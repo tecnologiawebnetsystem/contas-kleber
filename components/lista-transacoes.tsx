@@ -29,9 +29,23 @@ interface ListaTransacoesProps {
   onTogglePago: (id: string, mes: number, ano: number) => void
   onDelete: (id: string) => void
   onAddPagamento: (id: string, mes: number, ano: number, dataPagamento: string, anexo?: string) => void
+  mesSelecionado: number
+  anoSelecionado: number
+  onMesChange: (mes: number) => void
+  onAnoChange: (ano: number) => void
 }
 
-export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, onAddPagamento }: ListaTransacoesProps) {
+export function ListaTransacoes({
+  transacoes,
+  contas,
+  onTogglePago,
+  onDelete,
+  onAddPagamento,
+  mesSelecionado,
+  anoSelecionado,
+  onMesChange,
+  onAnoChange,
+}: ListaTransacoesProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [contaSelecionada, setContaSelecionada] = useState<Conta | null>(null)
   const [anexoVisualizar, setAnexoVisualizar] = useState<string | null>(null)
@@ -40,10 +54,6 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
   const [filtroTipo, setFiltroTipo] = useState<"todos" | "fixa" | "parcelada" | "diaria" | "credito">("todos")
   const [filtroStatus, setFiltroStatus] = useState<"todos" | "pago" | "pendente">("todos")
   const [ordenacao, setOrdenacao] = useState<"data" | "valor" | "nome">("data")
-
-  const hoje = new Date()
-  const mesAtual = hoje.getMonth()
-  const anoAtual = hoje.getFullYear()
 
   const meses = [
     "Janeiro",
@@ -59,6 +69,24 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
     "Novembro",
     "Dezembro",
   ]
+
+  const mudarMes = (direcao: "anterior" | "proximo") => {
+    if (direcao === "anterior") {
+      if (mesSelecionado === 0) {
+        onMesChange(11)
+        onAnoChange(anoSelecionado - 1)
+      } else {
+        onMesChange(mesSelecionado - 1)
+      }
+    } else {
+      if (mesSelecionado === 11) {
+        onMesChange(0)
+        onAnoChange(anoSelecionado + 1)
+      } else {
+        onMesChange(mesSelecionado + 1)
+      }
+    }
+  }
 
   const itensCombinados = [
     ...transacoes
@@ -77,11 +105,11 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
         if (conta.tipo === "diaria") {
           if (!conta.data_gasto) return false
           const dataGasto = new Date(conta.data_gasto)
-          return dataGasto.getMonth() === mesAtual && dataGasto.getFullYear() === anoAtual
+          return dataGasto.getMonth() === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
         }
         if (conta.tipo === "parcelada") {
           const inicio = new Date(conta.data_inicio!)
-          const parcelaAtual = (anoAtual - inicio.getFullYear()) * 12 + (mesAtual - inicio.getMonth()) + 1
+          const parcelaAtual = (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - inicio.getMonth()) + 1
           return parcelaAtual > 0 && parcelaAtual <= conta.parcelas!
         }
         return false
@@ -113,7 +141,7 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
   if (filtroStatus !== "todos") {
     itensFiltrados = itensFiltrados.filter((item) => {
       if (item.tipo === "credito") return filtroStatus === "pago"
-      const pago = item.conta?.pagamentos?.some((p) => p.mes === mesAtual && p.ano === anoAtual) || false
+      const pago = item.conta?.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado) || false
       return filtroStatus === "pago" ? pago : !pago
     })
   }
@@ -134,7 +162,7 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
   }
 
   const handleCompartilharWhatsApp = (conta: Conta) => {
-    const pagamento = conta.pagamentos?.find((p) => p.mes === mesAtual && p.ano === anoAtual)
+    const pagamento = conta.pagamentos?.find((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
     if (!pagamento) return
 
     let linhaVencimento = ""
@@ -150,7 +178,7 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
 
     if (conta.tipo === "parcelada") {
       const parcelaAtual = getParcelaAtual(conta)
-      linhaParcela = `📦 Parcela: ${parcelaAtual} de ${conta.parcelas}\n`
+      linhaParcela = `📦 Parcela: ${parcelaAtual} de ${conta.parcelas}x\n`
     }
 
     const anexoUrl = pagamento.anexo || conta.anexoDiario
@@ -165,7 +193,7 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
       `📅 Data do Pagamento: ${new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}\n` +
       linhaVencimento +
       linhaParcela +
-      `📊 Mês: ${meses[mesAtual]}/${anoAtual}` +
+      `📊 Mês: ${meses[mesSelecionado]}/${anoSelecionado}` +
       linhaAnexo
 
     const mensagemEncoded = encodeURIComponent(mensagem)
@@ -175,21 +203,29 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
   const getParcelaAtual = (conta: Conta) => {
     if (conta.tipo !== "parcelada") return null
     const inicio = new Date(conta.data_inicio!)
-    const parcelaAtual = (anoAtual - inicio.getFullYear()) * 12 + (mesAtual - inicio.getMonth()) + 1
+    const parcelaAtual = (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - inicio.getMonth()) + 1
     return parcelaAtual
   }
 
   const isPago = (conta: Conta) => {
-    return conta.pagamentos?.some((p) => p.mes === mesAtual && p.ano === anoAtual) || false
+    return conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado) || false
   }
 
   if (itensFiltrados.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {meses[mesAtual]}/{anoAtual}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <Button variant="outline" size="sm" onClick={() => mudarMes("anterior")}>
+              ← Anterior
+            </Button>
+            <CardTitle className="text-center">
+              {meses[mesSelecionado]}/{anoSelecionado}
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={() => mudarMes("proximo")}>
+              Próximo →
+            </Button>
+          </div>
           <div className="flex flex-col gap-3 mt-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -251,9 +287,17 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {meses[mesAtual]}/{anoAtual}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <Button variant="outline" size="sm" onClick={() => mudarMes("anterior")}>
+              ← Anterior
+            </Button>
+            <CardTitle className="text-center">
+              {meses[mesSelecionado]}/{anoSelecionado}
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={() => mudarMes("proximo")}>
+              Próximo →
+            </Button>
+          </div>
           <div className="flex flex-col gap-3 mt-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -340,7 +384,7 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
                 const conta = item.conta!
                 const pago = isPago(conta)
                 const parcelaAtual = getParcelaAtual(conta)
-                const pagamento = conta.pagamentos?.find((p) => p.mes === mesAtual && p.ano === anoAtual)
+                const pagamento = conta.pagamentos?.find((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
                 const temAnexo = pagamento?.anexo || conta.anexoDiario
 
                 return (
@@ -356,7 +400,7 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
                       checked={pago}
                       onCheckedChange={() => {
                         if (pago) {
-                          onTogglePago(conta.id, mesAtual, anoAtual)
+                          onTogglePago(conta.id, mesSelecionado, anoSelecionado)
                         } else {
                           handleMarcarPago(conta)
                         }
@@ -464,10 +508,10 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           conta={contaSelecionada}
-          mes={mesAtual}
-          ano={anoAtual}
+          mes={mesSelecionado}
+          ano={anoSelecionado}
           onConfirm={(dataPagamento, anexo) => {
-            onAddPagamento(contaSelecionada.id, mesAtual, anoAtual, dataPagamento, anexo)
+            onAddPagamento(contaSelecionada.id, mesSelecionado, anoSelecionado, dataPagamento, anexo)
             setDialogOpen(false)
             setContaSelecionada(null)
           }}

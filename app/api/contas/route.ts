@@ -18,9 +18,19 @@ export async function GET() {
 
     if (pagamentosError) throw pagamentosError
 
-    // Combinar contas com seus pagamentos
     const contasComPagamentos = contas.map((conta) => ({
-      ...conta,
+      id: conta.id,
+      nome: conta.nome,
+      valor: Number(conta.valor),
+      vencimento: conta.vencimento,
+      tipo: conta.tipo,
+      parcelas: conta.parcelas,
+      dataInicio: conta.data_inicio,
+      dataGasto: conta.data_gasto, // Converter data_gasto para dataGasto
+      anexoDiario: conta.anexo_diario, // Converter anexo_diario para anexoDiario
+      categoria: conta.categoria,
+      createdAt: conta.created_at,
+      updatedAt: conta.updated_at,
       pagamentos: pagamentos
         .filter((p) => p.conta_id === conta.id)
         .map((p) => ({

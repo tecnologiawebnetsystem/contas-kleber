@@ -23,6 +23,10 @@ export default function ContasPage() {
   const [creditoDialogOpen, setCreditoDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
 
+  const hoje = new Date()
+  const [mesSelecionado, setMesSelecionado] = useState(hoje.getMonth())
+  const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear())
+
   useEffect(() => {
     fetchContas()
     fetchSaldo()
@@ -235,14 +239,11 @@ export default function ContasPage() {
     window.open(url, "_blank")
   }
 
-  const hoje = new Date()
-  const mesAtual = hoje.getMonth()
-  const anoAtual = hoje.getFullYear()
   const diaAtual = hoje.getDate()
 
   const contasProximasVencimento = contas.filter((conta) => {
     if (conta.tipo === "diaria") return false
-    const isPago = conta.pagamentos?.some((p) => p.mes === mesAtual && p.ano === anoAtual)
+    const isPago = conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
     if (isPago) return false
 
     const diasParaVencimento = conta.vencimento - diaAtual
@@ -251,7 +252,7 @@ export default function ContasPage() {
 
   const contasAtrasadas = contas.filter((conta) => {
     if (conta.tipo === "diaria") return false
-    const isPago = conta.pagamentos?.some((p) => p.mes === mesAtual && p.ano === anoAtual)
+    const isPago = conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
     if (isPago) return false
 
     return conta.vencimento < diaAtual
@@ -262,11 +263,11 @@ export default function ContasPage() {
     if (conta.tipo === "diaria") {
       if (!conta.data_gasto) return false
       const dataGasto = new Date(conta.data_gasto)
-      return dataGasto.getMonth() === mesAtual && dataGasto.getFullYear() === anoAtual
+      return dataGasto.getMonth() === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
     }
     if (conta.tipo === "parcelada") {
       const inicio = new Date(conta.data_inicio!)
-      const parcelaAtual = (anoAtual - inicio.getFullYear()) * 12 + (mesAtual - inicio.getMonth()) + 1
+      const parcelaAtual = (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - inicio.getMonth()) + 1
       return parcelaAtual > 0 && parcelaAtual <= conta.parcelas!
     }
     return false
@@ -274,11 +275,26 @@ export default function ContasPage() {
 
   const totalMes = contasMesAtual.reduce((sum, conta) => sum + conta.valor, 0)
   const pagas = contasMesAtual.filter((conta) =>
-    conta.pagamentos?.some((p) => p.mes === mesAtual && p.ano === anoAtual),
+    conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado),
   ).length
   const totalPago = contasMesAtual
-    .filter((conta) => conta.pagamentos?.some((p) => p.mes === mesAtual && p.ano === anoAtual))
+    .filter((conta) => conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado))
     .reduce((sum, conta) => sum + conta.valor, 0)
+
+  const meses = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ]
 
   if (loading) {
     return (
@@ -398,7 +414,7 @@ export default function ContasPage() {
                     onClick={() =>
                       compartilharWidget(
                         "💵 Total do Mês",
-                        `Valor total: ${formatarMoeda(totalMes)}\n${contasMesAtual.length} contas neste mês\n\nMês: ${new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`,
+                        `Valor total: ${formatarMoeda(totalMes)}\n${contasMesAtual.length} contas neste mês\n\nMês: ${meses[mesSelecionado]}/${anoSelecionado}`,
                       )
                     }
                   >
@@ -424,7 +440,7 @@ export default function ContasPage() {
                     onClick={() =>
                       compartilharWidget(
                         "✅ Contas Pagas",
-                        `${pagas} de ${contasMesAtual.length} contas pagas\nValor pago: ${formatarMoeda(totalPago)}\n\nMês: ${new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`,
+                        `${pagas} de ${contasMesAtual.length} contas pagas\nValor pago: ${formatarMoeda(totalPago)}\n\nMês: ${meses[mesSelecionado]}/${anoSelecionado}`,
                       )
                     }
                   >
@@ -452,7 +468,7 @@ export default function ContasPage() {
                     onClick={() =>
                       compartilharWidget(
                         "📋 A Pagar",
-                        `Valor pendente: ${formatarMoeda(totalMes - totalPago)}\n${contasMesAtual.length - pagas} contas pendentes\n\nMês: ${new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`,
+                        `Valor pendente: ${formatarMoeda(totalMes - totalPago)}\n${contasMesAtual.length - pagas} contas pendentes\n\nMês: ${meses[mesSelecionado]}/${anoSelecionado}`,
                       )
                     }
                   >
@@ -474,6 +490,10 @@ export default function ContasPage() {
             onTogglePago={togglePago}
             onDelete={deleteConta}
             onAddPagamento={addPagamento}
+            mesSelecionado={mesSelecionado}
+            anoSelecionado={anoSelecionado}
+            onMesChange={setMesSelecionado}
+            onAnoChange={setAnoSelecionado}
           />
         </div>
       </div>

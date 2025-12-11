@@ -46,7 +46,11 @@ export default function ConsultaPage() {
     setMesAno(`${ano}-${mes}`)
   }, [])
 
-  const [anoSelecionado, mesSelecionado] = mesAno.split("-").map(Number)
+  const [anoSelecionado, mesSelecionado] = mesAno
+    ? mesAno.split("-").map(Number)
+    : [new Date().getFullYear(), new Date().getMonth() + 1]
+
+  console.log("[v0] Mês/Ano selecionado:", { mesAno, anoSelecionado, mesSelecionado })
 
   const hoje = new Date()
   const mesAtual = hoje.getMonth()
@@ -55,6 +59,42 @@ export default function ConsultaPage() {
 
   const contasFiltradas = contas
     .map((conta) => {
+      if (conta.tipo === "diaria") {
+        if (!conta.dataGasto) {
+          console.log("[v0] Gasto diário sem data:", conta.nome)
+          return null
+        }
+
+        const dataGasto = new Date(conta.dataGasto + "T00:00:00")
+        const mesGasto = dataGasto.getMonth()
+        const anoGasto = dataGasto.getFullYear()
+
+        console.log("[v0] Processando gasto diário:", {
+          nome: conta.nome,
+          dataGasto: conta.dataGasto,
+          mesGasto,
+          anoGasto,
+          mesSelecionado,
+          anoSelecionado,
+          match: mesGasto === mesSelecionado - 1 && anoGasto === anoSelecionado,
+        })
+
+        if (mesGasto !== mesSelecionado - 1 || anoGasto !== anoSelecionado) return null
+
+        return {
+          ...conta,
+          isPago: true, // Gastos diários já são considerados pagos
+          pagamento: {
+            mes: mesGasto,
+            ano: anoGasto,
+            dataPagamento: conta.dataGasto,
+            anexo: conta.anexoDiario || conta.pagamentos?.find((p) => p.mes === mesGasto && p.ano === anoGasto)?.anexo,
+          },
+          estaAtrasado: false,
+          estaProximo: false,
+        }
+      }
+
       if (conta.tipo === "fixa") {
         const isPago = conta.pagamentos?.some((p) => p.mes === mesSelecionado - 1 && p.ano === anoSelecionado)
         const pagamento = conta.pagamentos?.find((p) => p.mes === mesSelecionado - 1 && p.ano === anoSelecionado)
@@ -118,6 +158,8 @@ export default function ConsultaPage() {
       return true
     })
     .filter((conta) => conta.nome.toLowerCase().includes(busca.toLowerCase()))
+
+  console.log("[v0] Contas filtradas:", contasFiltradas.length, contasFiltradas)
 
   const totalGeral = contasFiltradas.reduce((sum, conta) => sum + conta.valor, 0)
   const totalPago = contasFiltradas.filter((c) => c.isPago).reduce((sum, conta) => sum + conta.valor, 0)
@@ -283,10 +325,18 @@ export default function ConsultaPage() {
                           <TableCell className="font-medium">{conta.nome}</TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {conta.tipo === "fixa" ? "Fixa" : `${conta.parcelaAtual}/${conta.parcelas}`}
+                              {conta.tipo === "fixa"
+                                ? "Fixa"
+                                : conta.tipo === "diaria"
+                                  ? "Diária"
+                                  : `${conta.parcelaAtual}/${conta.parcelas}`}
                             </Badge>
                           </TableCell>
-                          <TableCell>Dia {conta.vencimento}</TableCell>
+                          <TableCell>
+                            {conta.tipo === "diaria"
+                              ? new Date(conta.dataGasto! + "T00:00:00").toLocaleDateString("pt-BR")
+                              : `Dia ${conta.vencimento}`}
+                          </TableCell>
                           <TableCell>R$ {conta.valor.toFixed(2)}</TableCell>
                           <TableCell>
                             {conta.isPago ? (
