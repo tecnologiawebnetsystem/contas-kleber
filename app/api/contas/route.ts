@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       valor: body.valor,
       vencimento: body.vencimento,
       tipo: body.tipo,
-      categoria: body.categoria || "Outros", // Incluindo categoria
+      categoria: body.categoria || "Outros",
     }
 
     if (body.tipo === "parcelada") {
@@ -60,6 +60,9 @@ export async function POST(request: Request) {
 
     if (body.tipo === "diaria") {
       contaData.data_gasto = body.dataGasto
+      if (body.anexoDiario) {
+        contaData.anexo_diario = body.anexoDiario
+      }
     }
 
     const { data: conta, error: contaError } = await supabase.from("contas").insert(contaData).select().single()
@@ -71,13 +74,18 @@ export async function POST(request: Request) {
       const mes = dataGasto.getMonth()
       const ano = dataGasto.getFullYear()
 
-      // Criar pagamento
-      const { error: pagamentoError } = await supabase.from("pagamentos").insert({
+      const pagamentoData: any = {
         conta_id: conta.id,
         mes: mes,
         ano: ano,
         data_pagamento: body.dataGasto,
-      })
+      }
+
+      if (body.anexoDiario) {
+        pagamentoData.anexo = body.anexoDiario
+      }
+
+      const { error: pagamentoError } = await supabase.from("pagamentos").insert(pagamentoData)
 
       if (pagamentoError) throw pagamentoError
 

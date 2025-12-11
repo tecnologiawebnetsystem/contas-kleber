@@ -30,6 +30,7 @@ export interface Conta {
   parcelaAtual?: number
   dataInicio?: string
   dataGasto?: string
+  anexoDiario?: string // Adicionando campo para anexo de gastos diários
   pagamentos?: Pagamento[]
   created_at?: string
 }

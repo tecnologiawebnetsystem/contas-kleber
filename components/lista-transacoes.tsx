@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowUpCircle, Trash2, Share2, FileText, Search } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ArrowUpCircle, Trash2, Share2, Search, Paperclip } from "lucide-react"
 import { PagamentoDialog } from "@/components/pagamento-dialog"
 import { useState } from "react"
 import type { Conta } from "@/types/conta"
@@ -33,6 +34,7 @@ interface ListaTransacoesProps {
 export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, onAddPagamento }: ListaTransacoesProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [contaSelecionada, setContaSelecionada] = useState<Conta | null>(null)
+  const [anexoVisualizar, setAnexoVisualizar] = useState<string | null>(null)
 
   const [busca, setBusca] = useState("")
   const [filtroTipo, setFiltroTipo] = useState<"todos" | "fixa" | "parcelada" | "diaria" | "credito">("todos")
@@ -59,7 +61,6 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
   ]
 
   const itensCombinados = [
-    // Adicionar todas as transações de crédito
     ...transacoes
       .filter((t) => t.tipo === "credito")
       .map((t) => ({
@@ -70,7 +71,6 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
         data: new Date(t.data_transacao || t.created_at),
         created_at: new Date(t.created_at),
       })),
-    // Adicionar todas as contas do mês atual
     ...contas
       .filter((conta) => {
         if (conta.tipo === "fixa") return true
@@ -99,12 +99,10 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
 
   let itensFiltrados = itensCombinados
 
-  // Filtro de busca
   if (busca) {
     itensFiltrados = itensFiltrados.filter((item) => item.nome.toLowerCase().includes(busca.toLowerCase()))
   }
 
-  // Filtro de tipo
   if (filtroTipo !== "todos") {
     itensFiltrados = itensFiltrados.filter((item) => {
       if (filtroTipo === "credito") return item.tipo === "credito"
@@ -112,7 +110,6 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
     })
   }
 
-  // Filtro de status
   if (filtroStatus !== "todos") {
     itensFiltrados = itensFiltrados.filter((item) => {
       if (item.tipo === "credito") return filtroStatus === "pago"
@@ -121,7 +118,6 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
     })
   }
 
-  // Ordenação
   itensFiltrados = itensFiltrados.sort((a, b) => {
     if (ordenacao === "data") {
       return b.created_at.getTime() - a.created_at.getTime()
@@ -142,11 +138,24 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
     if (!pagamento) return
 
     let linhaVencimento = ""
+    let linhaParcela = ""
+    let linhaAnexo = ""
+
     if (conta.tipo === "diaria" && conta.data_gasto) {
       const dataGasto = new Date(conta.data_gasto).toLocaleDateString("pt-BR")
       linhaVencimento = `📅 Data do gasto: ${dataGasto}\n`
     } else {
       linhaVencimento = `📌 Vencimento: dia ${conta.vencimento}\n`
+    }
+
+    if (conta.tipo === "parcelada") {
+      const parcelaAtual = getParcelaAtual(conta)
+      linhaParcela = `📦 Parcela: ${parcelaAtual} de ${conta.parcelas}\n`
+    }
+
+    const anexoUrl = pagamento.anexo || conta.anexoDiario
+    if (anexoUrl) {
+      linhaAnexo = `\n📎 *Comprovante:*\n${anexoUrl}\n`
     }
 
     const mensagem =
@@ -155,7 +164,9 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
       `💰 Valor: ${formatarMoeda(conta.valor)}\n` +
       `📅 Data do Pagamento: ${new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}\n` +
       linhaVencimento +
-      `📊 Mês: ${meses[mesAtual]}/${anoAtual}`
+      linhaParcela +
+      `📊 Mês: ${meses[mesAtual]}/${anoAtual}` +
+      linhaAnexo
 
     const mensagemEncoded = encodeURIComponent(mensagem)
     window.open(`https://wa.me/?text=${mensagemEncoded}`, "_blank")
@@ -304,7 +315,7 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    className="flex items-center justify-between p-4 rounded-lg border bg-green-50 dark:bg-green-950/20 hover:bg-green-100 dark:hover:bg-green-950/30 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <ArrowUpCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -330,11 +341,16 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
                 const pago = isPago(conta)
                 const parcelaAtual = getParcelaAtual(conta)
                 const pagamento = conta.pagamentos?.find((p) => p.mes === mesAtual && p.ano === anoAtual)
+                const temAnexo = pagamento?.anexo || conta.anexoDiario
 
                 return (
                   <div
                     key={item.id}
-                    className="flex items-start gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    className={`flex items-start gap-4 p-4 border rounded-lg transition-colors ${
+                      pago
+                        ? "bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30"
+                        : "bg-card hover:bg-accent/50"
+                    }`}
                   >
                     <Checkbox
                       checked={pago}
@@ -354,6 +370,17 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
                         <h3 className={`font-semibold ${pago ? "line-through text-muted-foreground" : ""}`}>
                           {conta.nome}
                         </h3>
+                        {temAnexo && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setAnexoVisualizar(pagamento?.anexo || conta.anexoDiario || null)}
+                            className="h-6 px-2 gap-1 text-xs"
+                          >
+                            <Paperclip className="h-3 w-3" />
+                            Anexo
+                          </Button>
+                        )}
                         {conta.categoria && (
                           <Badge variant="outline" className="text-xs">
                             {conta.categoria}
@@ -387,18 +414,6 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
                           <p className="text-sm text-green-600 dark:text-green-400">
                             Pago em: {new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}
                           </p>
-                          {pagamento.anexo && (
-                            <div className="flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <a
-                                href={pagamento.anexo}
-                                download={`comprovante-${conta.nome}.jpg`}
-                                className="text-sm text-primary hover:underline"
-                              >
-                                Ver comprovante
-                              </a>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
@@ -458,6 +473,30 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
           }}
         />
       )}
+
+      <Dialog open={!!anexoVisualizar} onOpenChange={() => setAnexoVisualizar(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Comprovante</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center bg-muted rounded-lg p-4">
+            {anexoVisualizar && (
+              <img
+                src={anexoVisualizar || "/placeholder.svg"}
+                alt="Comprovante"
+                className="max-w-full max-h-[70vh] object-contain rounded"
+              />
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button asChild>
+              <a href={anexoVisualizar || ""} download="comprovante.jpg">
+                Baixar
+              </a>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

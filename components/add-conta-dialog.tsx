@@ -1,13 +1,13 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Upload, X, FileText } from "lucide-react"
 import type { Conta, TipoConta, Categoria } from "@/types/conta"
 
 interface AddContaDialogProps {
@@ -36,7 +36,30 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
   const [parcelas, setParcelas] = useState("")
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().split("T")[0])
   const [dataGasto, setDataGasto] = useState(new Date().toISOString().split("T")[0])
-  const [categoria, setCategoria] = useState<Categoria>("Outros") // Estado para categoria
+  const [categoria, setCategoria] = useState<Categoria>("Outros")
+  const [anexo, setAnexo] = useState<string | null>(null)
+  const [nomeArquivo, setNomeArquivo] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAnexo(reader.result as string)
+        setNomeArquivo(file.name)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleRemoveFile = () => {
+    setAnexo(null)
+    setNomeArquivo(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,7 +69,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
       valor: Number.parseFloat(valor),
       tipo,
       vencimento: tipo === "diaria" ? 1 : Number.parseInt(vencimento),
-      categoria, // Incluindo categoria
+      categoria,
       pagamentos: [],
     }
 
@@ -58,11 +81,13 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
 
     if (tipo === "diaria") {
       novaConta.dataGasto = dataGasto
+      if (anexo) {
+        novaConta.anexoDiario = anexo
+      }
     }
 
     onAdd(novaConta)
 
-    // Reset form
     setNome("")
     setValor("")
     setTipo("fixa")
@@ -70,7 +95,9 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
     setParcelas("")
     setDataInicio(new Date().toISOString().split("T")[0])
     setDataGasto(new Date().toISOString().split("T")[0])
-    setCategoria("Outros") // Reset categoria
+    setCategoria("Outros")
+    setAnexo(null)
+    setNomeArquivo(null)
   }
 
   return (
@@ -192,6 +219,41 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
               </SelectContent>
             </Select>
           </div>
+
+          {tipo === "diaria" && (
+            <div className="space-y-2">
+              <Label htmlFor="anexoDiario">Comprovante (Opcional)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="anexoDiario"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileChange}
+                  ref={fileInputRef}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {nomeArquivo ? "Trocar arquivo" : "Anexar comprovante"}
+                </Button>
+              </div>
+
+              {anexo && nomeArquivo && (
+                <div className="flex items-center gap-2 p-2 border rounded-md bg-accent/50">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm flex-1 truncate">{nomeArquivo}</span>
+                  <Button type="button" variant="ghost" size="icon" onClick={handleRemoveFile} className="h-6 w-6">
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-2 justify-end pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
