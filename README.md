@@ -2,6 +2,7 @@
 
 *Automatically synced with your [v0.app](https://v0.app) deployments*
 
+<!-- Links do README mantidos como estão pois são gerados automaticamente -->
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/kleberlinux-8687s-projects/v0-contas-kleber)
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/rAADARyPveP)
 

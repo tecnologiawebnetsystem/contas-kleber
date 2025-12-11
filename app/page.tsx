@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import type { Conta } from "@/types/conta"
 import { ListaTransacoes } from "@/components/lista-transacoes"
+import { LogoutButton } from "@/components/logout-button"
 
 export default function ContasPage() {
   const { toast } = useToast()
@@ -309,6 +310,7 @@ export default function ContasPage() {
                   Configurações
                 </Link>
               </Button>
+              <LogoutButton />
             </div>
           </div>
 

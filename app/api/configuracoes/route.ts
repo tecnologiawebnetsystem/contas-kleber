@@ -6,11 +6,12 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    const { data, error } = await supabase.from("configuracoes").select("*").limit(1).single()
+    const { data, error } = await supabase.from("configuracoes").select("*").limit(1)
 
-    if (error && error.code !== "PGRST116") throw error
+    if (error) throw error
 
-    return NextResponse.json(data || null)
+    // Retornar o primeiro registro ou null se não existir
+    return NextResponse.json(data && data.length > 0 ? data[0] : null)
   } catch (error) {
     console.error("[v0] Erro ao buscar configurações:", error)
     return NextResponse.json({ error: "Erro ao buscar configurações" }, { status: 500 })
@@ -23,12 +24,11 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
 
-    // Verificar se já existe configuração
-    const { data: existing } = await supabase.from("configuracoes").select("id").limit(1).single()
+    const { data: existing } = await supabase.from("configuracoes").select("id").limit(1)
 
     let result
 
-    if (existing) {
+    if (existing && existing.length > 0) {
       // Atualizar
       result = await supabase
         .from("configuracoes")
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
           notificar_atraso: body.notificarAtraso,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", existing.id)
+        .eq("id", existing[0].id)
         .select()
         .single()
     } else {
