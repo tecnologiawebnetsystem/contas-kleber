@@ -10,6 +10,7 @@ import { ArrowUpCircle, Trash2, Share2, FileText, Search } from "lucide-react"
 import { PagamentoDialog } from "@/components/pagamento-dialog"
 import { useState } from "react"
 import type { Conta } from "@/types/conta"
+import { formatarMoeda } from "@/lib/utils"
 
 interface Transacao {
   id: string
@@ -140,12 +141,20 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
     const pagamento = conta.pagamentos?.find((p) => p.mes === mesAtual && p.ano === anoAtual)
     if (!pagamento) return
 
+    let linhaVencimento = ""
+    if (conta.tipo === "diaria" && conta.data_gasto) {
+      const dataGasto = new Date(conta.data_gasto).toLocaleDateString("pt-BR")
+      linhaVencimento = `📅 Data do gasto: ${dataGasto}\n`
+    } else {
+      linhaVencimento = `📌 Vencimento: dia ${conta.vencimento}\n`
+    }
+
     const mensagem =
       `✅ *Pagamento Realizado*\n\n` +
       `📄 Conta: ${conta.nome}\n` +
-      `💰 Valor: R$ ${conta.valor.toFixed(2)}\n` +
+      `💰 Valor: ${formatarMoeda(conta.valor)}\n` +
       `📅 Data do Pagamento: ${new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}\n` +
-      `📌 Vencimento: dia ${conta.vencimento}\n` +
+      linhaVencimento +
       `📊 Mês: ${meses[mesAtual]}/${anoAtual}`
 
     const mensagemEncoded = encodeURIComponent(mensagem)
@@ -310,7 +319,9 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
                       <Badge variant="default" className="bg-green-600">
                         Entrada
                       </Badge>
-                      <span className="font-bold text-green-600 dark:text-green-400">+ R$ {item.valor.toFixed(2)}</span>
+                      <span className="font-bold text-green-600 dark:text-green-400">
+                        + {formatarMoeda(item.valor)}
+                      </span>
                     </div>
                   </div>
                 )
@@ -395,7 +406,7 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
                     <div className="flex items-center gap-2">
                       <div className="text-right">
                         <p className={`text-lg font-bold ${pago ? "text-muted-foreground" : "text-foreground"}`}>
-                          R$ {conta.valor.toFixed(2)}
+                          {formatarMoeda(conta.valor)}
                         </p>
                         {pago && (
                           <Badge variant="default" className="text-xs">

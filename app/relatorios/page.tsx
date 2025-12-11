@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, TrendingUp, TrendingDown, DollarSign } from "lucide-react"
 import Link from "next/link"
 import type { Conta, Categoria } from "@/types/conta"
+import { formatarMoeda } from "@/lib/utils"
 import {
   BarChart,
   Bar,
@@ -169,7 +170,7 @@ export default function RelatoriosPage() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">R$ {totalMesAtual.toFixed(2)}</div>
+                <div className="text-2xl font-bold">{formatarMoeda(totalMesAtual)}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {meses[mesAtual]} {anoAtual}
                 </p>
@@ -205,12 +206,11 @@ export default function RelatoriosPage() {
                     : "N/A"}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  R${" "}
-                  {dadosGraficoCategoria.length > 0
-                    ? dadosGraficoCategoria
-                        .reduce((max, item) => (item.valor > max.valor ? item : max))
-                        .valor.toFixed(2)
-                    : "0.00"}
+                  {formatarMoeda(
+                    dadosGraficoCategoria.length > 0
+                      ? dadosGraficoCategoria.reduce((max, item) => (item.valor > max.valor ? item : max)).valor
+                      : 0,
+                  )}
                 </p>
               </CardContent>
             </Card>
@@ -239,7 +239,7 @@ export default function RelatoriosPage() {
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                      <Tooltip formatter={(value: number) => formatarMoeda(value)} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
@@ -259,7 +259,7 @@ export default function RelatoriosPage() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="mes" />
                       <YAxis />
-                      <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                      <Tooltip formatter={(value: number) => formatarMoeda(value)} />
                       <Legend />
                       <Bar dataKey="valor" fill="#8b5cf6" name="Total Gasto" />
                     </BarChart>
@@ -286,7 +286,7 @@ export default function RelatoriosPage() {
                         <span className="font-medium">{item.nome}</span>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold">R$ {item.valor.toFixed(2)}</p>
+                        <p className="font-bold">{formatarMoeda(item.valor)}</p>
                         <p className="text-xs text-muted-foreground">
                           {((item.valor / totalMesAtual) * 100).toFixed(1)}% do total
                         </p>

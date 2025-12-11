@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, DollarSign, Calendar, TrendingUp, Search, AlertCircle, Settings, Wallet } from "lucide-react"
+import { Plus, DollarSign, Calendar, TrendingUp, Search, AlertCircle, Settings, Wallet, Share2 } from "lucide-react"
 import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -12,6 +12,7 @@ import Link from "next/link"
 import type { Conta } from "@/types/conta"
 import { ListaTransacoes } from "@/components/lista-transacoes"
 import { LogoutButton } from "@/components/logout-button"
+import { formatarMoeda } from "@/lib/utils"
 
 export default function ContasPage() {
   const { toast } = useToast()
@@ -115,7 +116,7 @@ export default function ContasPage() {
 
       toast({
         title: "Sucesso",
-        description: `R$ ${valor.toFixed(2)} adicionado ao seu saldo!`,
+        description: `${formatarMoeda(valor)} adicionado ao seu saldo!`,
       })
 
       await fetchTransacoes()
@@ -226,6 +227,12 @@ export default function ContasPage() {
         variant: "destructive",
       })
     }
+  }
+
+  const compartilharWidget = (titulo: string, conteudo: string) => {
+    const mensagem = `*${titulo}*\n\n${conteudo}\n\n_Financeiro Gonçalves_`
+    const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`
+    window.open(url, "_blank")
   }
 
   const hoje = new Date()
@@ -349,10 +356,25 @@ export default function ContasPage() {
                 <CardTitle className="text-sm font-medium text-green-900 dark:text-green-100">
                   Crédito Disponível
                 </CardTitle>
-                <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+                    onClick={() =>
+                      compartilharWidget(
+                        "💰 Crédito Disponível",
+                        `Saldo atual: ${formatarMoeda(saldo)}\n\nDisponível para gastos e pagamentos.`,
+                      )
+                    }
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                  <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-900 dark:text-green-100">R$ {saldo.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-green-900 dark:text-green-100">{formatarMoeda(saldo)}</div>
                 <Button
                   onClick={() => setCreditoDialogOpen(true)}
                   variant="ghost"
@@ -368,10 +390,25 @@ export default function ContasPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total do Mês</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() =>
+                      compartilharWidget(
+                        "💵 Total do Mês",
+                        `Valor total: ${formatarMoeda(totalMes)}\n${contasMesAtual.length} contas neste mês\n\nMês: ${new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`,
+                      )
+                    }
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">R$ {totalMes.toFixed(2)}</div>
+                <div className="text-2xl font-bold">{formatarMoeda(totalMes)}</div>
                 <p className="text-xs text-muted-foreground mt-1">{contasMesAtual.length} contas neste mês</p>
               </CardContent>
             </Card>
@@ -379,23 +416,53 @@ export default function ContasPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Contas Pagas</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() =>
+                      compartilharWidget(
+                        "✅ Contas Pagas",
+                        `${pagas} de ${contasMesAtual.length} contas pagas\nValor pago: ${formatarMoeda(totalPago)}\n\nMês: ${new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`,
+                      )
+                    }
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {pagas} de {contasMesAtual.length}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">R$ {totalPago.toFixed(2)} pago</p>
+                <p className="text-xs text-muted-foreground mt-1">{formatarMoeda(totalPago)} pago</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">A Pagar</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() =>
+                      compartilharWidget(
+                        "📋 A Pagar",
+                        `Valor pendente: ${formatarMoeda(totalMes - totalPago)}\n${contasMesAtual.length - pagas} contas pendentes\n\nMês: ${new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`,
+                      )
+                    }
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">R$ {(totalMes - totalPago).toFixed(2)}</div>
+                <div className="text-2xl font-bold">{formatarMoeda(totalMes - totalPago)}</div>
                 <p className="text-xs text-muted-foreground mt-1">{contasMesAtual.length - pagas} contas pendentes</p>
               </CardContent>
             </Card>

@@ -40,11 +40,20 @@ export function WhatsAppButton({
 
   const handleWhatsApp = () => {
     const dataFormatada = new Date(dataPagamento + "T00:00:00").toLocaleDateString("pt-BR")
+
+    let linhaVencimento = ""
+    if (conta.tipo === "diaria" && conta.data_gasto) {
+      const dataGasto = new Date(conta.data_gasto).toLocaleDateString("pt-BR")
+      linhaVencimento = `📅 *Data do gasto:* ${dataGasto}\n`
+    } else {
+      linhaVencimento = `📅 *Vencimento:* Dia ${conta.vencimento}\n`
+    }
+
     const mensagem =
       `✅ *Pagamento Realizado*\n\n` +
       `📋 *Conta:* ${conta.nome}\n` +
       `💰 *Valor:* R$ ${conta.valor.toFixed(2)}\n` +
-      `📅 *Vencimento:* Dia ${conta.vencimento}\n` +
+      linhaVencimento +
       `✔️ *Data do Pagamento:* ${dataFormatada}\n` +
       `📆 *Referência:* ${meses[mes]}/${ano}\n\n` +
       (anexo ? `📎 Comprovante anexado` : ``)

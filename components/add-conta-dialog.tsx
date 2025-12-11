@@ -93,48 +93,17 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="valor">Valor (R$)</Label>
-              <Input
-                id="valor"
-                type="number"
-                step="0.01"
-                placeholder="0,00"
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                required
-              />
-            </div>
-
-            {tipo !== "diaria" && (
-              <div className="space-y-2">
-                <Label htmlFor="vencimento">Dia Vencimento</Label>
-                <Input
-                  id="vencimento"
-                  type="number"
-                  min="1"
-                  max="31"
-                  placeholder="5"
-                  value={vencimento}
-                  onChange={(e) => setVencimento(e.target.value)}
-                  required
-                />
-              </div>
-            )}
-
-            {tipo === "diaria" && (
-              <div className="space-y-2">
-                <Label htmlFor="dataGasto">Data do Gasto</Label>
-                <Input
-                  id="dataGasto"
-                  type="date"
-                  value={dataGasto}
-                  onChange={(e) => setDataGasto(e.target.value)}
-                  required
-                />
-              </div>
-            )}
+          <div className="space-y-2">
+            <Label htmlFor="valor">Valor (R$)</Label>
+            <Input
+              id="valor"
+              type="number"
+              step="0.01"
+              placeholder="0,00"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              required
+            />
           </div>
 
           <div className="space-y-2">
@@ -151,21 +120,34 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="categoria">Categoria</Label>
-            <Select value={categoria} onValueChange={(v) => setCategoria(v as Categoria)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {categorias.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {tipo !== "diaria" && (
+            <div className="space-y-2">
+              <Label htmlFor="vencimento">Dia Vencimento</Label>
+              <Input
+                id="vencimento"
+                type="number"
+                min="1"
+                max="31"
+                placeholder="5"
+                value={vencimento}
+                onChange={(e) => setVencimento(e.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          {tipo === "diaria" && (
+            <div className="space-y-2">
+              <Label htmlFor="dataGasto">Data do Gasto</Label>
+              <Input
+                id="dataGasto"
+                type="date"
+                value={dataGasto}
+                onChange={(e) => setDataGasto(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           {tipo === "parcelada" && (
             <div className="grid grid-cols-2 gap-4">
@@ -194,6 +176,22 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
               </div>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="categoria">Categoria</Label>
+            <Select value={categoria} onValueChange={(v) => setCategoria(v as Categoria)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categorias.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="flex gap-2 justify-end pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
