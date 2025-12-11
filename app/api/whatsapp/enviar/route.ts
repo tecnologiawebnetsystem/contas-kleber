@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const client = require("twilio")(accountSid, authToken)
+    const twilio = require("twilio")
+    const client = twilio(accountSid, authToken)
 
     const resultados = []
 

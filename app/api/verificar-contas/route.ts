@@ -3,7 +3,13 @@ import { Resend } from "resend"
 import { EmailNotificacao } from "@/components/email-notificacao"
 import { createClient } from "@/lib/supabase/server"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const getResendClient = () => {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    return null
+  }
+  return new Resend(apiKey)
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +20,17 @@ export async function POST(request: NextRequest) {
 
     if (!config || !config.notificacoes_ativadas) {
       return NextResponse.json({ success: true, emailsEnviados: [], message: "Notificações desativadas" })
+    }
+
+    const resend = getResendClient()
+    if (!resend) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Resend API não configurada. Adicione RESEND_API_KEY nas variáveis de ambiente.",
+        },
+        { status: 500 },
+      )
     }
 
     // Buscar todas as contas
