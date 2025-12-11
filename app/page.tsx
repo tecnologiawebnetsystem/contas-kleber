@@ -288,30 +288,36 @@ export default function ContasPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 md:p-8 max-w-7xl">
         <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">Contas a Pagar</h1>
               <p className="text-muted-foreground mt-1">Gerencie suas contas fixas e parceladas</p>
+              <div className="flex gap-2 mt-4">
+                <Button onClick={() => setDialogOpen(true)} size="lg">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Conta
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/relatorios">
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Relatórios
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/consulta">
+                    <Search className="mr-2 h-4 w-4" />
+                    Consultar
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/configuracoes">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configurações
+                  </Link>
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={() => setDialogOpen(true)} size="lg">
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Conta
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/consulta">
-                  <Search className="mr-2 h-4 w-4" />
-                  Consultar
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/configuracoes">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Configurações
-                </Link>
-              </Button>
-              <LogoutButton />
-            </div>
+            <LogoutButton />
           </div>
 
           {contasProximasVencimento.length > 0 && (

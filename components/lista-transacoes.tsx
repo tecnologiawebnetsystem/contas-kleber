@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowUpCircle, Trash2, Share2, FileText } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ArrowUpCircle, Trash2, Share2, FileText, Search } from "lucide-react"
 import { PagamentoDialog } from "@/components/pagamento-dialog"
 import { useState } from "react"
 import type { Conta } from "@/types/conta"
@@ -30,6 +32,11 @@ interface ListaTransacoesProps {
 export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, onAddPagamento }: ListaTransacoesProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [contaSelecionada, setContaSelecionada] = useState<Conta | null>(null)
+
+  const [busca, setBusca] = useState("")
+  const [filtroTipo, setFiltroTipo] = useState<"todos" | "fixa" | "parcelada" | "diaria" | "credito">("todos")
+  const [filtroStatus, setFiltroStatus] = useState<"todos" | "pago" | "pendente">("todos")
+  const [ordenacao, setOrdenacao] = useState<"data" | "valor" | "nome">("data")
 
   const hoje = new Date()
   const mesAtual = hoje.getMonth()
@@ -87,7 +94,42 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
         created_at: new Date(conta.created_at),
         conta: conta,
       })),
-  ].sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
+  ]
+
+  let itensFiltrados = itensCombinados
+
+  // Filtro de busca
+  if (busca) {
+    itensFiltrados = itensFiltrados.filter((item) => item.nome.toLowerCase().includes(busca.toLowerCase()))
+  }
+
+  // Filtro de tipo
+  if (filtroTipo !== "todos") {
+    itensFiltrados = itensFiltrados.filter((item) => {
+      if (filtroTipo === "credito") return item.tipo === "credito"
+      return item.tipo === "conta" && item.conta?.tipo === filtroTipo
+    })
+  }
+
+  // Filtro de status
+  if (filtroStatus !== "todos") {
+    itensFiltrados = itensFiltrados.filter((item) => {
+      if (item.tipo === "credito") return filtroStatus === "pago"
+      const pago = item.conta?.pagamentos?.some((p) => p.mes === mesAtual && p.ano === anoAtual) || false
+      return filtroStatus === "pago" ? pago : !pago
+    })
+  }
+
+  // Ordenação
+  itensFiltrados = itensFiltrados.sort((a, b) => {
+    if (ordenacao === "data") {
+      return b.created_at.getTime() - a.created_at.getTime()
+    } else if (ordenacao === "valor") {
+      return b.valor - a.valor
+    } else {
+      return a.nome.localeCompare(b.nome)
+    }
+  })
 
   const handleMarcarPago = (conta: Conta) => {
     setContaSelecionada(conta)
@@ -121,16 +163,65 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
     return conta.pagamentos?.some((p) => p.mes === mesAtual && p.ano === anoAtual) || false
   }
 
-  if (itensCombinados.length === 0) {
+  if (itensFiltrados.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {meses[mesAtual]}/{anoAtual}
           </CardTitle>
+          <div className="flex flex-col gap-3 mt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Select value={filtroTipo} onValueChange={(v: any) => setFiltroTipo(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os tipos</SelectItem>
+                  <SelectItem value="credito">Créditos</SelectItem>
+                  <SelectItem value="fixa">Fixas</SelectItem>
+                  <SelectItem value="parcelada">Parceladas</SelectItem>
+                  <SelectItem value="diaria">Gastos Diários</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filtroStatus} onValueChange={(v: any) => setFiltroStatus(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="pago">Pagos</SelectItem>
+                  <SelectItem value="pendente">Pendentes</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={ordenacao} onValueChange={(v: any) => setOrdenacao(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Ordenar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="data">Data</SelectItem>
+                  <SelectItem value="valor">Valor</SelectItem>
+                  <SelectItem value="nome">Nome</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-8">Nenhuma movimentação registrada ainda.</p>
+          <p className="text-sm text-muted-foreground text-center py-8">
+            Nenhum resultado encontrado para os filtros aplicados.
+          </p>
         </CardContent>
       </Card>
     )
@@ -143,10 +234,57 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
           <CardTitle className="flex items-center gap-2">
             {meses[mesAtual]}/{anoAtual}
           </CardTitle>
+          <div className="flex flex-col gap-3 mt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Select value={filtroTipo} onValueChange={(v: any) => setFiltroTipo(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os tipos</SelectItem>
+                  <SelectItem value="credito">Créditos</SelectItem>
+                  <SelectItem value="fixa">Fixas</SelectItem>
+                  <SelectItem value="parcelada">Parceladas</SelectItem>
+                  <SelectItem value="diaria">Gastos Diários</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filtroStatus} onValueChange={(v: any) => setFiltroStatus(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="pago">Pagos</SelectItem>
+                  <SelectItem value="pendente">Pendentes</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={ordenacao} onValueChange={(v: any) => setOrdenacao(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Ordenar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="data">Data</SelectItem>
+                  <SelectItem value="valor">Valor</SelectItem>
+                  <SelectItem value="nome">Nome</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {itensCombinados.map((item) => {
+            {itensFiltrados.map((item) => {
               if (item.tipo === "credito") {
                 const dataFormatada = item.data.toLocaleDateString("pt-BR")
                 const horaFormatada = item.created_at.toLocaleTimeString("pt-BR", {
@@ -201,10 +339,15 @@ export function ListaTransacoes({ transacoes, contas, onTogglePago, onDelete, on
                     />
 
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className={`font-semibold ${pago ? "line-through text-muted-foreground" : ""}`}>
                           {conta.nome}
                         </h3>
+                        {conta.categoria && (
+                          <Badge variant="outline" className="text-xs">
+                            {conta.categoria}
+                          </Badge>
+                        )}
                         {conta.tipo === "parcelada" && (
                           <Badge variant="outline" className="text-xs">
                             {parcelaAtual}/{conta.parcelas}x

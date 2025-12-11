@@ -8,13 +8,25 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { Conta, TipoConta } from "@/types/conta"
+import type { Conta, TipoConta, Categoria } from "@/types/conta"
 
 interface AddContaDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAdd: (conta: Omit<Conta, "id">) => void
 }
+
+const categorias: Categoria[] = [
+  "Moradia",
+  "Alimentação",
+  "Transporte",
+  "Saúde",
+  "Educação",
+  "Lazer",
+  "Vestuário",
+  "Serviços",
+  "Outros",
+]
 
 export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProps) {
   const [nome, setNome] = useState("")
@@ -24,6 +36,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
   const [parcelas, setParcelas] = useState("")
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().split("T")[0])
   const [dataGasto, setDataGasto] = useState(new Date().toISOString().split("T")[0])
+  const [categoria, setCategoria] = useState<Categoria>("Outros") // Estado para categoria
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,6 +46,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
       valor: Number.parseFloat(valor),
       tipo,
       vencimento: tipo === "diaria" ? 1 : Number.parseInt(vencimento),
+      categoria, // Incluindo categoria
       pagamentos: [],
     }
 
@@ -56,6 +70,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
     setParcelas("")
     setDataInicio(new Date().toISOString().split("T")[0])
     setDataGasto(new Date().toISOString().split("T")[0])
+    setCategoria("Outros") // Reset categoria
   }
 
   return (
@@ -132,6 +147,22 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
                 <SelectItem value="fixa">Fixa Mensal</SelectItem>
                 <SelectItem value="parcelada">Parcelada</SelectItem>
                 <SelectItem value="diaria">Gasto Diário</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="categoria">Categoria</Label>
+            <Select value={categoria} onValueChange={(v) => setCategoria(v as Categoria)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categorias.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

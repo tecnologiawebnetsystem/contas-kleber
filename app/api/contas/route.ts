@@ -50,6 +50,7 @@ export async function POST(request: Request) {
       valor: body.valor,
       vencimento: body.vencimento,
       tipo: body.tipo,
+      categoria: body.categoria || "Outros", // Incluindo categoria
     }
 
     if (body.tipo === "parcelada") {

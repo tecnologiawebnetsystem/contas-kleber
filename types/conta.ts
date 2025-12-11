@@ -1,5 +1,16 @@
 export type TipoConta = "fixa" | "parcelada" | "diaria"
 
+export type Categoria =
+  | "Moradia"
+  | "Alimentação"
+  | "Transporte"
+  | "Saúde"
+  | "Educação"
+  | "Lazer"
+  | "Vestuário"
+  | "Serviços"
+  | "Outros"
+
 export interface Pagamento {
   mes: number
   ano: number
@@ -14,9 +25,11 @@ export interface Conta {
   valor: number
   tipo: TipoConta
   vencimento: number
+  categoria?: Categoria // Adicionando categoria
   parcelas?: number
   parcelaAtual?: number
   dataInicio?: string
   dataGasto?: string
   pagamentos?: Pagamento[]
+  created_at?: string
 }
