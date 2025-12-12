@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ArrowUpCircle, Trash2, Share2, Search, Paperclip, ChevronLeft, ChevronRight, Download } from "lucide-react"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import type { Conta } from "@/types/conta"
 import { formatarMoeda } from "@/lib/utils"
 import { EditContaDialog } from "./edit-conta-dialog"
@@ -22,6 +22,16 @@ interface Transacao {
   data_transacao: string
   created_at: string
   referencia_id?: string
+}
+
+interface ItemListado {
+  id: string
+  tipo: "credito" | "conta"
+  nome: string
+  valor: number
+  data: Date
+  created_at: Date
+  conta?: Conta
 }
 
 interface ListaTransacoesProps {
@@ -95,18 +105,25 @@ export function ListaTransacoes({
     }
   }
 
-  const itensCombinados = [
-    ...transacoes
-      .filter((t) => t.tipo === "credito")
-      .map((t) => ({
-        id: t.id,
-        tipo: "credito" as const,
-        nome: t.descricao,
-        valor: t.valor,
-        data: new Date(t.data_transacao || t.created_at),
-        created_at: new Date(t.created_at),
-      })),
-    ...contas
+  const itensMesAtual = useMemo(() => {
+    const itens: ItemListado[] = []
+
+    // Processar transações
+    itens.push(
+      ...transacoes
+        .filter((t) => t.tipo === "credito")
+        .map((t) => ({
+          id: t.id,
+          tipo: "credito" as const,
+          nome: t.descricao,
+          valor: t.valor,
+          data: new Date(t.data_transacao || t.created_at),
+          created_at: new Date(t.created_at),
+        })),
+    )
+
+    // Processar contas
+    const contasFiltradas = contas
       .filter((conta) => {
         if (conta.tipo === "fixa") return true
         if (conta.tipo === "diaria") {
@@ -115,7 +132,7 @@ export function ListaTransacoes({
           return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
         }
         if (conta.tipo === "parcelada") {
-          const inicio = new Date(conta.data_inicio!)
+          const inicio = new Date(conta.dataInicio!)
           const parcelaAtual =
             (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - (inicio.getMonth() + 1)) + 1
           return parcelaAtual > 0 && parcelaAtual <= conta.parcelas!
@@ -135,39 +152,45 @@ export function ListaTransacoes({
         data: conta.tipo === "diaria" && conta.data_gasto ? new Date(conta.data_gasto) : new Date(),
         created_at: new Date(conta.created_at),
         conta: conta,
-      })),
-  ]
+      }))
 
-  let itensFiltrados = itensCombinados
+    itens.push(...contasFiltradas)
 
-  if (busca) {
-    itensFiltrados = itensFiltrados.filter((item) => item.nome.toLowerCase().includes(busca.toLowerCase()))
-  }
+    return itens
+  }, [transacoes, contas, mesSelecionado, anoSelecionado])
 
-  if (filtroTipo !== "todos") {
-    itensFiltrados = itensFiltrados.filter((item) => {
-      if (filtroTipo === "credito") return item.tipo === "credito"
-      return item.tipo === "conta" && item.conta?.tipo === filtroTipo
-    })
-  }
+  const itensFiltrados = useMemo(() => {
+    let itens = itensMesAtual
 
-  if (filtroStatus !== "todos") {
-    itensFiltrados = itensFiltrados.filter((item) => {
-      if (item.tipo === "credito") return filtroStatus === "pago"
-      const pago = item.conta?.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado) || false
-      return filtroStatus === "pago" ? pago : !pago
-    })
-  }
-
-  itensFiltrados = itensFiltrados.sort((a, b) => {
-    if (ordenacao === "data") {
-      return b.created_at.getTime() - a.created_at.getTime()
-    } else if (ordenacao === "valor") {
-      return b.valor - a.valor
-    } else {
-      return a.nome.localeCompare(b.nome)
+    if (busca) {
+      itens = itens.filter((item) => item.nome.toLowerCase().includes(busca.toLowerCase()))
     }
-  })
+
+    if (filtroTipo !== "todos") {
+      itens = itens.filter((item) => {
+        if (filtroTipo === "credito") return item.tipo === "credito"
+        return item.tipo === "conta" && item.conta?.tipo === filtroTipo
+      })
+    }
+
+    if (filtroStatus !== "todos") {
+      itens = itens.filter((item) => {
+        if (item.tipo === "credito") return filtroStatus === "pago"
+        const pago = item.conta?.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado) || false
+        return filtroStatus === "pago" ? pago : !pago
+      })
+    }
+
+    return itens.sort((a, b) => {
+      if (ordenacao === "data") {
+        return b.created_at.getTime() - a.created_at.getTime()
+      } else if (ordenacao === "valor") {
+        return b.valor - a.valor
+      } else {
+        return a.nome.localeCompare(b.nome)
+      }
+    })
+  }, [itensMesAtual, busca, filtroTipo, filtroStatus, ordenacao])
 
   const handleMarcarPago = (conta: Conta) => {
     setContaSelecionada(conta)
@@ -215,7 +238,7 @@ export function ListaTransacoes({
 
   const getParcelaAtual = (conta: Conta) => {
     if (conta.tipo !== "parcelada") return null
-    const inicio = new Date(conta.data_inicio!)
+    const inicio = new Date(conta.dataInicio!)
     const parcelaAtual = (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - (inicio.getMonth() + 1)) + 1
     return parcelaAtual
   }
