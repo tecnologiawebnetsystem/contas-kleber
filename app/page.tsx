@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, DollarSign, Calendar, TrendingUp, Search, AlertCircle, Settings, Wallet, Share2 } from "lucide-react"
+import { Plus, Calendar, TrendingUp, Search, AlertCircle, Settings, Wallet, Share2, PiggyBank } from "lucide-react"
 import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -22,15 +22,17 @@ export default function ContasPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [creditoDialogOpen, setCreditoDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [caixinhaSaldo, setCaixinhaSaldo] = useState(0)
 
   const hoje = new Date()
-  const [mesSelecionado, setMesSelecionado] = useState(hoje.getMonth())
+  const [mesSelecionado, setMesSelecionado] = useState(hoje.getMonth() + 1)
   const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear())
 
   useEffect(() => {
     fetchContas()
     fetchSaldo()
     fetchTransacoes()
+    fetchCaixinha() // Adicionar busca da caixinha
   }, [])
 
   const fetchSaldo = async () => {
@@ -70,6 +72,17 @@ export default function ContasPage() {
       setTransacoes(data)
     } catch (error) {
       console.error("[v0] Erro ao buscar transações:", error)
+    }
+  }
+
+  const fetchCaixinha = async () => {
+    try {
+      const response = await fetch("/api/caixinha")
+      if (!response.ok) return
+      const data = await response.json()
+      setCaixinhaSaldo(data.totalDepositado || 0)
+    } catch (error) {
+      console.error("Erro ao buscar caixinha:", error)
     }
   }
 
@@ -233,6 +246,33 @@ export default function ContasPage() {
     }
   }
 
+  const editConta = async (id: string, contaAtualizada: Partial<Conta>) => {
+    try {
+      const response = await fetch(`/api/contas/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contaAtualizada),
+      })
+
+      if (!response.ok) throw new Error("Erro ao atualizar conta")
+
+      toast({
+        title: "Sucesso",
+        description: "Conta atualizada com sucesso!",
+      })
+
+      await fetchContas()
+      await fetchTransacoes()
+    } catch (error) {
+      console.error("[v0] Erro ao editar conta:", error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a conta.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const compartilharWidget = (titulo: string, conteudo: string) => {
     const mensagem = `*${titulo}*\n\n${conteudo}\n\n_Financeiro Gonçalves_`
     const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`
@@ -261,24 +301,29 @@ export default function ContasPage() {
   const contasMesAtual = contas.filter((conta) => {
     if (conta.tipo === "fixa") return true
     if (conta.tipo === "diaria") {
-      if (!conta.data_gasto) return false
-      const dataGasto = new Date(conta.data_gasto)
-      return dataGasto.getMonth() === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
+      if (!conta.dataGasto && !conta.data_gasto) return false
+      const dataGasto = new Date(conta.dataGasto || conta.data_gasto!)
+      return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
     }
     if (conta.tipo === "parcelada") {
       const inicio = new Date(conta.data_inicio!)
-      const parcelaAtual = (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - inicio.getMonth()) + 1
+      const parcelaAtual = (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - (inicio.getMonth() + 1)) + 1
       return parcelaAtual > 0 && parcelaAtual <= conta.parcelas!
     }
     return false
   })
 
   const totalMes = contasMesAtual.reduce((sum, conta) => sum + conta.valor, 0)
-  const pagas = contasMesAtual.filter((conta) =>
-    conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado),
-  ).length
+  const pagas = contasMesAtual.filter((conta) => {
+    if (conta.tipo === "diaria") return true
+    return conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
+  }).length
+
   const totalPago = contasMesAtual
-    .filter((conta) => conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado))
+    .filter((conta) => {
+      if (conta.tipo === "diaria") return true
+      return conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
+    })
     .reduce((sum, conta) => sum + conta.valor, 0)
 
   const meses = [
@@ -326,6 +371,16 @@ export default function ContasPage() {
                     Relatórios
                   </Link>
                 </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white"
+                >
+                  <Link href="/caixinha">
+                    <PiggyBank className="mr-2 h-4 w-4" />
+                    Caixinha
+                  </Link>
+                </Button>
                 <Button asChild size="lg" variant="outline">
                   <Link href="/consulta">
                     <Search className="mr-2 h-4 w-4" />
@@ -367,6 +422,42 @@ export default function ContasPage() {
           )}
 
           <div className="grid gap-4 md:grid-cols-4">
+            <Card className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950 dark:via-yellow-950 dark:to-orange-950 border-amber-300 dark:border-amber-700 shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-amber-900 dark:text-amber-100">Caixinha</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
+                    onClick={() =>
+                      compartilharWidget(
+                        "🐷 Caixinha - Poupança",
+                        `Total economizado: ${formatarMoeda(caixinhaSaldo)}\nMeta: R$ 40.000,00\nProgresso: ${((caixinhaSaldo / 40000) * 100).toFixed(1)}%\n\nContinue economizando!`,
+                      )
+                    }
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                  <PiggyBank className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                  {formatarMoeda(caixinhaSaldo)}
+                </div>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">Meta: R$ 40.000,00</p>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 text-xs text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200 p-0 h-auto"
+                >
+                  <Link href="/caixinha">Ver detalhes →</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200 dark:border-green-800">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-green-900 dark:text-green-100">
@@ -405,7 +496,7 @@ export default function ContasPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total do Mês</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Pago</CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
@@ -413,34 +504,8 @@ export default function ContasPage() {
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     onClick={() =>
                       compartilharWidget(
-                        "💵 Total do Mês",
-                        `Valor total: ${formatarMoeda(totalMes)}\n${contasMesAtual.length} contas neste mês\n\nMês: ${meses[mesSelecionado]}/${anoSelecionado}`,
-                      )
-                    }
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatarMoeda(totalMes)}</div>
-                <p className="text-xs text-muted-foreground mt-1">{contasMesAtual.length} contas neste mês</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Contas Pagas</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    onClick={() =>
-                      compartilharWidget(
-                        "✅ Contas Pagas",
-                        `${pagas} de ${contasMesAtual.length} contas pagas\nValor pago: ${formatarMoeda(totalPago)}\n\nMês: ${meses[mesSelecionado]}/${anoSelecionado}`,
+                        "✅ Total Pago",
+                        `Valor pago: ${formatarMoeda(totalPago)}\n${pagas} de ${contasMesAtual.length} contas pagas\n\nMês: ${meses[mesSelecionado - 1]}/${anoSelecionado}`,
                       )
                     }
                   >
@@ -450,16 +515,16 @@ export default function ContasPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {pagas} de {contasMesAtual.length}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">{formatarMoeda(totalPago)} pago</p>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatarMoeda(totalPago)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {pagas} de {contasMesAtual.length} contas pagas
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">A Pagar</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Pendente</CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
@@ -467,8 +532,8 @@ export default function ContasPage() {
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     onClick={() =>
                       compartilharWidget(
-                        "📋 A Pagar",
-                        `Valor pendente: ${formatarMoeda(totalMes - totalPago)}\n${contasMesAtual.length - pagas} contas pendentes\n\nMês: ${meses[mesSelecionado]}/${anoSelecionado}`,
+                        "⏳ Total Pendente",
+                        `Valor pendente: ${formatarMoeda(totalMes - totalPago)}\n${contasMesAtual.length - pagas} de ${contasMesAtual.length} contas pendentes\n\nMês: ${meses[mesSelecionado - 1]}/${anoSelecionado}`,
                       )
                     }
                   >
@@ -478,8 +543,12 @@ export default function ContasPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatarMoeda(totalMes - totalPago)}</div>
-                <p className="text-xs text-muted-foreground mt-1">{contasMesAtual.length - pagas} contas pendentes</p>
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {formatarMoeda(totalMes - totalPago)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {contasMesAtual.length - pagas} de {contasMesAtual.length} pendentes
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -490,6 +559,7 @@ export default function ContasPage() {
             onTogglePago={togglePago}
             onDelete={deleteConta}
             onAddPagamento={addPagamento}
+            onEdit={editConta}
             mesSelecionado={mesSelecionado}
             anoSelecionado={anoSelecionado}
             onMesChange={setMesSelecionado}

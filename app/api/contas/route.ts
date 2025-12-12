@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       contaData.data_inicio = body.dataInicio
     }
 
-    if (body.tipo === "diaria") {
+    if (body.tipo === "diaria" || body.tipo === "caixinha") {
       contaData.data_gasto = body.dataGasto
       if (body.anexoDiario) {
         contaData.anexo_diario = body.anexoDiario
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
 
     if (contaError) throw contaError
 
-    if (body.tipo === "diaria") {
+    if (body.tipo === "diaria" || body.tipo === "caixinha") {
       const dataGasto = new Date(body.dataGasto)
       const mes = dataGasto.getMonth()
       const ano = dataGasto.getFullYear()
@@ -104,7 +104,10 @@ export async function POST(request: Request) {
 
       if (saldoError) throw saldoError
 
-      const novoSaldo = Number(saldoData.valor) - Number(body.valor)
+      const novoSaldo =
+        body.tipo === "caixinha"
+          ? Number(saldoData.valor) + Number(body.valor)
+          : Number(saldoData.valor) - Number(body.valor)
 
       // Atualizar saldo
       const { error: updateSaldoError } = await supabase
@@ -116,9 +119,9 @@ export async function POST(request: Request) {
 
       // Registrar transação de débito
       const { error: transacaoError } = await supabase.from("transacoes").insert({
-        tipo: "debito",
+        tipo: body.tipo === "caixinha" ? "credito" : "debito",
         valor: body.valor,
-        descricao: `Gasto diário: ${body.nome}`,
+        descricao: body.tipo === "caixinha" ? `Depósito na caixinha: ${body.nome}` : `Gasto diário: ${body.nome}`,
         referencia_id: conta.id,
         data_transacao: body.dataGasto,
       })

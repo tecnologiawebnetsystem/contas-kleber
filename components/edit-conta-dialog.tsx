@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, X, FileText } from "lucide-react"
 import type { Conta, TipoConta, Categoria } from "@/types/conta"
 
-interface AddContaDialogProps {
+interface EditContaDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAdd: (conta: Omit<Conta, "id">) => void
+  onEdit: (id: string, conta: Partial<Conta>) => void
+  conta: Conta | null
 }
 
 const categorias: Categoria[] = [
@@ -28,18 +29,47 @@ const categorias: Categoria[] = [
   "Outros",
 ]
 
-export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProps) {
+export function EditContaDialog({ open, onOpenChange, onEdit, conta }: EditContaDialogProps) {
   const [nome, setNome] = useState("")
   const [valor, setValor] = useState("")
   const [tipo, setTipo] = useState<TipoConta>("fixa")
-  const [dataVencimento, setDataVencimento] = useState(new Date().toISOString().split("T")[0])
+  const [dataVencimento, setDataVencimento] = useState("")
   const [parcelas, setParcelas] = useState("")
-  const [dataInicio, setDataInicio] = useState(new Date().toISOString().split("T")[0])
-  const [dataGasto, setDataGasto] = useState(new Date().toISOString().split("T")[0])
+  const [dataInicio, setDataInicio] = useState("")
+  const [dataGasto, setDataGasto] = useState("")
   const [categoria, setCategoria] = useState<Categoria>("Outros")
   const [anexo, setAnexo] = useState<string | null>(null)
   const [nomeArquivo, setNomeArquivo] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (conta && open) {
+      setNome(conta.nome)
+      setValor(conta.valor.toString())
+      setTipo(conta.tipo)
+      if (conta.vencimento) {
+        const hoje = new Date()
+        const ano = hoje.getFullYear()
+        const mes = String(hoje.getMonth() + 1).padStart(2, "0")
+        const dia = String(conta.vencimento).padStart(2, "0")
+        setDataVencimento(`${ano}-${mes}-${dia}`)
+      }
+      setCategoria(conta.categoria || "Outros")
+
+      if (conta.tipo === "parcelada") {
+        setParcelas(conta.parcelas?.toString() || "")
+        setDataInicio(conta.dataInicio || "")
+      }
+
+      if (conta.tipo === "diaria" || conta.tipo === "caixinha") {
+        setDataGasto(conta.dataGasto || "")
+        setAnexo(conta.anexoDiario || null)
+        if (conta.anexoDiario) {
+          setNomeArquivo("Comprovante anexado")
+        }
+      }
+    }
+  }, [conta, open])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -64,50 +94,42 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    const diaVencimento = tipo === "diaria" ? 1 : new Date(dataVencimento).getDate()
+    if (!conta) return
 
-    const novaConta: Omit<Conta, "id"> = {
+    const diaVencimento = tipo === "diaria" || tipo === "caixinha" ? 1 : new Date(dataVencimento).getDate()
+
+    const contaAtualizada: Partial<Conta> = {
       nome,
       valor: Number.parseFloat(valor),
       tipo,
       vencimento: diaVencimento,
       categoria,
-      pagamentos: [],
     }
 
     if (tipo === "parcelada") {
-      novaConta.parcelas = Number.parseInt(parcelas)
-      novaConta.dataInicio = dataInicio
-      novaConta.parcelaAtual = 1
+      contaAtualizada.parcelas = Number.parseInt(parcelas)
+      contaAtualizada.dataInicio = dataInicio
     }
 
     if (tipo === "diaria" || tipo === "caixinha") {
-      novaConta.dataGasto = dataGasto
+      contaAtualizada.dataGasto = dataGasto
       if (anexo) {
-        novaConta.anexoDiario = anexo
+        contaAtualizada.anexoDiario = anexo
       }
     }
 
-    onAdd(novaConta)
-
-    setNome("")
-    setValor("")
-    setTipo("fixa")
-    setDataVencimento(new Date().toISOString().split("T")[0])
-    setParcelas("")
-    setDataInicio(new Date().toISOString().split("T")[0])
-    setDataGasto(new Date().toISOString().split("T")[0])
-    setCategoria("Outros")
-    setAnexo(null)
-    setNomeArquivo(null)
+    onEdit(conta.id, contaAtualizada)
+    onOpenChange(false)
   }
+
+  if (!conta) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Nova Conta</DialogTitle>
-          <DialogDescription>Adicione uma conta fixa, parcelada ou gasto diário</DialogDescription>
+          <DialogTitle>Editar Conta</DialogTitle>
+          <DialogDescription>Altere os dados da conta</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -137,7 +159,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
 
           <div className="space-y-2">
             <Label htmlFor="tipo">Tipo de Conta</Label>
-            <Select value={tipo} onValueChange={(v) => setTipo(v as TipoConta)}>
+            <Select value={tipo} onValueChange={(v) => setTipo(v as TipoConta)} disabled>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -148,6 +170,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
                 <SelectItem value="caixinha">Caixinha (Poupança)</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">O tipo de conta não pode ser alterado</p>
           </div>
 
           {tipo !== "diaria" && tipo !== "caixinha" && (
@@ -173,41 +196,6 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
                 onChange={(e) => setDataGasto(e.target.value)}
                 required
               />
-            </div>
-          )}
-
-          {(tipo === "diaria" || tipo === "caixinha") && (
-            <div className="space-y-2">
-              <Label htmlFor="anexoDiario">Comprovante (Opcional)</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="anexoDiario"
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleFileChange}
-                  ref={fileInputRef}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full"
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  {nomeArquivo ? "Trocar arquivo" : "Anexar comprovante"}
-                </Button>
-              </div>
-
-              {anexo && nomeArquivo && (
-                <div className="flex items-center gap-2 p-2 border rounded-md bg-accent/50">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm flex-1 truncate">{nomeArquivo}</span>
-                  <Button type="button" variant="ghost" size="icon" onClick={handleRemoveFile} className="h-6 w-6">
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
             </div>
           )}
 
@@ -255,11 +243,46 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
             </Select>
           </div>
 
+          {(tipo === "diaria" || tipo === "caixinha") && (
+            <div className="space-y-2">
+              <Label htmlFor="anexoDiario">Comprovante (Opcional)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="anexoDiario"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileChange}
+                  ref={fileInputRef}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {nomeArquivo ? "Trocar arquivo" : "Anexar comprovante"}
+                </Button>
+              </div>
+
+              {anexo && nomeArquivo && (
+                <div className="flex items-center gap-2 p-2 border rounded-md bg-accent/50">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm flex-1 truncate">{nomeArquivo}</span>
+                  <Button type="button" variant="ghost" size="icon" onClick={handleRemoveFile} className="h-6 w-6">
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-2 justify-end pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit">Adicionar</Button>
+            <Button type="submit">Salvar</Button>
           </div>
         </form>
       </DialogContent>

@@ -1,4 +1,4 @@
-export type TipoConta = "fixa" | "parcelada" | "diaria"
+export type TipoConta = "fixa" | "parcelada" | "diaria" | "caixinha"
 
 export type Categoria =
   | "Moradia"
