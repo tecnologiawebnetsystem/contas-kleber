@@ -440,8 +440,16 @@ export function ListaTransacoes({
                 if (conta.tipo === "fixa") {
                   dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
                 } else if (conta.tipo === "parcelada") {
-                  const dataInicioStr = conta.dataInicio || conta.data_inicio || conta.created_at
-                  dataVencimento = dataInicioStr ? new Date(dataInicioStr) : null
+                  // Para parceladas, calcular a data de vencimento da parcela atual
+                  const dataInicioStr = conta.dataInicio || conta.createdAt
+                  if (dataInicioStr) {
+                    const dataInicio = new Date(dataInicioStr)
+                    const mesesDiferenca =
+                      (anoSelecionado - dataInicio.getFullYear()) * 12 + (mesSelecionado - 1 - dataInicio.getMonth())
+
+                    // Calcular a data de vencimento da parcela usando o dia de vencimento
+                    dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
+                  }
                 } else if (conta.tipo === "diaria" || conta.tipo === "caixinha") {
                   dataVencimento = conta.dataGasto ? new Date(conta.dataGasto) : null
                 }
@@ -531,13 +539,13 @@ export function ListaTransacoes({
                           </Badge>
                         )}
                       </div>
-                      {conta.tipo === "diaria" && conta.data_gasto ? (
+                      {conta.tipo === "diaria" && (conta.data_gasto || conta.dataGasto) ? (
                         <p className="text-sm text-muted-foreground">
-                          Data de Pagamento: {new Date(conta.data_gasto).toLocaleDateString("pt-BR")}
+                          Data do Gasto: {new Date(conta.data_gasto || conta.dataGasto).toLocaleDateString("pt-BR")}
                         </p>
-                      ) : conta.tipo === "caixinha" && conta.data_gasto ? (
+                      ) : conta.tipo === "caixinha" && (conta.data_gasto || conta.dataGasto) ? (
                         <p className="text-sm text-muted-foreground">
-                          Data do Depósito: {new Date(conta.data_gasto).toLocaleDateString("pt-BR")}
+                          Data do Depósito: {new Date(conta.data_gasto || conta.dataGasto).toLocaleDateString("pt-BR")}
                         </p>
                       ) : conta.tipo === "fixa" ? (
                         <p className="text-sm text-muted-foreground">
@@ -546,11 +554,10 @@ export function ListaTransacoes({
                         </p>
                       ) : conta.tipo === "parcelada" && parcelaAtual ? (
                         <p className="text-sm text-muted-foreground">
-                          Parcela {parcelaAtual} - Vencimento: dia {conta.vencimento}
+                          Parcela {parcelaAtual} - Vencimento:{" "}
+                          {new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}
                         </p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Vencimento: dia {conta.vencimento}</p>
-                      )}
+                      ) : null}
                       {pago && pagamento && conta.tipo !== "diaria" && (
                         <div className="mt-2 space-y-1">
                           <p className="text-sm text-green-600 dark:text-green-400">

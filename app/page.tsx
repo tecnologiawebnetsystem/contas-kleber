@@ -295,19 +295,31 @@ export default function ContasPage() {
     const isPago = conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
     if (isPago) return false
 
-    return conta.vencimento < diaAtual
+    let dataVencimento: Date
+
+    if (conta.tipo === "parcelada") {
+      const inicio = conta.dataInicio ? new Date(conta.dataInicio) : new Date(conta.createdAt || new Date())
+      const mesInicio = inicio.getMonth()
+      const anoInicio = inicio.getFullYear()
+
+      const mesesPassados = (anoSelecionado - anoInicio) * 12 + (mesSelecionado - mesInicio)
+
+      const mesVencimento = mesInicio + mesesPassados
+      const anoVencimento = anoInicio + Math.floor(mesVencimento / 12)
+      const mesVencimentoFinal = mesVencimento % 12
+
+      dataVencimento = new Date(anoVencimento, mesVencimentoFinal, conta.vencimento)
+    } else {
+      dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
+    }
+
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+
+    return dataVencimento < hoje
   })
 
   const contasMesAtual = contas.filter((conta) => {
-    console.log("[v0] Processando conta:", {
-      nome: conta.nome,
-      tipo: conta.tipo,
-      dataInicio: conta.dataInicio,
-      createdAt: conta.createdAt,
-      parcelas: conta.parcelas,
-      todasPropriedades: Object.keys(conta),
-    })
-
     if (conta.tipo === "fixa") return true
 
     if (conta.tipo === "diaria") {
@@ -325,15 +337,7 @@ export default function ContasPage() {
     if (conta.tipo === "parcelada") {
       const dataInicioStr = conta.dataInicio || conta.createdAt
 
-      console.log("[v0] Conta parcelada:", {
-        nome: conta.nome,
-        dataInicioStr,
-        mesSelecionado,
-        anoSelecionado,
-      })
-
       if (!dataInicioStr) {
-        console.log("[v0] REJEITADA: sem data_inicio nem createdAt")
         return false
       }
 
@@ -343,15 +347,6 @@ export default function ContasPage() {
       const mesesDiferenca =
         (dataBase.getFullYear() - inicio.getFullYear()) * 12 + (dataBase.getMonth() - inicio.getMonth())
       const parcelaAtual = mesesDiferenca + 1
-
-      console.log("[v0] Cálculo:", {
-        inicio: inicio.toISOString(),
-        dataBase: dataBase.toISOString(),
-        mesesDiferenca,
-        parcelaAtual,
-        totalParcelas: conta.parcelas,
-        resultado: parcelaAtual >= 1 && parcelaAtual <= (conta.parcelas || 0),
-      })
 
       return parcelaAtual >= 1 && parcelaAtual <= (conta.parcelas || 0)
     }
