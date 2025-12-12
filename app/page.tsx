@@ -300,16 +300,36 @@ export default function ContasPage() {
 
   const contasMesAtual = contas.filter((conta) => {
     if (conta.tipo === "fixa") return true
+
     if (conta.tipo === "diaria") {
       if (!conta.dataGasto && !conta.data_gasto) return false
       const dataGasto = new Date(conta.dataGasto || conta.data_gasto!)
       return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
     }
-    if (conta.tipo === "parcelada") {
-      const inicio = new Date(conta.data_inicio!)
-      const parcelaAtual = (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - (inicio.getMonth() + 1)) + 1
-      return parcelaAtual > 0 && parcelaAtual <= conta.parcelas!
+
+    if (conta.tipo === "caixinha") {
+      if (!conta.dataGasto && !conta.data_gasto) return false
+      const dataGasto = new Date(conta.dataGasto || conta.data_gasto!)
+      return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
     }
+
+    if (conta.tipo === "parcelada") {
+      const dataInicioStr = conta.dataInicio || conta.createdAt
+
+      if (!dataInicioStr) {
+        return false
+      }
+
+      const inicio = new Date(dataInicioStr)
+      const dataBase = new Date(anoSelecionado, mesSelecionado - 1, 1)
+
+      const mesesDiferenca =
+        (dataBase.getFullYear() - inicio.getFullYear()) * 12 + (dataBase.getMonth() - inicio.getMonth())
+      const parcelaAtual = mesesDiferenca + 1
+
+      return parcelaAtual >= 1 && parcelaAtual <= (conta.parcelas || 0)
+    }
+
     return false
   })
 
@@ -364,12 +384,6 @@ export default function ContasPage() {
                 <Button onClick={() => setDialogOpen(true)} size="lg">
                   <Plus className="mr-2 h-4 w-4" />
                   Nova Conta
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <Link href="/relatorios">
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    Relatórios
-                  </Link>
                 </Button>
                 <Button
                   asChild

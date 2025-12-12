@@ -56,7 +56,9 @@ export function ListaTransacoes({
   const [contaParaEditar, setContaParaEditar] = useState<Conta | null>(null)
 
   const [busca, setBusca] = useState("")
-  const [filtroTipo, setFiltroTipo] = useState<"todos" | "fixa" | "parcelada" | "diaria" | "credito">("todos")
+  const [filtroTipo, setFiltroTipo] = useState<"todos" | "fixa" | "parcelada" | "diaria" | "credito" | "caixinha">(
+    "todos",
+  )
   const [filtroStatus, setFiltroStatus] = useState<"todos" | "pago" | "pendente">("todos")
   const [ordenacao, setOrdenacao] = useState<"data" | "valor" | "nome">("data")
 
@@ -117,6 +119,11 @@ export function ListaTransacoes({
           const parcelaAtual =
             (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - (inicio.getMonth() + 1)) + 1
           return parcelaAtual > 0 && parcelaAtual <= conta.parcelas!
+        }
+        if (conta.tipo === "caixinha") {
+          if (!conta.dataGasto && !conta.data_gasto) return false
+          const dataGasto = new Date(conta.dataGasto || conta.data_gasto!)
+          return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
         }
         return false
       })
@@ -258,6 +265,7 @@ export function ListaTransacoes({
                   <SelectItem value="fixa">Fixas</SelectItem>
                   <SelectItem value="parcelada">Parceladas</SelectItem>
                   <SelectItem value="diaria">Gastos Diários</SelectItem>
+                  <SelectItem value="caixinha">Caixinha</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -332,6 +340,7 @@ export function ListaTransacoes({
                   <SelectItem value="fixa">Fixas</SelectItem>
                   <SelectItem value="parcelada">Parceladas</SelectItem>
                   <SelectItem value="diaria">Gastos Diários</SelectItem>
+                  <SelectItem value="caixinha">Caixinha</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -407,19 +416,10 @@ export function ListaTransacoes({
 
                 if (conta.tipo === "fixa") {
                   dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
-                  console.log(
-                    "[v0] Conta Fixa:",
-                    conta.nome,
-                    "Vencimento:",
-                    conta.vencimento,
-                    "Data calculada:",
-                    dataVencimento,
-                    "Hoje:",
-                    hoje,
-                  )
                 } else if (conta.tipo === "parcelada") {
-                  dataVencimento = conta.dataInicio ? new Date(conta.dataInicio) : null
-                } else if (conta.tipo === "diaria") {
+                  const dataInicioStr = conta.dataInicio || conta.data_inicio || conta.created_at
+                  dataVencimento = dataInicioStr ? new Date(dataInicioStr) : null
+                } else if (conta.tipo === "diaria" || conta.tipo === "caixinha") {
                   dataVencimento = conta.dataGasto ? new Date(conta.dataGasto) : null
                 }
 
@@ -430,17 +430,6 @@ export function ListaTransacoes({
                   dataVencimento.getFullYear() === hoje.getFullYear()
 
                 const estaPendente = !pago && dataVencimento && dataVencimento < hoje
-
-                console.log(
-                  "[v0] Conta:",
-                  conta.nome,
-                  "Vence hoje:",
-                  venceHoje,
-                  "Pendente:",
-                  estaPendente,
-                  "Pago:",
-                  pago,
-                )
 
                 let corBackground = "bg-card hover:bg-accent/50"
 
@@ -484,11 +473,7 @@ export function ListaTransacoes({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              console.log("[v0] Clicou no anexo")
-                              console.log("[v0] pagamento?.anexo:", pagamento?.anexo)
-                              console.log("[v0] conta.anexoDiario:", conta.anexoDiario)
                               const anexoUrl = pagamento?.anexo || conta.anexoDiario || null
-                              console.log("[v0] anexoUrl final:", anexoUrl)
                               setAnexoVisualizar(anexoUrl)
                             }}
                             className="h-6 px-2 gap-1 text-xs"
@@ -517,11 +502,28 @@ export function ListaTransacoes({
                             Gasto Diário
                           </Badge>
                         )}
+                        {conta.tipo === "caixinha" && (
+                          <Badge variant="default" className="text-xs bg-amber-500">
+                            Caixinha
+                          </Badge>
+                        )}
                       </div>
-                      {conta.tipo === "diaria" && (conta.data_gasto || conta.dataGasto) ? (
+                      {conta.tipo === "diaria" && conta.data_gasto ? (
                         <p className="text-sm text-muted-foreground">
-                          Data de Pagamento:{" "}
-                          {new Date(conta.data_gasto || conta.dataGasto!).toLocaleDateString("pt-BR")}
+                          Data de Pagamento: {new Date(conta.data_gasto).toLocaleDateString("pt-BR")}
+                        </p>
+                      ) : conta.tipo === "caixinha" && conta.data_gasto ? (
+                        <p className="text-sm text-muted-foreground">
+                          Data do Depósito: {new Date(conta.data_gasto).toLocaleDateString("pt-BR")}
+                        </p>
+                      ) : conta.tipo === "fixa" ? (
+                        <p className="text-sm text-muted-foreground">
+                          Vencimento:{" "}
+                          {new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}
+                        </p>
+                      ) : conta.tipo === "parcelada" && parcelaAtual ? (
+                        <p className="text-sm text-muted-foreground">
+                          Parcela {parcelaAtual} - Vencimento: dia {conta.vencimento}
                         </p>
                       ) : (
                         <p className="text-sm text-muted-foreground">Vencimento: dia {conta.vencimento}</p>

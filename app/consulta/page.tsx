@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Search, ArrowLeft } from "lucide-react"
+import { Search, ArrowLeft, FileDown, FileSpreadsheet } from "lucide-react"
 import Link from "next/link"
 import type { Conta } from "@/types/conta"
 import { WhatsAppButton } from "@/components/whatsapp-button"
@@ -25,7 +25,8 @@ export default function ConsultaPage() {
   const [tipoSelecionado, setTipoSelecionado] = useState<string>("todos")
   const [categoriaSelecionada, setCategoriaSelecionada] = useState<string>("todas")
   const [mesAno, setMesAno] = useState("")
-  const [filtroPeriodo, setFiltroPeriodo] = useState<"periodo" | "todos">("periodo")
+  const [filtroPeriodo, setFiltroPeriodo] = useState<"periodo" | "todos" | "dia">("periodo")
+  const [diaEspecifico, setDiaEspecifico] = useState("")
   const [loading, setLoading] = useState(true)
   const [pesquisaRealizada, setPesquisaRealizada] = useState(false)
 
@@ -50,16 +51,30 @@ export default function ConsultaPage() {
     const hoje = new Date()
     const mes = String(hoje.getMonth() + 1).padStart(2, "0")
     const ano = hoje.getFullYear()
+    const dia = String(hoje.getDate()).padStart(2, "0")
     setMesAno(`${ano}-${mes}`)
+    setDiaEspecifico(`${ano}-${mes}-${dia}`)
   }, [])
+
+  useEffect(() => {
+    setPesquisaRealizada(false)
+    setContasFiltradas([])
+  }, [filtroPeriodo, mesAno, diaEspecifico, tipoSelecionado, categoriaSelecionada, contaSelecionada, filtro])
+
+  useEffect(() => {
+    setContaSelecionada("todas")
+  }, [tipoSelecionado, categoriaSelecionada])
 
   const executarPesquisa = async () => {
     await fetchContas()
     const semFiltroPeriodo = filtroPeriodo === "todos"
+    const filtroDia = filtroPeriodo === "dia"
 
-    const [anoSelecionado, mesSelecionado] = mesAno
-      ? mesAno.split("-").map(Number)
-      : [new Date().getFullYear(), new Date().getMonth() + 1]
+    const [anoSelecionado, mesSelecionado, diaSelecionado] = diaEspecifico
+      ? diaEspecifico.split("-").map(Number)
+      : [new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()]
+
+    const [anoMes, mesMes] = mesAno ? mesAno.split("-").map(Number) : [anoSelecionado, mesSelecionado]
 
     const hoje = new Date()
     const mesAtual = hoje.getMonth()
@@ -89,25 +104,25 @@ export default function ConsultaPage() {
     const todasContasProcessadas: Conta[] = []
 
     todasContas.forEach((conta) => {
-      console.log("[v0] Processando conta:", conta.nome, "Tipo:", conta.tipo, "Parcelas:", conta.parcelas)
-
       if (conta.tipo === "parcelada" && conta.parcelas && conta.parcelas > 1) {
         const dataInicio = conta.dataInicio || conta.createdAt
-        if (!dataInicio) {
-          console.log("[v0] Conta parcelada sem data_inicio:", conta.nome)
-          return
-        }
+        if (!dataInicio) return
 
         for (let i = 1; i <= conta.parcelas; i++) {
           const dataVencimento = calcularDataVencimento(dataInicio, i, conta.vencimento)
-
           const mesVencimento = dataVencimento.getMonth() + 1
           const anoVencimento = dataVencimento.getFullYear()
+          const diaVencimento = dataVencimento.getDate()
 
-          if (!semFiltroPeriodo) {
-            if (mesVencimento !== mesSelecionado || anoVencimento !== anoSelecionado) {
+          if (filtroDia) {
+            if (
+              diaVencimento !== diaSelecionado ||
+              mesVencimento !== mesSelecionado ||
+              anoVencimento !== anoSelecionado
+            )
               continue
-            }
+          } else if (!semFiltroPeriodo) {
+            if (mesVencimento !== mesMes || anoVencimento !== anoMes) continue
           }
 
           const dataVencimentoISO = dataVencimento.toISOString().split("T")[0]
@@ -127,31 +142,25 @@ export default function ConsultaPage() {
           })
         }
       } else if (conta.tipo === "fixa") {
-        if (!semFiltroPeriodo) {
+        if (!semFiltroPeriodo && !filtroDia) {
           const dataCriacao = new Date(conta.createdAt)
-          if (dataCriacao > new Date(anoSelecionado, mesSelecionado - 1, 1)) {
-            return
-          }
+          if (dataCriacao > new Date(anoMes, mesMes - 1, 1)) return
         }
 
-        const ano = semFiltroPeriodo ? anoAtual : anoSelecionado
-        const mes = semFiltroPeriodo ? mesAtual + 1 : mesSelecionado
+        const ano = filtroDia ? anoSelecionado : semFiltroPeriodo ? anoAtual : anoMes
+        const mes = filtroDia ? mesSelecionado : semFiltroPeriodo ? mesAtual + 1 : mesMes
 
         const ultimoDiaDoMes = new Date(ano, mes, 0).getDate()
         const diaVencimento = Math.min(conta.vencimento, ultimoDiaDoMes)
         const dataVencimento = new Date(ano, mes - 1, diaVencimento)
 
-        console.log(
-          `[v0] Conta Fixa: ${conta.nome} Vencimento: ${conta.vencimento} Data calculada: ${dataVencimento.toISOString()} Hoje: ${hoje.toISOString()}`,
-        )
+        if (filtroDia && diaVencimento !== diaSelecionado) return
 
         const isPago = conta.pagamentos?.some((p) => p.ano === ano && p.mes === mes) || false
 
         const estaAtrasado = !isPago && dataVencimento < hoje
         const diffDias = Math.ceil((dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
         const estaProximo = !isPago && diffDias > 0 && diffDias <= 7
-
-        console.log(`[v0] Conta: ${conta.nome} Vence hoje: ${diffDias === 0} Pendente: ${estaAtrasado} Pago: ${isPago}`)
 
         todasContasProcessadas.push({
           ...conta,
@@ -166,11 +175,13 @@ export default function ConsultaPage() {
         const dataGasto = new Date(conta.dataGasto + "T00:00:00")
         const mesGasto = dataGasto.getMonth() + 1
         const anoGasto = dataGasto.getFullYear()
+        const diaGasto = dataGasto.getDate()
 
-        if (!semFiltroPeriodo && (mesGasto !== mesSelecionado || anoGasto !== anoSelecionado)) return null
+        if (filtroDia) {
+          if (diaGasto !== diaSelecionado || mesGasto !== mesSelecionado || anoGasto !== anoSelecionado) return null
+        } else if (!semFiltroPeriodo && (mesGasto !== mesMes || anoGasto !== anoMes)) return null
 
         const isPago = true
-        console.log(`[v0] Conta: ${conta.nome} Vence hoje: false Pendente: false Pago: ${isPago}`)
 
         todasContasProcessadas.push({
           ...conta,
@@ -192,14 +203,19 @@ export default function ConsultaPage() {
       return true
     })
 
-    console.log("[v0] Total de contas processadas:", todasContasProcessadas.length)
-    console.log("[v0] Total de contas filtradas:", resultados.length)
-
     setContasFiltradas(resultados)
     setPesquisaRealizada(true)
   }
 
-  const nomesContasUnicas = Array.from(new Set(todasContas.map((c) => ({ id: c.id, nome: c.nome }))))
+  const contasFiltradasParaDropdown = todasContas.filter((conta) => {
+    if (tipoSelecionado !== "todos" && conta.tipo !== tipoSelecionado) return false
+    if (categoriaSelecionada !== "todas" && conta.categoria !== categoriaSelecionada) return false
+    return true
+  })
+
+  const nomesContasUnicas = Array.from(
+    new Map(contasFiltradasParaDropdown.map((c) => [c.id, { id: c.id, nome: c.nome }])).values(),
+  )
   const tiposUnicos = Array.from(new Set(todasContas.map((c) => c.tipo).filter(Boolean)))
   const categoriasUnicas = Array.from(new Set(todasContas.map((c) => c.categoria).filter(Boolean)))
 
@@ -221,6 +237,14 @@ export default function ConsultaPage() {
   const [anoSelecionado, mesSelecionado] = mesAno
     ? mesAno.split("-").map(Number)
     : [new Date().getFullYear(), new Date().getMonth() + 1]
+
+  const exportarParaPDF = () => {
+    alert("Funcionalidade de exportar para PDF será implementada em breve!")
+  }
+
+  const exportarParaExcel = () => {
+    alert("Funcionalidade de exportar para Excel será implementada em breve!")
+  }
 
   if (loading) {
     return (
@@ -255,11 +279,21 @@ export default function ConsultaPage() {
               <div className="grid gap-4">
                 <div className="flex flex-col gap-3">
                   <label className="text-sm font-medium">Período</label>
-                  <RadioGroup value={filtroPeriodo} onValueChange={(v) => setFiltroPeriodo(v as "periodo" | "todos")}>
+                  <RadioGroup
+                    value={filtroPeriodo}
+                    onValueChange={(v) => setFiltroPeriodo(v as "periodo" | "todos" | "dia")}
+                    className="flex flex-wrap gap-4"
+                  >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="periodo" id="com-periodo" />
                       <Label htmlFor="com-periodo" className="cursor-pointer">
                         Filtrar por mês/ano
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="dia" id="por-dia" />
+                      <Label htmlFor="por-dia" className="cursor-pointer">
+                        Por dia
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -278,7 +312,18 @@ export default function ConsultaPage() {
                       type="month"
                       value={mesAno}
                       onChange={(e) => setMesAno(e.target.value)}
-                      disabled={filtroPeriodo === "todos"}
+                      disabled={filtroPeriodo !== "periodo"}
+                      className="disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">Dia Específico</label>
+                    <Input
+                      type="date"
+                      value={diaEspecifico}
+                      onChange={(e) => setDiaEspecifico(e.target.value)}
+                      disabled={filtroPeriodo !== "dia"}
                       className="disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
@@ -338,30 +383,42 @@ export default function ConsultaPage() {
                       </SelectContent>
                     </Select>
                   </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium">Conta</label>
-                    <Select value={contaSelecionada} onValueChange={setContaSelecionada}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todas as contas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todas">Todas as contas</SelectItem>
-                        {nomesContasUnicas.map((conta) => (
-                          <SelectItem key={conta.id} value={conta.id}>
-                            {conta.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">Conta</label>
+                  <Select value={contaSelecionada} onValueChange={setContaSelecionada}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas as contas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas as contas</SelectItem>
+                      {nomesContasUnicas.map((conta) => (
+                        <SelectItem key={conta.id} value={conta.id}>
+                          {conta.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-wrap gap-2 justify-end">
                   <Button onClick={executarPesquisa} size="lg">
                     <Search className="mr-2 h-4 w-4" />
                     Pesquisar
                   </Button>
+                  {pesquisaRealizada && (
+                    <>
+                      <Button onClick={exportarParaPDF} size="lg" variant="outline">
+                        <FileDown className="mr-2 h-4 w-4" />
+                        Exportar PDF
+                      </Button>
+                      <Button onClick={exportarParaExcel} size="lg" variant="outline">
+                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                        Exportar Excel
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -409,7 +466,9 @@ export default function ConsultaPage() {
                     Contas de{" "}
                     {filtroPeriodo === "periodo" && mesAno
                       ? `${meses[mesSelecionado - 1]} ${anoSelecionado}`
-                      : "Todos os Períodos"}
+                      : filtroPeriodo === "dia" && diaEspecifico
+                        ? new Date(diaEspecifico + "T00:00:00").toLocaleDateString("pt-BR")
+                        : "Todos os Períodos"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -436,7 +495,7 @@ export default function ConsultaPage() {
                           </TableRow>
                         ) : (
                           contasFiltradas.map((conta) => (
-                            <TableRow key={conta.id}>
+                            <TableRow key={`${conta.id}-${conta.parcelaAtual || "unica"}`}>
                               <TableCell className="font-medium">{conta.nome}</TableCell>
                               <TableCell>
                                 <Badge variant="outline">
@@ -459,47 +518,47 @@ export default function ConsultaPage() {
                                     ? new Date(conta.dataVencimento + "T00:00:00").toLocaleDateString("pt-BR")
                                     : `Dia ${conta.vencimento}`}
                               </TableCell>
-                              <TableCell>{formatarMoeda(conta.valor)}</TableCell>
+                              <TableCell className="font-semibold">{formatarMoeda(conta.valor)}</TableCell>
                               <TableCell>
-                                {conta.isPago ? (
-                                  <Badge className="bg-green-500 hover:bg-green-600">Pago</Badge>
-                                ) : conta.estaAtrasado ? (
-                                  <Badge variant="destructive">Atrasado</Badge>
-                                ) : conta.estaProximo ? (
-                                  <Badge className="bg-amber-500 hover:bg-amber-600">Vence em breve</Badge>
-                                ) : (
-                                  <Badge variant="secondary">Pendente</Badge>
-                                )}
+                                <Badge
+                                  variant={
+                                    conta.isPago
+                                      ? "default"
+                                      : conta.estaAtrasado
+                                        ? "destructive"
+                                        : conta.estaProximo
+                                          ? "secondary"
+                                          : "outline"
+                                  }
+                                >
+                                  {conta.isPago
+                                    ? "Pago"
+                                    : conta.estaAtrasado
+                                      ? "Atrasado"
+                                      : conta.estaProximo
+                                        ? "Vence em breve"
+                                        : "Pendente"}
+                                </Badge>
                               </TableCell>
                               <TableCell>
-                                {conta.pagamentos?.some((p) => p.mes === mesSelecionado - 1 && p.ano === anoSelecionado)
-                                  ? new Date(
-                                      conta.pagamentos.find(
-                                        (p) => p.mes === mesSelecionado - 1 && p.ano === anoSelecionado,
-                                      )!.dataPagamento + "T00:00:00",
-                                    ).toLocaleDateString("pt-BR")
-                                  : "-"}
+                                {conta.isPago && conta.tipo !== "diaria" && conta.tipo !== "caixinha"
+                                  ? conta.pagamentos?.find((p) => {
+                                      const dataVenc = new Date(conta.dataVencimento! + "T00:00:00")
+                                      return p.ano === dataVenc.getFullYear() && p.mes === dataVenc.getMonth() + 1
+                                    })?.dataPagamento
+                                    ? new Date(
+                                        conta.pagamentos.find((p) => {
+                                          const dataVenc = new Date(conta.dataVencimento! + "T00:00:00")
+                                          return p.ano === dataVenc.getFullYear() && p.mes === dataVenc.getMonth() + 1
+                                        })!.dataPagamento,
+                                      ).toLocaleDateString("pt-BR")
+                                    : "-"
+                                  : conta.tipo === "diaria" || conta.tipo === "caixinha"
+                                    ? new Date(conta.dataGasto! + "T00:00:00").toLocaleDateString("pt-BR")
+                                    : "-"}
                               </TableCell>
                               <TableCell className="text-right">
-                                {conta.isPago && conta.pagamentos && (
-                                  <WhatsAppButton
-                                    conta={conta}
-                                    mes={mesSelecionado - 1}
-                                    ano={anoSelecionado}
-                                    dataPagamento={
-                                      conta.pagamentos.find(
-                                        (p) => p.mes === mesSelecionado - 1 && p.ano === anoSelecionado,
-                                      )!.dataPagamento!
-                                    }
-                                    anexo={
-                                      conta.pagamentos.find(
-                                        (p) => p.mes === mesSelecionado - 1 && p.ano === anoSelecionado,
-                                      )!.anexo
-                                    }
-                                    variant="ghost"
-                                    size="sm"
-                                  />
-                                )}
+                                <WhatsAppButton conta={conta} />
                               </TableCell>
                             </TableRow>
                           ))

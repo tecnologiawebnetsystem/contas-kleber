@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,6 +39,8 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
   const [categoria, setCategoria] = useState<Categoria>("Outros")
   const [anexo, setAnexo] = useState<string | null>(null)
   const [nomeArquivo, setNomeArquivo] = useState<string | null>(null)
+  const [nomesContas, setNomesContas] = useState<string[]>([])
+  const [sugestoesVisiveis, setSugestoesVisiveis] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,6 +104,20 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
     setNomeArquivo(null)
   }
 
+  useEffect(() => {
+    if (open) {
+      fetch("/api/contas")
+        .then((res) => res.json())
+        .then((data) => {
+          const nomes = [...new Set(data.map((c: Conta) => c.nome))]
+          setNomesContas(nomes)
+        })
+        .catch((err) => console.error("[v0] Erro ao buscar nomes:", err))
+    }
+  }, [open])
+
+  const sugestoesFiltradas = nomesContas.filter((n) => n.toLowerCase().includes(nome.toLowerCase()) && n !== nome)
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -113,13 +129,37 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="nome">Nome da Conta</Label>
-            <Input
-              id="nome"
-              placeholder="Ex: Luz, Água, Remédio, Gasolina..."
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="nome"
+                placeholder="Ex: Luz, Água, Remédio, Gasolina..."
+                value={nome}
+                onChange={(e) => {
+                  setNome(e.target.value)
+                  setSugestoesVisiveis(e.target.value.length > 0)
+                }}
+                onFocus={() => setSugestoesVisiveis(nome.length > 0)}
+                onBlur={() => setTimeout(() => setSugestoesVisiveis(false), 200)}
+                required
+              />
+              {sugestoesVisiveis && sugestoesFiltradas.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                  {sugestoesFiltradas.map((sugestao, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground"
+                      onClick={() => {
+                        setNome(sugestao)
+                        setSugestoesVisiveis(false)
+                      }}
+                    >
+                      {sugestao}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
