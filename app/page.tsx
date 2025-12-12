@@ -299,6 +299,15 @@ export default function ContasPage() {
   })
 
   const contasMesAtual = contas.filter((conta) => {
+    console.log("[v0] Processando conta:", {
+      nome: conta.nome,
+      tipo: conta.tipo,
+      dataInicio: conta.dataInicio,
+      createdAt: conta.createdAt,
+      parcelas: conta.parcelas,
+      todasPropriedades: Object.keys(conta),
+    })
+
     if (conta.tipo === "fixa") return true
 
     if (conta.tipo === "diaria") {
@@ -316,7 +325,15 @@ export default function ContasPage() {
     if (conta.tipo === "parcelada") {
       const dataInicioStr = conta.dataInicio || conta.createdAt
 
+      console.log("[v0] Conta parcelada:", {
+        nome: conta.nome,
+        dataInicioStr,
+        mesSelecionado,
+        anoSelecionado,
+      })
+
       if (!dataInicioStr) {
+        console.log("[v0] REJEITADA: sem data_inicio nem createdAt")
         return false
       }
 
@@ -326,6 +343,15 @@ export default function ContasPage() {
       const mesesDiferenca =
         (dataBase.getFullYear() - inicio.getFullYear()) * 12 + (dataBase.getMonth() - inicio.getMonth())
       const parcelaAtual = mesesDiferenca + 1
+
+      console.log("[v0] Cálculo:", {
+        inicio: inicio.toISOString(),
+        dataBase: dataBase.toISOString(),
+        mesesDiferenca,
+        parcelaAtual,
+        totalParcelas: conta.parcelas,
+        resultado: parcelaAtual >= 1 && parcelaAtual <= (conta.parcelas || 0),
+      })
 
       return parcelaAtual >= 1 && parcelaAtual <= (conta.parcelas || 0)
     }
