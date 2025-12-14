@@ -24,6 +24,16 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
 
+    const emailDestino = body.email_destino || body.emailDestino
+    const notificacoesAtivadas = body.notificacoes_ativadas ?? body.notificacoesAtivadas
+    const notificarVencimento = body.notificar_vencimento ?? body.notificarVencimento
+    const notificarAtraso = body.notificar_atraso ?? body.notificarAtraso
+
+    // Validar que email_destino não está vazio
+    if (!emailDestino) {
+      return NextResponse.json({ error: "E-mail de destino é obrigatório" }, { status: 400 })
+    }
+
     const { data: existing } = await supabase.from("configuracoes").select("id").limit(1)
 
     let result
@@ -33,32 +43,30 @@ export async function POST(request: Request) {
       result = await supabase
         .from("configuracoes")
         .update({
-          email_destino: body.emailDestino,
-          notificacoes_ativadas: body.notificacoesAtivadas,
-          notificar_vencimento: body.notificarVencimento,
-          notificar_atraso: body.notificarAtraso,
+          email_destino: emailDestino,
+          notificacoes_ativadas: notificacoesAtivadas,
+          notificar_vencimento: notificarVencimento,
+          notificar_atraso: notificarAtraso,
           updated_at: new Date().toISOString(),
         })
         .eq("id", existing[0].id)
         .select()
-        .single()
     } else {
       // Inserir
       result = await supabase
         .from("configuracoes")
         .insert({
-          email_destino: body.emailDestino,
-          notificacoes_ativadas: body.notificacoesAtivadas,
-          notificar_vencimento: body.notificarVencimento,
-          notificar_atraso: body.notificarAtraso,
+          email_destino: emailDestino,
+          notificacoes_ativadas: notificacoesAtivadas,
+          notificar_vencimento: notificarVencimento,
+          notificar_atraso: notificarAtraso,
         })
         .select()
-        .single()
     }
 
     if (result.error) throw result.error
 
-    return NextResponse.json(result.data)
+    return NextResponse.json(result.data && result.data.length > 0 ? result.data[0] : null)
   } catch (error) {
     console.error("[v0] Erro ao salvar configurações:", error)
     return NextResponse.json({ error: "Erro ao salvar configurações" }, { status: 500 })

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Calendar, TrendingUp, Search, AlertCircle, Settings, Wallet, Share2, PiggyBank } from "lucide-react"
@@ -13,6 +13,12 @@ import type { Conta } from "@/types/conta"
 import { ListaTransacoes } from "@/components/lista-transacoes"
 import { LogoutButton } from "@/components/logout-button"
 import { formatarMoeda } from "@/lib/utils"
+import { getDataAtualBrasil } from "@/lib/date-utils"
+import { WhatsAppSendDialog } from "@/components/whatsapp-send-dialog"
+import { InstallPrompt } from "./install-prompt"
+import { OfflineIndicator } from "@/components/offline-indicator"
+import { offlineStorage } from "@/lib/offline/storage"
+import { useOffline } from "@/hooks/use-offline"
 
 export default function ContasPage() {
   const { toast } = useToast()
@@ -22,43 +28,73 @@ export default function ContasPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [creditoDialogOpen, setCreditoDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [caixinhaSaldo, setCaixinhaSaldo] = useState(0)
+  const [dataCaixinha, setDataCaixinha] = useState<any | null>(null)
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
+  const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
 
-  const hoje = new Date()
+  const hoje = getDataAtualBrasil()
   const [mesSelecionado, setMesSelecionado] = useState(hoje.getMonth() + 1)
   const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear())
+  const [mostrarApenasHoje, setMostrarApenasHoje] = useState(false)
+
+  const { isOnline, syncPendingOperations } = useOffline()
 
   useEffect(() => {
     fetchContas()
     fetchSaldo()
     fetchTransacoes()
-    fetchCaixinha() // Adicionar busca da caixinha
+    fetchCaixinha()
   }, [])
 
   const fetchSaldo = async () => {
     try {
-      const response = await fetch("/api/saldo")
-      if (!response.ok) throw new Error("Erro ao buscar saldo")
-      const data = await response.json()
-      setSaldo(Number(data.valor))
+      if (isOnline) {
+        const response = await fetch("/api/saldo")
+        if (!response.ok) throw new Error("Erro ao buscar saldo")
+        const data = await response.json()
+        const saldoValue = Number(data.valor)
+        setSaldo(saldoValue)
+        await offlineStorage.saveSaldo(saldoValue)
+      } else {
+        const cachedSaldo = await offlineStorage.getSaldo()
+        setSaldo(cachedSaldo)
+      }
     } catch (error) {
       console.error("[v0] Erro ao buscar saldo:", error)
+      const cachedSaldo = await offlineStorage.getSaldo()
+      setSaldo(cachedSaldo)
     }
   }
 
   const fetchContas = async () => {
     try {
-      const response = await fetch("/api/contas")
-      if (!response.ok) throw new Error("Erro ao buscar contas")
-      const data = await response.json()
-      setContas(data)
+      if (isOnline) {
+        const response = await fetch("/api/contas")
+        if (!response.ok) throw new Error("Erro ao buscar contas")
+        const data = await response.json()
+        setContas(data)
+        await offlineStorage.saveContas(data)
+      } else {
+        const cachedContas = await offlineStorage.getContas()
+        setContas(cachedContas)
+      }
     } catch (error) {
       console.error("[v0] Erro ao buscar contas:", error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar as contas.",
-        variant: "destructive",
-      })
+      // Tentar buscar do cache se a rede falhar
+      const cachedContas = await offlineStorage.getContas()
+      if (cachedContas.length > 0) {
+        setContas(cachedContas)
+        toast({
+          title: "Modo Offline",
+          description: "Mostrando dados salvos localmente.",
+        })
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as contas.",
+          variant: "destructive",
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -66,50 +102,76 @@ export default function ContasPage() {
 
   const fetchTransacoes = async () => {
     try {
-      const response = await fetch("/api/transacoes")
-      if (!response.ok) throw new Error("Erro ao buscar transações")
-      const data = await response.json()
-      setTransacoes(data)
+      if (isOnline) {
+        const response = await fetch("/api/transacoes")
+        if (!response.ok) throw new Error("Erro ao buscar transações")
+        const data = await response.json()
+        setTransacoes(data)
+        await offlineStorage.saveTransacoes(data)
+      } else {
+        const cachedTransacoes = await offlineStorage.getTransacoes()
+        setTransacoes(cachedTransacoes)
+      }
     } catch (error) {
       console.error("[v0] Erro ao buscar transações:", error)
+      const cachedTransacoes = await offlineStorage.getTransacoes()
+      setTransacoes(cachedTransacoes)
     }
   }
 
   const fetchCaixinha = async () => {
     try {
-      const response = await fetch("/api/caixinha")
-      if (!response.ok) return
-      const data = await response.json()
-      setCaixinhaSaldo(data.totalDepositado || 0)
+      if (isOnline) {
+        const response = await fetch("/api/caixinha")
+        if (!response.ok) throw new Error("Erro ao buscar caixinha")
+        const data = await response.json()
+        setDataCaixinha(data)
+        await offlineStorage.saveCaixinha(data)
+      } else {
+        const cachedCaixinha = await offlineStorage.getCaixinha()
+        setDataCaixinha(cachedCaixinha)
+      }
     } catch (error) {
-      console.error("Erro ao buscar caixinha:", error)
+      console.error("[v0] Erro ao buscar caixinha:", error)
+      const cachedCaixinha = await offlineStorage.getCaixinha()
+      setDataCaixinha(cachedCaixinha)
     }
   }
 
-  const addConta = async (conta: Omit<Conta, "id">) => {
+  const addConta = async (novaConta: Omit<Conta, "id">) => {
     try {
-      const response = await fetch("/api/contas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(conta),
-      })
+      if (isOnline) {
+        const response = await fetch("/api/contas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(novaConta),
+        })
 
-      if (!response.ok) throw new Error("Erro ao criar conta")
+        if (!response.ok) throw new Error("Erro ao adicionar conta")
 
-      toast({
-        title: "Sucesso",
-        description: conta.tipo === "diaria" ? "Gasto diário registrado com sucesso!" : "Conta adicionada com sucesso!",
-      })
+        toast({
+          title: "Sucesso",
+          description: "Conta adicionada com sucesso!",
+        })
+      } else {
+        // Adicionar à fila de operações pendentes
+        await offlineStorage.addPendingOperation({
+          type: "insert",
+          table: "contas",
+          data: novaConta,
+        })
 
-      if (conta.tipo === "diaria") {
-        await fetchSaldo()
-        await fetchTransacoes()
+        toast({
+          title: "Salvo Offline",
+          description: "Conta será adicionada quando você estiver online.",
+        })
       }
 
-      await fetchContas()
+      fetchContas()
+      fetchSaldo()
+      fetchTransacoes()
       setDialogOpen(false)
     } catch (error) {
-      console.error("[v0] Erro ao adicionar conta:", error)
       toast({
         title: "Erro",
         description: "Não foi possível adicionar a conta.",
@@ -273,10 +335,10 @@ export default function ContasPage() {
     }
   }
 
-  const compartilharWidget = (titulo: string, conteudo: string) => {
+  const abrirModalWhatsApp = (titulo: string, conteudo: string) => {
     const mensagem = `*${titulo}*\n\n${conteudo}\n\n_Financeiro Gonçalves_`
-    const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`
-    window.open(url, "_blank")
+    setMensagemWhatsApp(mensagem)
+    setWhatsappDialogOpen(true)
   }
 
   const diaAtual = hoje.getDate()
@@ -298,7 +360,9 @@ export default function ContasPage() {
     let dataVencimento: Date
 
     if (conta.tipo === "parcelada") {
-      const inicio = conta.dataInicio ? new Date(conta.dataInicio) : new Date(conta.createdAt || new Date())
+      const inicio = conta.dataInicio
+        ? new Date(conta.dataInicio + "T00:00:00")
+        : new Date(conta.createdAt + "T00:00:00" || new Date())
       const mesInicio = inicio.getMonth()
       const anoInicio = inicio.getFullYear()
 
@@ -320,17 +384,50 @@ export default function ContasPage() {
   })
 
   const contasMesAtual = contas.filter((conta) => {
+    if (mostrarApenasHoje) {
+      const hoje = getDataAtualBrasil()
+      const diaHoje = hoje.getDate()
+      const mesHoje = hoje.getMonth() + 1
+      const anoHoje = hoje.getFullYear()
+
+      if (conta.tipo === "diaria" || conta.tipo === "caixinha") {
+        if (!conta.dataGasto && !conta.data_gasto) return false
+        const dataGasto = new Date((conta.dataGasto || conta.data_gasto!) + "T00:00:00")
+        return (
+          dataGasto.getDate() === diaHoje && dataGasto.getMonth() + 1 === mesHoje && dataGasto.getFullYear() === anoHoje
+        )
+      }
+
+      if (conta.tipo === "fixa") {
+        return conta.vencimento === diaHoje && mesHoje === mesSelecionado && anoHoje === anoSelecionado
+      }
+
+      if (conta.tipo === "parcelada") {
+        const dataInicioStr = conta.dataInicio || conta.createdAt
+        if (!dataInicioStr) return false
+
+        const inicio = new Date(dataInicioStr + "T00:00:00")
+        const mesesDiferenca = (anoHoje - inicio.getFullYear()) * 12 + (mesHoje - inicio.getMonth() - 1)
+        const parcelaAtual = mesesDiferenca + 1
+
+        const parcelaVenceHoje = parcelaAtual >= 1 && parcelaAtual <= (conta.parcelas || 0)
+        return parcelaVenceHoje && conta.vencimento === diaHoje
+      }
+
+      return false
+    }
+
     if (conta.tipo === "fixa") return true
 
     if (conta.tipo === "diaria") {
       if (!conta.dataGasto && !conta.data_gasto) return false
-      const dataGasto = new Date(conta.dataGasto || conta.data_gasto!)
+      const dataGasto = new Date((conta.dataGasto || conta.data_gasto!) + "T00:00:00")
       return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
     }
 
     if (conta.tipo === "caixinha") {
       if (!conta.dataGasto && !conta.data_gasto) return false
-      const dataGasto = new Date(conta.dataGasto || conta.data_gasto!)
+      const dataGasto = new Date((conta.dataGasto || conta.data_gasto!) + "T00:00:00")
       return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
     }
 
@@ -341,7 +438,7 @@ export default function ContasPage() {
         return false
       }
 
-      const inicio = new Date(dataInicioStr)
+      const inicio = new Date(dataInicioStr + "T00:00:00")
       const dataBase = new Date(anoSelecionado, mesSelecionado - 1, 1)
 
       const mesesDiferenca =
@@ -382,6 +479,18 @@ export default function ContasPage() {
     "Dezembro",
   ]
 
+  const metaCaixinha = useMemo(() => {
+    console.log("[v0] Debug meta caixinha:", {
+      dataCaixinha,
+      config: dataCaixinha?.config,
+      meta_valor: dataCaixinha?.config?.meta_valor,
+    })
+    if (!dataCaixinha?.config?.meta_valor) return 0
+    return Number(dataCaixinha.config.meta_valor)
+  }, [dataCaixinha])
+
+  const totalDepositado = dataCaixinha?.totalDepositado || 0
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -394,7 +503,10 @@ export default function ContasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <InstallPrompt />
+      <OfflineIndicator />
+
       <div className="container mx-auto p-4 md:p-8 max-w-7xl">
         <div className="flex flex-col gap-6">
           <div className="flex items-start justify-between flex-wrap gap-4">
@@ -466,9 +578,9 @@ export default function ContasPage() {
                     size="icon"
                     className="h-8 w-8 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
                     onClick={() =>
-                      compartilharWidget(
+                      abrirModalWhatsApp(
                         "🐷 Caixinha - Poupança",
-                        `Total economizado: ${formatarMoeda(caixinhaSaldo)}\nMeta: R$ 40.000,00\nProgresso: ${((caixinhaSaldo / 40000) * 100).toFixed(1)}%\n\nContinue economizando!`,
+                        `📊 *Resumo da Caixinha*\n\n💰 *Valor Total Economizado:* ${formatarMoeda(totalDepositado)}\n🎯 *Meta:* ${formatarMoeda(metaCaixinha)}\n📈 *Progresso:* ${((totalDepositado / metaCaixinha) * 100).toFixed(1)}%\n${totalDepositado >= metaCaixinha ? "✅ *Meta atingida!*" : `💪 *Faltam:* ${formatarMoeda(metaCaixinha - totalDepositado)}`}\n\nContinue economizando! 🚀`,
                       )
                     }
                   >
@@ -479,9 +591,9 @@ export default function ContasPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                  {formatarMoeda(caixinhaSaldo)}
+                  {formatarMoeda(totalDepositado)}
                 </div>
-                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">Meta: R$ 40.000,00</p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">Meta: {formatarMoeda(metaCaixinha)}</p>
                 <Button
                   asChild
                   variant="ghost"
@@ -504,9 +616,9 @@ export default function ContasPage() {
                     size="icon"
                     className="h-8 w-8 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                     onClick={() =>
-                      compartilharWidget(
+                      abrirModalWhatsApp(
                         "💰 Crédito Disponível",
-                        `Saldo atual: ${formatarMoeda(saldo)}\n\nDisponível para gastos e pagamentos.`,
+                        `💳 *Crédito Disponível*\n\n💵 *Saldo Atual:* ${formatarMoeda(saldo)}\n\n✅ Disponível para gastos e pagamentos.\n\n${saldo > 0 ? "🟢 Você tem saldo disponível!" : "🔴 Atenção: Saldo zerado ou negativo!"}`,
                       )
                     }
                   >
@@ -538,9 +650,9 @@ export default function ContasPage() {
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     onClick={() =>
-                      compartilharWidget(
+                      abrirModalWhatsApp(
                         "✅ Total Pago",
-                        `Valor pago: ${formatarMoeda(totalPago)}\n${pagas} de ${contasMesAtual.length} contas pagas\n\nMês: ${meses[mesSelecionado - 1]}/${anoSelecionado}`,
+                        `✅ *Contas Pagas - ${meses[mesSelecionado - 1]}/${anoSelecionado}*\n\n💰 *Valor Total Pago:* ${formatarMoeda(totalPago)}\n📋 *Contas:* ${pagas} de ${contasMesAtual.length} pagas\n📊 *Percentual:* ${contasMesAtual.length > 0 ? ((pagas / contasMesAtual.length) * 100).toFixed(1) : 0}%\n\n${pagas === contasMesAtual.length ? "🎉 Parabéns! Todas as contas foram pagas!" : `⏳ Ainda restam ${contasMesAtual.length - pagas} conta(s) pendente(s).`}`,
                       )
                     }
                   >
@@ -566,9 +678,9 @@ export default function ContasPage() {
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     onClick={() =>
-                      compartilharWidget(
+                      abrirModalWhatsApp(
                         "⏳ Total Pendente",
-                        `Valor pendente: ${formatarMoeda(totalMes - totalPago)}\n${contasMesAtual.length - pagas} de ${contasMesAtual.length} contas pendentes\n\nMês: ${meses[mesSelecionado - 1]}/${anoSelecionado}`,
+                        `⚠️ *Contas Pendentes - ${meses[mesSelecionado - 1]}/${anoSelecionado}*\n\n💳 *Valor Total Pendente:* ${formatarMoeda(totalMes - totalPago)}\n📋 *Contas:* ${contasMesAtual.length - pagas} de ${contasMesAtual.length} pendentes\n📊 *Percentual:* ${contasMesAtual.length > 0 ? (((contasMesAtual.length - pagas) / contasMesAtual.length) * 100).toFixed(1) : 0}%\n\n${contasAtrasadas.length > 0 ? `🔴 *Atenção:* ${contasAtrasadas.length} conta(s) atrasada(s)!` : "🟡 Lembre-se de pagar em dia!"}`,
                       )
                     }
                   >
@@ -599,12 +711,19 @@ export default function ContasPage() {
             anoSelecionado={anoSelecionado}
             onMesChange={setMesSelecionado}
             onAnoChange={setAnoSelecionado}
+            mostrarApenasHoje={mostrarApenasHoje}
+            onToggleMostrarHoje={setMostrarApenasHoje}
           />
         </div>
       </div>
 
       <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} />
       <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
+      <WhatsAppSendDialog
+        open={whatsappDialogOpen}
+        onOpenChange={setWhatsappDialogOpen}
+        mensagemInicial={mensagemWhatsApp}
+      />
     </div>
   )
 }

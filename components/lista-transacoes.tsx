@@ -7,12 +7,24 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ArrowUpCircle, Trash2, Share2, Search, Paperclip, ChevronLeft, ChevronRight, Download } from "lucide-react"
+import { WhatsAppSendDialog } from "./whatsapp-send-dialog"
+import {
+  ArrowUpCircle,
+  Trash2,
+  Share2,
+  Search,
+  Paperclip,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Calendar,
+} from "lucide-react"
 import { useState, useMemo } from "react"
 import type { Conta } from "@/types/conta"
 import { formatarMoeda } from "@/lib/utils"
 import { EditContaDialog } from "./edit-conta-dialog"
 import { Pencil } from "lucide-react"
+import { getDataAtualBrasil } from "@/lib/date-utils"
 
 interface Transacao {
   id: string
@@ -45,6 +57,8 @@ interface ListaTransacoesProps {
   anoSelecionado: number
   onMesChange: (mes: number) => void
   onAnoChange: (ano: number) => void
+  mostrarApenasHoje?: boolean
+  onToggleMostrarHoje?: (mostrar: boolean) => void
 }
 
 export function ListaTransacoes({
@@ -58,12 +72,16 @@ export function ListaTransacoes({
   anoSelecionado,
   onMesChange,
   onAnoChange,
+  mostrarApenasHoje = false,
+  onToggleMostrarHoje,
 }: ListaTransacoesProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [contaSelecionada, setContaSelecionada] = useState<Conta | null>(null)
   const [anexoVisualizar, setAnexoVisualizar] = useState<string | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [contaParaEditar, setContaParaEditar] = useState<Conta | null>(null)
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
+  const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
 
   const [busca, setBusca] = useState("")
   const [filtroTipo, setFiltroTipo] = useState<"todos" | "fixa" | "parcelada" | "diaria" | "credito" | "caixinha">(
@@ -106,10 +124,10 @@ export function ListaTransacoes({
   }
 
   const itensMesAtual = useMemo(() => {
-    const itens: ItemListado[] = []
+    const todosItens: ItemListado[] = []
 
     // Processar transações
-    itens.push(
+    todosItens.push(
       ...transacoes
         .filter((t) => t.tipo === "credito")
         .map((t) => ({
@@ -154,10 +172,54 @@ export function ListaTransacoes({
         conta: conta,
       }))
 
-    itens.push(...contasFiltradas)
+    todosItens.push(...contasFiltradas)
 
-    return itens
-  }, [transacoes, contas, mesSelecionado, anoSelecionado])
+    if (mostrarApenasHoje) {
+      const hoje = new Date()
+      const diaHoje = hoje.getDate()
+      const mesHoje = hoje.getMonth() + 1
+      const anoHoje = hoje.getFullYear()
+
+      return todosItens.filter((item) => {
+        if (item.tipo === "credito") {
+          const dataCredito = new Date(item.data)
+          return (
+            dataCredito.getDate() === diaHoje &&
+            dataCredito.getMonth() + 1 === mesHoje &&
+            dataCredito.getFullYear() === anoHoje
+          )
+        } else {
+          // Para contas
+          const conta = item.conta!
+
+          // Gastos diários e caixinha
+          if (conta.tipo === "diaria" || conta.tipo === "caixinha") {
+            const dataGasto = conta.dataGasto || conta.data_gasto
+            if (!dataGasto) return false
+            const dataGastoDate = new Date(dataGasto + "T00:00:00")
+            return (
+              dataGastoDate.getDate() === diaHoje &&
+              dataGastoDate.getMonth() + 1 === mesHoje &&
+              dataGastoDate.getFullYear() === anoHoje
+            )
+          }
+
+          // Contas fixas e parceladas
+          const pagamentoHoje = conta.pagamentos?.find((p) => {
+            if (!p.data_pagamento) return false
+            const dataPag = new Date(p.data_pagamento + "T00:00:00")
+            return (
+              dataPag.getDate() === diaHoje && dataPag.getMonth() + 1 === mesHoje && dataPag.getFullYear() === anoHoje
+            )
+          })
+
+          return !!pagamentoHoje
+        }
+      })
+    }
+
+    return todosItens
+  }, [transacoes, contas, mesSelecionado, anoSelecionado, mostrarApenasHoje])
 
   const itensFiltrados = useMemo(() => {
     let itens = itensMesAtual
@@ -199,15 +261,15 @@ export function ListaTransacoes({
 
   const handleCompartilharWhatsApp = (conta: Conta) => {
     const pagamento = conta.pagamentos?.find((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
-    if (!pagamento) return
 
+    let mensagem = ""
     let linhaVencimento = ""
     let linhaParcela = ""
     let linhaAnexo = ""
 
     if (conta.tipo === "diaria" && conta.data_gasto) {
       const dataGasto = new Date(conta.data_gasto).toLocaleDateString("pt-BR")
-      linhaVencimento = `📅 Data Pagamento: ${dataGasto}\n`
+      linhaVencimento = `📅 Data: ${dataGasto}\n`
     } else {
       linhaVencimento = `📌 Vencimento: dia ${conta.vencimento}\n`
     }
@@ -217,23 +279,36 @@ export function ListaTransacoes({
       linhaParcela = `📦 Parcela: ${parcelaAtual} de ${conta.parcelas}x\n`
     }
 
-    const anexoUrl = pagamento.anexo || conta.anexoDiario
-    if (anexoUrl) {
-      linhaAnexo = `\n📎 *Comprovante:*\n${anexoUrl}\n`
+    // Se tem pagamento registrado
+    if (pagamento) {
+      const anexoUrl = pagamento.anexo || conta.anexoDiario
+      if (anexoUrl) {
+        linhaAnexo = `\n📎 *Comprovante:*\n${anexoUrl}\n`
+      }
+
+      mensagem =
+        `✅ *Pagamento Realizado*\n\n` +
+        `📄 Conta: ${conta.nome}\n` +
+        `💰 Valor: ${formatarMoeda(conta.valor)}\n` +
+        `📅 Data do Pagamento: ${new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}\n` +
+        linhaVencimento +
+        linhaParcela +
+        `📊 Mês: ${meses[mesSelecionado]}/${anoSelecionado}` +
+        linhaAnexo
+    } else {
+      // Conta pendente
+      mensagem =
+        `⏳ *Conta Pendente*\n\n` +
+        `📄 Conta: ${conta.nome}\n` +
+        `💰 Valor: ${formatarMoeda(conta.valor)}\n` +
+        linhaVencimento +
+        linhaParcela +
+        `📊 Mês: ${meses[mesSelecionado]}/${anoSelecionado}\n` +
+        `\n⚠️ *Aguardando pagamento*`
     }
 
-    const mensagem =
-      `✅ *Pagamento Realizado*\n\n` +
-      `📄 Conta: ${conta.nome}\n` +
-      `💰 Valor: ${formatarMoeda(conta.valor)}\n` +
-      `📅 Data do Pagamento: ${new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}\n` +
-      linhaVencimento +
-      linhaParcela +
-      `📊 Mês: ${meses[mesSelecionado]}/${anoSelecionado}` +
-      linhaAnexo
-
-    const mensagemEncoded = encodeURIComponent(mensagem)
-    window.open(`https://wa.me/?text=${mensagemEncoded}`, "_blank")
+    setMensagemWhatsApp(mensagem)
+    setWhatsappDialogOpen(true)
   }
 
   const getParcelaAtual = (conta: Conta) => {
@@ -252,6 +327,46 @@ export function ListaTransacoes({
     setEditDialogOpen(true)
   }
 
+  const getCorPorStatus = (conta: Conta, pago: boolean) => {
+    const hoje = getDataAtualBrasil()
+    hoje.setHours(0, 0, 0, 0)
+
+    let dataVencimento: Date | null = null
+
+    if (conta.tipo === "fixa") {
+      dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
+    } else if (conta.tipo === "parcelada") {
+      const dataInicioStr = conta.dataInicio || conta.createdAt
+      if (dataInicioStr) {
+        const dataInicio = new Date(dataInicioStr + "T00:00:00")
+        const mesesDiferenca =
+          (anoSelecionado - dataInicio.getFullYear()) * 12 + (mesSelecionado - 1 - dataInicio.getMonth())
+
+        dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
+      }
+    } else if (conta.tipo === "diaria" || conta.tipo === "caixinha") {
+      dataVencimento = conta.dataGasto ? new Date(conta.dataGasto + "T00:00:00") : null
+    }
+
+    const venceHoje =
+      dataVencimento &&
+      dataVencimento.getDate() === hoje.getDate() &&
+      dataVencimento.getMonth() === hoje.getMonth() &&
+      dataVencimento.getFullYear() === hoje.getFullYear()
+
+    const estaPendente = !pago && dataVencimento && dataVencimento < hoje
+
+    if (venceHoje && !pago && conta.tipo !== "diaria") {
+      return "bg-orange-50 dark:bg-orange-950/20 hover:bg-orange-100 dark:hover:bg-orange-950/30 border-orange-300 dark:border-orange-700"
+    } else if (estaPendente && !pago) {
+      return "bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/40 border-red-300 dark:border-red-700"
+    } else if (pago || conta.tipo === "diaria") {
+      return "bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30"
+    }
+
+    return "bg-card hover:bg-accent/50"
+  }
+
   if (itensFiltrados.length === 0) {
     return (
       <Card>
@@ -261,7 +376,7 @@ export function ListaTransacoes({
               ← Anterior
             </Button>
             <CardTitle className="text-center">
-              {meses[mesSelecionado - 1]}/{anoSelecionado}
+              {mostrarApenasHoje ? "Dia de Hoje" : `${meses[mesSelecionado - 1]}/${anoSelecionado}`}
             </CardTitle>
             <Button variant="outline" size="sm" onClick={avancarMes}>
               Próximo →
@@ -327,20 +442,31 @@ export function ListaTransacoes({
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="shadow-lg">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" onClick={voltarMes}>
+              <Button variant="outline" size="icon" onClick={voltarMes} disabled={mostrarApenasHoje}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <h2 className="text-2xl font-semibold">
-                {meses[mesSelecionado - 1]}/{anoSelecionado}
+                {mostrarApenasHoje ? "Dia de Hoje" : `${meses[mesSelecionado - 1]}/${anoSelecionado}`}
               </h2>
-              <Button variant="outline" size="icon" onClick={avancarMes}>
+              <Button variant="outline" size="icon" onClick={avancarMes} disabled={mostrarApenasHoje}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
+            {onToggleMostrarHoje && (
+              <Button
+                variant={mostrarApenasHoje ? "default" : "outline"}
+                size="sm"
+                onClick={() => onToggleMostrarHoje(!mostrarApenasHoje)}
+                className="gap-2"
+              >
+                <Calendar className="h-4 w-4" />
+                {mostrarApenasHoje ? "Ver mês completo" : "Dia de hoje"}
+              </Button>
+            )}
           </div>
           <div className="flex flex-col gap-3 mt-4">
             <div className="relative">
@@ -432,47 +558,7 @@ export function ListaTransacoes({
                 const pagamento = conta.pagamentos?.find((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
                 const temAnexo = pagamento?.anexo || conta.anexoDiario
 
-                const hoje = new Date()
-                hoje.setHours(0, 0, 0, 0)
-
-                let dataVencimento: Date | null = null
-
-                if (conta.tipo === "fixa") {
-                  dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
-                } else if (conta.tipo === "parcelada") {
-                  // Para parceladas, calcular a data de vencimento da parcela atual
-                  const dataInicioStr = conta.dataInicio || conta.createdAt
-                  if (dataInicioStr) {
-                    const dataInicio = new Date(dataInicioStr)
-                    const mesesDiferenca =
-                      (anoSelecionado - dataInicio.getFullYear()) * 12 + (mesSelecionado - 1 - dataInicio.getMonth())
-
-                    // Calcular a data de vencimento da parcela usando o dia de vencimento
-                    dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
-                  }
-                } else if (conta.tipo === "diaria" || conta.tipo === "caixinha") {
-                  dataVencimento = conta.dataGasto ? new Date(conta.dataGasto) : null
-                }
-
-                const venceHoje =
-                  dataVencimento &&
-                  dataVencimento.getDate() === hoje.getDate() &&
-                  dataVencimento.getMonth() === hoje.getMonth() &&
-                  dataVencimento.getFullYear() === hoje.getFullYear()
-
-                const estaPendente = !pago && dataVencimento && dataVencimento < hoje
-
-                let corBackground = "bg-card hover:bg-accent/50"
-
-                if (venceHoje && !pago && conta.tipo !== "diaria") {
-                  corBackground =
-                    "bg-orange-50 dark:bg-orange-950/20 hover:bg-orange-100 dark:hover:bg-orange-950/30 border-orange-300 dark:border-orange-700"
-                } else if (estaPendente && !pago) {
-                  corBackground =
-                    "bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/40 border-red-300 dark:border-red-700"
-                } else if (pago || conta.tipo === "diaria") {
-                  corBackground = "bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30"
-                }
+                const corBackground = getCorPorStatus(conta, pago)
 
                 return (
                   <div
@@ -514,102 +600,70 @@ export function ListaTransacoes({
                           </Button>
                         )}
                         {conta.categoria && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="secondary" className="text-xs">
                             {conta.categoria}
                           </Badge>
                         )}
+                        {conta.tipo === "fixa" && <Badge className="text-xs bg-blue-600">Fixa</Badge>}
                         {conta.tipo === "parcelada" && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge className="text-xs bg-purple-600">
                             {parcelaAtual}/{conta.parcelas}x
                           </Badge>
                         )}
-                        {conta.tipo === "fixa" && (
-                          <Badge variant="secondary" className="text-xs">
-                            Fixa
-                          </Badge>
-                        )}
-                        {conta.tipo === "diaria" && (
-                          <Badge variant="default" className="text-xs bg-purple-500">
-                            Gasto Diário
-                          </Badge>
-                        )}
-                        {conta.tipo === "caixinha" && (
-                          <Badge variant="default" className="text-xs bg-amber-500">
-                            Caixinha
-                          </Badge>
-                        )}
+                        {conta.tipo === "diaria" && <Badge className="text-xs bg-purple-600">Gasto Diário</Badge>}
+                        {conta.tipo === "caixinha" && <Badge className="text-xs bg-amber-600">Caixinha</Badge>}
                       </div>
-                      {conta.tipo === "diaria" && (conta.data_gasto || conta.dataGasto) ? (
-                        <p className="text-sm text-muted-foreground">
-                          Data do Gasto: {new Date(conta.data_gasto || conta.dataGasto).toLocaleDateString("pt-BR")}
-                        </p>
-                      ) : conta.tipo === "caixinha" && (conta.data_gasto || conta.dataGasto) ? (
-                        <p className="text-sm text-muted-foreground">
-                          Data do Depósito: {new Date(conta.data_gasto || conta.dataGasto).toLocaleDateString("pt-BR")}
-                        </p>
-                      ) : conta.tipo === "fixa" ? (
-                        <p className="text-sm text-muted-foreground">
-                          Vencimento:{" "}
-                          {new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}
-                        </p>
-                      ) : conta.tipo === "parcelada" && parcelaAtual ? (
-                        <p className="text-sm text-muted-foreground">
-                          Parcela {parcelaAtual} - Vencimento:{" "}
-                          {new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}
-                        </p>
-                      ) : null}
-                      {pago && pagamento && conta.tipo !== "diaria" && (
-                        <div className="mt-2 space-y-1">
-                          <p className="text-sm text-green-600 dark:text-green-400">
-                            Pago em: {new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}
-                          </p>
-                        </div>
-                      )}
+
+                      <div className="text-sm text-muted-foreground">
+                        {conta.tipo === "diaria" && conta.dataGasto ? (
+                          <span>
+                            Data do Gasto: {new Date(conta.dataGasto + "T00:00:00").toLocaleDateString("pt-BR")}
+                          </span>
+                        ) : conta.tipo === "caixinha" && conta.dataGasto ? (
+                          <span>
+                            Data do Gasto: {new Date(conta.dataGasto + "T00:00:00").toLocaleDateString("pt-BR")}
+                          </span>
+                        ) : conta.tipo === "fixa" ? (
+                          <span>
+                            Vencimento:{" "}
+                            {new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}
+                          </span>
+                        ) : conta.tipo === "parcelada" ? (
+                          <>
+                            <span>
+                              Parcela {parcelaAtual} - Vencimento:{" "}
+                              {new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString(
+                                "pt-BR",
+                              )}
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        <p
-                          className={`text-lg font-bold ${pago || conta.tipo === "diaria" ? "text-muted-foreground" : "text-foreground"}`}
-                        >
-                          {formatarMoeda(conta.valor)}
-                        </p>
-                        {(pago || conta.tipo === "diaria") && (
-                          <Badge variant="default" className="text-xs">
-                            Pago
-                          </Badge>
-                        )}
-                      </div>
-
-                      {(pago || conta.tipo === "diaria") && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleCompartilharWhatsApp(conta)}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
-                          title="Compartilhar no WhatsApp"
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </Button>
+                      <span className="font-bold text-lg">{formatarMoeda(conta.valor)}</span>
+                      {pago && (
+                        <Badge variant="default" className="bg-green-600">
+                          Pago
+                        </Badge>
                       )}
+                    </div>
 
+                    <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleEditarConta(conta)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
-                        title="Editar"
+                        onClick={() => handleCompartilharWhatsApp(conta)}
+                        className="h-8 w-8"
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Share2 className="h-4 w-4 text-green-600" />
                       </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(conta.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" onClick={() => handleEditarConta(conta)} className="h-8 w-8">
+                        <Pencil className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => onDelete(conta.id)} className="h-8 w-8">
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   </div>
@@ -620,38 +674,97 @@ export function ListaTransacoes({
         </CardContent>
       </Card>
 
-      <Dialog open={!!anexoVisualizar} onOpenChange={() => setAnexoVisualizar(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh]">
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Comprovante</DialogTitle>
+            <DialogTitle>Registrar Pagamento</DialogTitle>
           </DialogHeader>
-          <div className="relative w-full flex flex-col items-center gap-4">
-            {anexoVisualizar && (
-              <>
-                <img
-                  src={anexoVisualizar || "/placeholder.svg"}
-                  alt="Comprovante"
-                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
-                />
-                <Button
-                  onClick={() => {
-                    const link = document.createElement("a")
-                    link.href = anexoVisualizar
-                    link.download = "comprovante.jpg"
-                    link.click()
-                  }}
-                  className="w-full"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Baixar
-                </Button>
-              </>
-            )}
-          </div>
+          {contaSelecionada && (
+            <PagamentoDialog
+              conta={contaSelecionada}
+              mes={mesSelecionado}
+              ano={anoSelecionado}
+              onConfirm={onAddPagamento}
+              onCancel={() => setDialogOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
-      <EditContaDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} onEdit={onEdit} conta={contaParaEditar} />
+      <Dialog open={!!anexoVisualizar} onOpenChange={() => setAnexoVisualizar(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Comprovante de Pagamento</DialogTitle>
+          </DialogHeader>
+          {anexoVisualizar && (
+            <div className="space-y-4">
+              <img src={anexoVisualizar || "/placeholder.svg"} alt="Comprovante" className="w-full rounded-lg" />
+              <Button asChild className="w-full">
+                <a href={anexoVisualizar} download target="_blank" rel="noopener noreferrer">
+                  <Download className="mr-2 h-4 w-4" />
+                  Baixar Comprovante
+                </a>
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <EditContaDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} conta={contaParaEditar} onEdit={onEdit} />
+
+      <WhatsAppSendDialog open={whatsappDialogOpen} onOpenChange={setWhatsappDialogOpen} mensagem={mensagemWhatsApp} />
+    </div>
+  )
+}
+
+function PagamentoDialog({
+  conta,
+  mes,
+  ano,
+  onConfirm,
+  onCancel,
+}: {
+  conta: Conta
+  mes: number
+  ano: number
+  onConfirm: (id: string, mes: number, ano: number, dataPagamento: string, anexo?: string) => void
+  onCancel: () => void
+}) {
+  const hoje = getDataAtualBrasil().toISOString().split("T")[0]
+  const [dataPagamento, setDataPagamento] = useState(hoje)
+  const [anexo, setAnexo] = useState("")
+
+  const handleConfirm = () => {
+    onConfirm(conta.id, mes, ano, dataPagamento, anexo || undefined)
+    onCancel()
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="text-sm font-medium">Conta</label>
+        <p className="text-lg font-semibold">{conta.nome}</p>
+      </div>
+      <div>
+        <label className="text-sm font-medium">Valor</label>
+        <p className="text-lg font-semibold">{formatarMoeda(conta.valor)}</p>
+      </div>
+      <div>
+        <label className="text-sm font-medium">Data do Pagamento</label>
+        <Input type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} />
+      </div>
+      <div>
+        <label className="text-sm font-medium">Anexo (opcional)</label>
+        <Input type="url" placeholder="URL do comprovante" value={anexo} onChange={(e) => setAnexo(e.target.value)} />
+      </div>
+      <div className="flex gap-2">
+        <Button onClick={handleConfirm} className="flex-1">
+          Confirmar
+        </Button>
+        <Button onClick={onCancel} variant="outline" className="flex-1 bg-transparent">
+          Cancelar
+        </Button>
+      </div>
     </div>
   )
 }

@@ -40,10 +40,12 @@ export async function POST(request: Request) {
     const supabase = createClient()
 
     if (acao === "gerar_depositos") {
+      const { data: config } = await supabase.from("caixinha_config").select("meta_valor").single()
+      const metaValor = config?.meta_valor || 35000
+
       // Gerar depósitos semanais automaticamente
       const dataInicio = new Date("2026-01-01")
       const dataFim = new Date("2026-12-31")
-      const metaValor = 40000
 
       const depositos = []
       const dataAtual = new Date(dataInicio)

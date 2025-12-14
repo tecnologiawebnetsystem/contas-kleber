@@ -14,6 +14,7 @@ import Link from "next/link"
 import type { Conta } from "@/types/conta"
 import { WhatsAppButton } from "@/components/whatsapp-button"
 import { formatarMoeda } from "@/lib/utils"
+import { getDataAtualBrasil } from "@/lib/date-utils"
 
 type Filtro = "todos" | "pagos" | "pendentes" | "atrasados" | "proximos"
 
@@ -48,7 +49,7 @@ export default function ConsultaPage() {
   }, [])
 
   useEffect(() => {
-    const hoje = new Date()
+    const hoje = getDataAtualBrasil()
     const mes = String(hoje.getMonth() + 1).padStart(2, "0")
     const ano = hoje.getFullYear()
     const dia = String(hoje.getDate()).padStart(2, "0")
@@ -66,145 +67,26 @@ export default function ConsultaPage() {
   }, [tipoSelecionado, categoriaSelecionada])
 
   const executarPesquisa = async () => {
-    await fetchContas()
-    const semFiltroPeriodo = filtroPeriodo === "todos"
-    const filtroDia = filtroPeriodo === "dia"
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
 
-    const [anoSelecionado, mesSelecionado, diaSelecionado] = diaEspecifico
-      ? diaEspecifico.split("-").map(Number)
-      : [new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()]
-
-    const [anoMes, mesMes] = mesAno ? mesAno.split("-").map(Number) : [anoSelecionado, mesSelecionado]
-
-    const hoje = new Date()
-    const mesAtual = hoje.getMonth()
-    const anoAtual = hoje.getFullYear()
-    const diaAtual = hoje.getDate()
-
-    const calcularDataVencimento = (dataInicio: string, numeroParcela: number, diaVencimento: number) => {
-      const inicio = new Date(dataInicio)
-      const mesInicio = inicio.getMonth()
-      const anoInicio = inicio.getFullYear()
-
-      const mesesParaSomar = numeroParcela - 1
-      let mesVencimento = mesInicio + mesesParaSomar
-      let anoVencimento = anoInicio
-
-      while (mesVencimento > 11) {
-        mesVencimento -= 12
-        anoVencimento++
+      if (filtroPeriodo === "periodo" && mesAno) {
+        params.append("mes", mesAno)
+      } else if (filtroPeriodo === "dia" && diaEspecifico) {
+        params.append("dia", diaEspecifico)
       }
 
-      const ultimoDiaDoMes = new Date(anoVencimento, mesVencimento + 1, 0).getDate()
-      const diaFinal = Math.min(diaVencimento, ultimoDiaDoMes)
-
-      return new Date(anoVencimento, mesVencimento, diaFinal)
+      const response = await fetch(`/api/contas?${params.toString()}`)
+      if (!response.ok) throw new Error("Erro ao buscar contas")
+      const data = await response.json()
+      setContasFiltradas(data)
+    } catch (error) {
+      console.error("Erro ao buscar contas:", error)
+    } finally {
+      setLoading(false)
+      setPesquisaRealizada(true)
     }
-
-    const todasContasProcessadas: Conta[] = []
-
-    todasContas.forEach((conta) => {
-      if (conta.tipo === "parcelada" && conta.parcelas && conta.parcelas > 1) {
-        const dataInicio = conta.dataInicio || conta.createdAt
-        if (!dataInicio) return
-
-        for (let i = 1; i <= conta.parcelas; i++) {
-          const dataVencimento = calcularDataVencimento(dataInicio, i, conta.vencimento)
-          const mesVencimento = dataVencimento.getMonth() + 1
-          const anoVencimento = dataVencimento.getFullYear()
-          const diaVencimento = dataVencimento.getDate()
-
-          if (filtroDia) {
-            if (
-              diaVencimento !== diaSelecionado ||
-              mesVencimento !== mesSelecionado ||
-              anoVencimento !== anoSelecionado
-            )
-              continue
-          } else if (!semFiltroPeriodo) {
-            if (mesVencimento !== mesMes || anoVencimento !== anoMes) continue
-          }
-
-          const dataVencimentoISO = dataVencimento.toISOString().split("T")[0]
-          const isPago = conta.pagamentos?.some((p) => p.ano === anoVencimento && p.mes === mesVencimento) || false
-
-          const estaAtrasado = !isPago && dataVencimento < hoje
-          const diffDias = Math.ceil((dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
-          const estaProximo = !isPago && diffDias > 0 && diffDias <= 7
-
-          todasContasProcessadas.push({
-            ...conta,
-            parcelaAtual: i,
-            dataVencimento: dataVencimentoISO,
-            isPago,
-            estaAtrasado,
-            estaProximo,
-          })
-        }
-      } else if (conta.tipo === "fixa") {
-        if (!semFiltroPeriodo && !filtroDia) {
-          const dataCriacao = new Date(conta.createdAt)
-          if (dataCriacao > new Date(anoMes, mesMes - 1, 1)) return
-        }
-
-        const ano = filtroDia ? anoSelecionado : semFiltroPeriodo ? anoAtual : anoMes
-        const mes = filtroDia ? mesSelecionado : semFiltroPeriodo ? mesAtual + 1 : mesMes
-
-        const ultimoDiaDoMes = new Date(ano, mes, 0).getDate()
-        const diaVencimento = Math.min(conta.vencimento, ultimoDiaDoMes)
-        const dataVencimento = new Date(ano, mes - 1, diaVencimento)
-
-        if (filtroDia && diaVencimento !== diaSelecionado) return
-
-        const isPago = conta.pagamentos?.some((p) => p.ano === ano && p.mes === mes) || false
-
-        const estaAtrasado = !isPago && dataVencimento < hoje
-        const diffDias = Math.ceil((dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
-        const estaProximo = !isPago && diffDias > 0 && diffDias <= 7
-
-        todasContasProcessadas.push({
-          ...conta,
-          dataVencimento: dataVencimento.toISOString().split("T")[0],
-          isPago,
-          estaAtrasado,
-          estaProximo,
-        })
-      } else if (conta.tipo === "diaria" || conta.tipo === "caixinha") {
-        if (!conta.dataGasto) return null
-
-        const dataGasto = new Date(conta.dataGasto + "T00:00:00")
-        const mesGasto = dataGasto.getMonth() + 1
-        const anoGasto = dataGasto.getFullYear()
-        const diaGasto = dataGasto.getDate()
-
-        if (filtroDia) {
-          if (diaGasto !== diaSelecionado || mesGasto !== mesSelecionado || anoGasto !== anoSelecionado) return null
-        } else if (!semFiltroPeriodo && (mesGasto !== mesMes || anoGasto !== anoMes)) return null
-
-        const isPago = true
-
-        todasContasProcessadas.push({
-          ...conta,
-          isPago,
-          estaAtrasado: false,
-          estaProximo: false,
-        })
-      }
-    })
-
-    const resultados = todasContasProcessadas.filter((conta) => {
-      if (tipoSelecionado !== "todos" && conta.tipo !== tipoSelecionado) return false
-      if (categoriaSelecionada !== "todas" && conta.categoria !== categoriaSelecionada) return false
-      if (contaSelecionada !== "todas" && conta.id !== contaSelecionada) return false
-      if (filtro === "pagos") return conta.isPago
-      if (filtro === "pendentes") return !conta.isPago
-      if (filtro === "atrasados") return conta.estaAtrasado
-      if (filtro === "proximos") return conta.estaProximo
-      return true
-    })
-
-    setContasFiltradas(resultados)
-    setPesquisaRealizada(true)
   }
 
   const contasFiltradasParaDropdown = todasContas.filter((conta) => {

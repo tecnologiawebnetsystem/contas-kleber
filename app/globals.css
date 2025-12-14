@@ -4,7 +4,6 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color scheme for financial app - blue/green tones for trust and money */
   --background: oklch(0.99 0.01 240);
   --foreground: oklch(0.15 0.02 240);
   --card: oklch(1 0 0);
@@ -122,5 +121,50 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Otimizações para PWA e tablets */
+  /* Prevenir zoom em inputs no iOS */
+  @media screen and (max-width: 768px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Otimizar scroll em tablets */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Melhorar área de toque em tablets */
+  button,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Desabilitar seleção de texto em áreas interativas */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Animação suave para instalação PWA */
+  @keyframes slide-in-bottom {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-in {
+    animation: slide-in-bottom 0.3s ease-out;
   }
 }

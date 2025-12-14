@@ -37,7 +37,7 @@ export default function ConfiguracoesPage() {
     whatsappMensagemTemplate: "🔔 *Alerta de Contas - Financeiro Gonçalves*\n\n",
   })
   const [novoNumero, setNovoNumero] = useState("")
-  const [enviando, setEnviando] = useState(false)
+  const [enviandoEmail, setEnviandoEmail] = useState(false)
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -74,6 +74,7 @@ export default function ConfiguracoesPage() {
 
   const salvarConfiguracoes = async () => {
     try {
+      console.log("[v0] Salvando configurações:", config)
       const response = await fetch("/api/configuracoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,7 +91,16 @@ export default function ConfiguracoesPage() {
         }),
       })
 
-      if (!response.ok) throw new Error("Erro ao salvar configurações")
+      console.log("[v0] Response status:", response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error("[v0] Erro na resposta:", errorData)
+        throw new Error("Erro ao salvar configurações")
+      }
+
+      const result = await response.json()
+      console.log("[v0] Configurações salvas com sucesso:", result)
 
       toast({
         title: "Configurações salvas",
@@ -139,36 +149,21 @@ export default function ConfiguracoesPage() {
   }
 
   const enviarEmailTeste = async () => {
-    if (!config.emailDestino) {
-      toast({
-        title: "E-mail não configurado",
-        description: "Por favor, informe o e-mail de destino.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setEnviando(true)
-
     try {
+      setEnviandoEmail(true)
       const response = await fetch("/api/verificar-contas", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forceTest: true }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        if (data.emailsEnviados.length > 0) {
-          toast({
-            title: "E-mails enviados com sucesso!",
-            description: `${data.emailsEnviados.length} notificação(ões) enviada(s).`,
-          })
-        } else {
-          toast({
-            title: "Nenhuma notificação necessária",
-            description: "Não há contas próximas do vencimento ou atrasadas no momento.",
-          })
-        }
+        toast({
+          title: "E-mail de teste enviado!",
+          description: `Verifique sua caixa de entrada em ${config.emailDestino}`,
+        })
       } else {
         toast({
           title: "Erro ao enviar e-mail",
@@ -183,7 +178,7 @@ export default function ConfiguracoesPage() {
         variant: "destructive",
       })
     } finally {
-      setEnviando(false)
+      setEnviandoEmail(false)
     }
   }
 
@@ -272,12 +267,91 @@ export default function ConfiguracoesPage() {
               <CardDescription>Configure o envio automático de alertas sobre suas contas</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="rounded-lg bg-muted p-4 space-y-3">
+                <h4 className="font-semibold text-sm">Como configurar notificações por e-mail:</h4>
+                <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
+                  <li>
+                    Acesse{" "}
+                    <a
+                      href="https://resend.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      resend.com
+                    </a>{" "}
+                    e crie uma conta gratuita
+                  </li>
+                  <li>
+                    Após fazer login, vá em <strong>API Keys</strong> no menu lateral
+                  </li>
+                  <li>
+                    Clique em <strong>Create API Key</strong> e dê um nome (ex: "Financeiro Gonçalves")
+                  </li>
+                  <li>Copie a API Key gerada (começa com "re_")</li>
+                  <li>
+                    No Vercel, vá em <strong>Settings → Environment Variables</strong>
+                  </li>
+                  <li>
+                    Adicione uma nova variável:
+                    <div className="mt-1 p-2 bg-background rounded border font-mono text-xs">
+                      <div>
+                        <strong>Name:</strong> RESEND_API_KEY
+                      </div>
+                      <div>
+                        <strong>Value:</strong> [Cole sua API Key aqui]
+                      </div>
+                    </div>
+                  </li>
+                  <li>Salve e faça redeploy do projeto</li>
+                  <li>Configure o e-mail de destino abaixo e clique em "Testar Agora"</li>
+                </ol>
+                <p className="text-xs text-muted-foreground mt-2">
+                  ⚠️ Importante: O plano gratuito do Resend permite 100 e-mails/dia e 3.000 e-mails/mês.
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <div className="text-amber-600 dark:text-amber-400 text-xl">⚠️</div>
+                  <div className="flex-1 space-y-2">
+                    <h4 className="font-semibold text-sm text-amber-900 dark:text-amber-100">
+                      Limitação do Plano Gratuito do Resend
+                    </h4>
+                    <p className="text-xs text-amber-800 dark:text-amber-200">
+                      No plano gratuito, você só pode enviar e-mails para o endereço cadastrado na sua conta Resend (
+                      <strong>tecnologiawebnetsystem@gmail.com</strong>).
+                    </p>
+                    <p className="text-xs text-amber-800 dark:text-amber-200">
+                      Para enviar para outros e-mails, você precisa:
+                    </p>
+                    <ul className="text-xs text-amber-800 dark:text-amber-200 list-disc list-inside ml-2 space-y-1">
+                      <li>
+                        Verificar um domínio em{" "}
+                        <a
+                          href="https://resend.com/domains"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline font-semibold"
+                        >
+                          resend.com/domains
+                        </a>
+                      </li>
+                      <li>Usar um e-mail desse domínio no campo "E-mail de Destino" abaixo</li>
+                    </ul>
+                    <p className="text-xs text-amber-800 dark:text-amber-200 font-semibold mt-2">
+                      💡 Dica: Para testes, use tecnologiawebnetsystem@gmail.com como destinatário.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail de Destino</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="seu@email.com"
+                  placeholder="tecnologiawebnetsystem@gmail.com"
                   value={config.emailDestino}
                   onChange={(e) => setConfig({ ...config, emailDestino: e.target.value })}
                 />
@@ -328,9 +402,9 @@ export default function ConfiguracoesPage() {
                   <Save className="mr-2 h-4 w-4" />
                   Salvar Configurações
                 </Button>
-                <Button onClick={enviarEmailTeste} variant="outline" disabled={enviando}>
+                <Button onClick={enviarEmailTeste} variant="outline" disabled={enviandoEmail}>
                   <Send className="mr-2 h-4 w-4" />
-                  {enviando ? "Enviando..." : "Testar Agora"}
+                  {enviandoEmail ? "Enviando..." : "Testar Agora"}
                 </Button>
               </div>
             </CardContent>
