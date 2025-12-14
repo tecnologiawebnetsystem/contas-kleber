@@ -18,12 +18,18 @@ import {
   ChevronRight,
   Download,
   Calendar,
+  MoreVertical,
+  Edit,
+  CheckCircle,
 } from "lucide-react"
 import { useState, useMemo } from "react"
 import type { Conta } from "@/types/conta"
 import { formatarMoeda } from "@/lib/utils"
 import { EditContaDialog } from "./edit-conta-dialog"
-import { Pencil } from "lucide-react"
+import { useSwipe } from "@/hooks/use-swipe"
+import { useLongPress } from "@/hooks/use-long-press"
+import { UndoToast } from "./undo-toast"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { getDataAtualBrasil } from "@/lib/date-utils"
 
 interface Transacao {
@@ -75,6 +81,10 @@ export function ListaTransacoes({
   mostrarApenasHoje = false,
   onToggleMostrarHoje,
 }: ListaTransacoesProps) {
+  const [busca, setBusca] = useState("")
+  const [filtroTipo, setFiltroTipo] = useState<string>("todos")
+  const [filtroStatus, setFiltroStatus] = useState<string>("todos")
+  const [ordenacao, setOrdenacao] = useState<"data" | "valor" | "nome">("data")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [contaSelecionada, setContaSelecionada] = useState<Conta | null>(null)
   const [anexoVisualizar, setAnexoVisualizar] = useState<string | null>(null)
@@ -83,12 +93,9 @@ export function ListaTransacoes({
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
 
-  const [busca, setBusca] = useState("")
-  const [filtroTipo, setFiltroTipo] = useState<"todos" | "fixa" | "parcelada" | "diaria" | "credito" | "caixinha">(
-    "todos",
-  )
-  const [filtroStatus, setFiltroStatus] = useState<"todos" | "pago" | "pendente">("todos")
-  const [ordenacao, setOrdenacao] = useState<"data" | "valor" | "nome">("data")
+  const [swipedItemId, setSwipedItemId] = useState<string | null>(null)
+  const [undoData, setUndoData] = useState<{ action: string; conta: Conta } | null>(null)
+  const [showUndo, setShowUndo] = useState(false)
 
   const meses = [
     "Janeiro",
@@ -367,6 +374,45 @@ export function ListaTransacoes({
     return "bg-card hover:bg-accent/50"
   }
 
+  const handleDeleteWithUndo = (conta: Conta) => {
+    setUndoData({ action: "delete", conta })
+    setShowUndo(true)
+
+    // Aguardar 5 segundos antes de deletar
+    setTimeout(() => {
+      if (showUndo) {
+        onDelete(conta.id)
+        setShowUndo(false)
+      }
+    }, 5000)
+  }
+
+  const handleUndo = () => {
+    setShowUndo(false)
+    setUndoData(null)
+  }
+
+  const swipeHandlers = useSwipe(
+    {
+      onSwipeLeft: () => {
+        // Arrastar para esquerda = editar
+        handleEditarConta(contaSelecionada!)
+      },
+      onSwipeRight: () => {
+        // Arrastar para direita = deletar com desfazer
+        handleDeleteWithUndo(contaSelecionada!)
+      },
+    },
+    100,
+  )
+
+  const longPressHandlers = useLongPress({
+    onLongPress: () => {
+      // Long press = menu rápido
+      setContaSelecionada(contaSelecionada!)
+    },
+  })
+
   if (itensFiltrados.length === 0) {
     return (
       <Card>
@@ -563,7 +609,11 @@ export function ListaTransacoes({
                 return (
                   <div
                     key={item.id}
-                    className={`flex items-start gap-4 p-4 border rounded-lg transition-colors ${corBackground}`}
+                    className={`flex items-start gap-4 p-4 border rounded-lg transition-all ${corBackground} ${
+                      swipedItemId === item.id ? "translate-x-2 shadow-lg" : ""
+                    }`}
+                    {...swipeHandlers}
+                    {...longPressHandlers}
                   >
                     <Checkbox
                       checked={pago || conta.tipo === "diaria"}
@@ -641,16 +691,35 @@ export function ListaTransacoes({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg">{formatarMoeda(conta.valor)}</span>
-                      {pago && (
-                        <Badge variant="default" className="bg-green-600">
-                          Pago
-                        </Badge>
-                      )}
-                    </div>
-
                     <div className="flex items-center gap-1">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {!pago && conta.tipo !== "diaria" && (
+                            <DropdownMenuItem onClick={() => handleMarcarPago(conta)}>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Marcar como pago
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => handleCompartilharWhatsApp(conta)}>
+                            <Share2 className="h-4 w-4 mr-2" />
+                            Compartilhar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditarConta(conta)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteWithUndo(conta)} className="text-destructive">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Deletar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
                       <Button
                         variant="ghost"
                         size="icon"
@@ -660,9 +729,14 @@ export function ListaTransacoes({
                         <Share2 className="h-4 w-4 text-green-600" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleEditarConta(conta)} className="h-8 w-8">
-                        <Pencil className="h-4 w-4 text-blue-600" />
+                        <Edit className="h-4 w-4 text-blue-600" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => onDelete(conta.id)} className="h-8 w-8">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteWithUndo(conta)}
+                        className="h-8 w-8"
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -673,6 +747,8 @@ export function ListaTransacoes({
           </div>
         </CardContent>
       </Card>
+
+      {showUndo && undoData && <UndoToast message={`${undoData.conta.nome} será deletada`} onUndo={handleUndo} />}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

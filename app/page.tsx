@@ -1,9 +1,21 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Calendar, TrendingUp, Search, AlertCircle, Settings, Wallet, Share2, PiggyBank } from "lucide-react"
+import {
+  Plus,
+  Calendar,
+  TrendingUp,
+  Search,
+  AlertCircle,
+  Settings,
+  Wallet,
+  Share2,
+  PiggyBank,
+  BarChart3,
+  Plane,
+} from "lucide-react"
 import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -19,6 +31,7 @@ import { InstallPrompt } from "./install-prompt"
 import { OfflineIndicator } from "@/components/offline-indicator"
 import { offlineStorage } from "@/lib/offline/storage"
 import { useOffline } from "@/hooks/use-offline"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function ContasPage() {
   const { toast } = useToast()
@@ -28,7 +41,8 @@ export default function ContasPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [creditoDialogOpen, setCreditoDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [dataCaixinha, setDataCaixinha] = useState<any | null>(null)
+  const [dataPoupanca, setDataPoupanca] = useState<any | null>(null)
+  const [dataViagem, setDataViagem] = useState<any | null>(null)
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
 
@@ -43,7 +57,7 @@ export default function ContasPage() {
     fetchContas()
     fetchSaldo()
     fetchTransacoes()
-    fetchCaixinha()
+    fetchPoupancaEViagem()
   }, [])
 
   const fetchSaldo = async () => {
@@ -119,22 +133,44 @@ export default function ContasPage() {
     }
   }
 
-  const fetchCaixinha = async () => {
+  // Não mais necessário, substituído por fetchPoupancaEViagem
+  // const fetchCaixinha = async () => {
+  //   try {
+  //     if (isOnline) {
+  //       const response = await fetch("/api/caixinha")
+  //       if (!response.ok) throw new Error("Erro ao buscar caixinha")
+  //       const data = await response.json()
+  //       setDataCaixinha(data)
+  //       await offlineStorage.saveCaixinha(data)
+  //     } else {
+  //       const cachedCaixinha = await offlineStorage.getCaixinha()
+  //       setDataCaixinha(cachedCaixinha)
+  //     }
+  //   } catch (error) {
+  //     console.error("[v0] Erro ao buscar caixinha:", error)
+  //     const cachedCaixinha = await offlineStorage.getCaixinha()
+  //     setDataCaixinha(cachedCaixinha)
+  //   }
+  // }
+
+  const fetchPoupancaEViagem = async () => {
     try {
       if (isOnline) {
-        const response = await fetch("/api/caixinha")
-        if (!response.ok) throw new Error("Erro ao buscar caixinha")
+        const response = await fetch("/api/contas")
+        if (!response.ok) throw new Error("Erro ao buscar contas")
         const data = await response.json()
-        setDataCaixinha(data)
-        await offlineStorage.saveCaixinha(data)
-      } else {
-        const cachedCaixinha = await offlineStorage.getCaixinha()
-        setDataCaixinha(cachedCaixinha)
+
+        const poupanca = data.filter((c: Conta) => c.tipo === "poupanca")
+        const viagem = data.filter((c: Conta) => c.tipo === "viagem")
+
+        const totalPoupanca = poupanca.reduce((sum: number, c: Conta) => sum + c.valor, 0)
+        const totalViagem = viagem.reduce((sum: number, c: Conta) => sum + c.valor, 0)
+
+        setDataPoupanca({ totalDepositado: totalPoupanca })
+        setDataViagem({ totalDepositado: totalViagem })
       }
     } catch (error) {
-      console.error("[v0] Erro ao buscar caixinha:", error)
-      const cachedCaixinha = await offlineStorage.getCaixinha()
-      setDataCaixinha(cachedCaixinha)
+      console.error("[v0] Erro ao buscar poupança e viagem:", error)
     }
   }
 
@@ -170,6 +206,7 @@ export default function ContasPage() {
       fetchContas()
       fetchSaldo()
       fetchTransacoes()
+      fetchPoupancaEViagem()
       setDialogOpen(false)
     } catch (error) {
       toast({
@@ -344,7 +381,7 @@ export default function ContasPage() {
   const diaAtual = hoje.getDate()
 
   const contasProximasVencimento = contas.filter((conta) => {
-    if (conta.tipo === "diaria") return false
+    if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return false
     const isPago = conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
     if (isPago) return false
 
@@ -353,7 +390,7 @@ export default function ContasPage() {
   })
 
   const contasAtrasadas = contas.filter((conta) => {
-    if (conta.tipo === "diaria") return false
+    if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return false
     const isPago = conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
     if (isPago) return false
 
@@ -390,7 +427,7 @@ export default function ContasPage() {
       const mesHoje = hoje.getMonth() + 1
       const anoHoje = hoje.getFullYear()
 
-      if (conta.tipo === "diaria" || conta.tipo === "caixinha") {
+      if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") {
         if (!conta.dataGasto && !conta.data_gasto) return false
         const dataGasto = new Date((conta.dataGasto || conta.data_gasto!) + "T00:00:00")
         return (
@@ -419,7 +456,7 @@ export default function ContasPage() {
 
     if (conta.tipo === "fixa") return true
 
-    if (conta.tipo === "diaria") {
+    if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") {
       if (!conta.dataGasto && !conta.data_gasto) return false
       const dataGasto = new Date((conta.dataGasto || conta.data_gasto!) + "T00:00:00")
       return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
@@ -453,13 +490,13 @@ export default function ContasPage() {
 
   const totalMes = contasMesAtual.reduce((sum, conta) => sum + conta.valor, 0)
   const pagas = contasMesAtual.filter((conta) => {
-    if (conta.tipo === "diaria") return true
+    if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return true
     return conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
   }).length
 
   const totalPago = contasMesAtual
     .filter((conta) => {
-      if (conta.tipo === "diaria") return true
+      if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return true
       return conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
     })
     .reduce((sum, conta) => sum + conta.valor, 0)
@@ -479,17 +516,21 @@ export default function ContasPage() {
     "Dezembro",
   ]
 
-  const metaCaixinha = useMemo(() => {
-    console.log("[v0] Debug meta caixinha:", {
-      dataCaixinha,
-      config: dataCaixinha?.config,
-      meta_valor: dataCaixinha?.config?.meta_valor,
-    })
-    if (!dataCaixinha?.config?.meta_valor) return 0
-    return Number(dataCaixinha.config.meta_valor)
-  }, [dataCaixinha])
+  const totalPoupanca = dataPoupanca?.totalDepositado || 0
+  const totalViagem = dataViagem?.totalDepositado || 0
 
-  const totalDepositado = dataCaixinha?.totalDepositado || 0
+  // Removendo metaCaixinha e totalDepositado pois foram substituídos por totalPoupanca e totalViagem
+  // const metaCaixinha = useMemo(() => {
+  //   console.log("[v0] Debug meta caixinha:", {
+  //     dataCaixinha,
+  //     config: dataCaixinha?.config,
+  //     meta_valor: dataCaixinha?.config?.meta_valor,
+  //   })
+  //   if (!dataCaixinha?.config?.meta_valor) return 0
+  //   return Number(dataCaixinha.config.meta_valor)
+  // }, [dataCaixinha])
+
+  // const totalDepositado = dataCaixinha?.totalDepositado || 0
 
   if (loading) {
     return (
@@ -513,12 +554,12 @@ export default function ContasPage() {
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">Contas a Pagar</h1>
               <p className="text-muted-foreground mt-1">Gerencie suas contas fixas e parceladas</p>
-              <div className="flex gap-2 mt-4">
+              <div className="flex gap-2 mt-4 flex-wrap">
                 <Button onClick={() => setDialogOpen(true)} size="lg">
                   <Plus className="mr-2 h-4 w-4" />
                   Nova Conta
                 </Button>
-                <Button
+                {/* <Button
                   asChild
                   size="lg"
                   className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white"
@@ -526,6 +567,12 @@ export default function ContasPage() {
                   <Link href="/caixinha">
                     <PiggyBank className="mr-2 h-4 w-4" />
                     Caixinha
+                  </Link>
+                </Button> */}
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/relatorios">
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Relatórios
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
@@ -542,7 +589,10 @@ export default function ContasPage() {
                 </Button>
               </div>
             </div>
-            <LogoutButton />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <LogoutButton />
+            </div>
           </div>
 
           {contasProximasVencimento.length > 0 && (
@@ -559,19 +609,19 @@ export default function ContasPage() {
           )}
 
           {contasAtrasadas.length > 0 && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="dark:bg-red-950 dark:border-red-800">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Alerta: Contas Atrasadas</AlertTitle>
-              <AlertDescription>
+              <AlertTitle className="dark:text-red-100">Alerta: Contas Atrasadas</AlertTitle>
+              <AlertDescription className="dark:text-red-200">
                 Você tem {contasAtrasadas.length} conta(s) atrasada(s): {contasAtrasadas.map((c) => c.nome).join(", ")}
               </AlertDescription>
             </Alert>
           )}
 
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             <Card className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950 dark:via-yellow-950 dark:to-orange-950 border-amber-300 dark:border-amber-700 shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-amber-900 dark:text-amber-100">Caixinha</CardTitle>
+                <CardTitle className="text-sm font-medium text-amber-900 dark:text-amber-100">Poupança</CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
@@ -579,8 +629,8 @@ export default function ContasPage() {
                     className="h-8 w-8 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
                     onClick={() =>
                       abrirModalWhatsApp(
-                        "🐷 Caixinha - Poupança",
-                        `📊 *Resumo da Caixinha*\n\n💰 *Valor Total Economizado:* ${formatarMoeda(totalDepositado)}\n🎯 *Meta:* ${formatarMoeda(metaCaixinha)}\n📈 *Progresso:* ${((totalDepositado / metaCaixinha) * 100).toFixed(1)}%\n${totalDepositado >= metaCaixinha ? "✅ *Meta atingida!*" : `💪 *Faltam:* ${formatarMoeda(metaCaixinha - totalDepositado)}`}\n\nContinue economizando! 🚀`,
+                        "💰 Poupança",
+                        `📊 *Saldo em Poupança*\n\n💰 *Total Poupado:* ${formatarMoeda(totalPoupanca)}\n\nContinue economizando! 🚀`,
                       )
                     }
                   >
@@ -591,17 +641,33 @@ export default function ContasPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                  {formatarMoeda(totalDepositado)}
+                  {formatarMoeda(totalPoupanca)}
                 </div>
-                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">Meta: {formatarMoeda(metaCaixinha)}</p>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="mt-2 text-xs text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200 p-0 h-auto"
-                >
-                  <Link href="/caixinha">Ver detalhes →</Link>
-                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 dark:from-blue-950 dark:via-cyan-950 dark:to-sky-950 border-blue-300 dark:border-blue-700 shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">Viagem</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                    onClick={() =>
+                      abrirModalWhatsApp(
+                        "✈️ Viagem",
+                        `📊 *Fundo para Viagens*\n\n✈️ *Total Economizado:* ${formatarMoeda(totalViagem)}\n\nSua próxima aventura está chegando! 🌍`,
+                      )
+                    }
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                  <Plane className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{formatarMoeda(totalViagem)}</div>
               </CardContent>
             </Card>
 
@@ -617,8 +683,8 @@ export default function ContasPage() {
                     className="h-8 w-8 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                     onClick={() =>
                       abrirModalWhatsApp(
-                        "💰 Crédito Disponível",
-                        `💳 *Crédito Disponível*\n\n💵 *Saldo Atual:* ${formatarMoeda(saldo)}\n\n✅ Disponível para gastos e pagamentos.\n\n${saldo > 0 ? "🟢 Você tem saldo disponível!" : "🔴 Atenção: Saldo zerado ou negativo!"}`,
+                        "💳 Crédito Disponível",
+                        `💰 *Saldo Atual*\n\n💵 *Valor Disponível:* ${formatarMoeda(saldo)}\n📊 *Status:* ${saldo > 0 ? "✅ Positivo" : saldo < 0 ? "⚠️ Negativo" : "⚡ Zerado"}\n${saldo < 0 ? `\n🔴 *Atenção:* Você está com saldo negativo de ${formatarMoeda(Math.abs(saldo))}` : ""}\n\n_Gerencie bem seus recursos!_ 💪`,
                       )
                     }
                   >
@@ -631,70 +697,75 @@ export default function ContasPage() {
                 <div className="text-2xl font-bold text-green-900 dark:text-green-100">{formatarMoeda(saldo)}</div>
                 <Button
                   onClick={() => setCreditoDialogOpen(true)}
-                  variant="ghost"
                   size="sm"
-                  className="mt-2 text-xs text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200 p-0 h-auto"
+                  variant="ghost"
+                  className="mt-2 text-xs text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
                 >
-                  <Plus className="h-3 w-3 mr-1" />
+                  <Plus className="mr-1 h-3 w-3" />
                   Adicionar crédito
                 </Button>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card dark:bg-card border-border dark:border-border">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Pago</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground dark:text-foreground">Total Pago</CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    onClick={() =>
+                    className="h-8 w-8 text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-foreground"
+                    onClick={() => {
+                      const percentualPago = totalMes > 0 ? ((totalPago / totalMes) * 100).toFixed(1) : "0"
                       abrirModalWhatsApp(
                         "✅ Total Pago",
-                        `✅ *Contas Pagas - ${meses[mesSelecionado - 1]}/${anoSelecionado}*\n\n💰 *Valor Total Pago:* ${formatarMoeda(totalPago)}\n📋 *Contas:* ${pagas} de ${contasMesAtual.length} pagas\n📊 *Percentual:* ${contasMesAtual.length > 0 ? ((pagas / contasMesAtual.length) * 100).toFixed(1) : 0}%\n\n${pagas === contasMesAtual.length ? "🎉 Parabéns! Todas as contas foram pagas!" : `⏳ Ainda restam ${contasMesAtual.length - pagas} conta(s) pendente(s).`}`,
+                        `📊 *Resumo de Pagamentos - ${meses[mesSelecionado - 1]}/${anoSelecionado}*\n\n✅ *Total Pago:* ${formatarMoeda(totalPago)}\n📝 *Contas Pagas:* ${pagas} de ${contasMesAtual.length}\n📈 *Percentual:* ${percentualPago}%\n💰 *Total do Mês:* ${formatarMoeda(totalMes)}\n\n${pagas === contasMesAtual.length ? "🎉 *Parabéns! Todas as contas foram pagas!*" : `⏳ *Faltam ${contasMesAtual.length - pagas} conta(s) para quitar*`}`,
                       )
-                    }
+                    }}
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Calendar className="h-4 w-4 text-muted-foreground dark:text-muted-foreground" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatarMoeda(totalPago)}</div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <div className="text-2xl font-bold text-foreground dark:text-foreground">
+                  {formatarMoeda(totalPago)}
+                </div>
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground mt-1">
                   {pagas} de {contasMesAtual.length} contas pagas
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card dark:bg-card border-border dark:border-border">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Pendente</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground dark:text-foreground">
+                  Total Pendente
+                </CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    className="h-8 w-8 text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-foreground"
                     onClick={() =>
                       abrirModalWhatsApp(
                         "⏳ Total Pendente",
-                        `⚠️ *Contas Pendentes - ${meses[mesSelecionado - 1]}/${anoSelecionado}*\n\n💳 *Valor Total Pendente:* ${formatarMoeda(totalMes - totalPago)}\n📋 *Contas:* ${contasMesAtual.length - pagas} de ${contasMesAtual.length} pendentes\n📊 *Percentual:* ${contasMesAtual.length > 0 ? (((contasMesAtual.length - pagas) / contasMesAtual.length) * 100).toFixed(1) : 0}%\n\n${contasAtrasadas.length > 0 ? `🔴 *Atenção:* ${contasAtrasadas.length} conta(s) atrasada(s)!` : "🟡 Lembre-se de pagar em dia!"}`,
+                        `📊 *Contas Pendentes - ${meses[mesSelecionado - 1]}/${anoSelecionado}*\n\n⏳ *Total Pendente:* ${formatarMoeda(totalMes - totalPago)}\n📝 *Contas Pendentes:* ${contasMesAtual.length - pagas} de ${contasMesAtual.length}\n${contasAtrasadas.length > 0 ? `\n🔴 *Atenção:* ${contasAtrasadas.length} conta(s) atrasada(s)` : ""}\n\nFique em dia com seus compromissos! 💪`,
                       )
                     }
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <TrendingUp className="h-4 w-4 text-muted-foreground dark:text-muted-foreground" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                <div className="text-2xl font-bold text-foreground dark:text-foreground">
                   {formatarMoeda(totalMes - totalPago)}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {contasMesAtual.length - pagas} de {contasMesAtual.length} pendentes
+                <p className="text-xs text-muted-foreground dark:text-muted-foreground mt-1">
+                  {contasMesAtual.length - pagas} pendentes
                 </p>
               </CardContent>
             </Card>

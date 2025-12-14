@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       contaData.data_inicio = body.dataInicio
     }
 
-    if (body.tipo === "diaria" || body.tipo === "caixinha") {
+    if (body.tipo === "diaria" || body.tipo === "poupanca" || body.tipo === "viagem") {
       contaData.data_gasto = body.dataGasto
       if (body.anexoDiario) {
         contaData.anexo_diario = body.anexoDiario
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
 
     if (contaError) throw contaError
 
-    if (body.tipo === "diaria" || body.tipo === "caixinha") {
+    if (body.tipo === "diaria" || body.tipo === "poupanca" || body.tipo === "viagem") {
       const dataGasto = new Date(body.dataGasto)
       const mes = dataGasto.getMonth()
       const ano = dataGasto.getFullYear()
@@ -105,9 +105,9 @@ export async function POST(request: Request) {
       if (saldoError) throw saldoError
 
       const novoSaldo =
-        body.tipo === "caixinha"
-          ? Number(saldoData.valor) + Number(body.valor)
-          : Number(saldoData.valor) - Number(body.valor)
+        body.tipo === "poupanca" || body.tipo === "viagem"
+          ? Number(saldoData.valor) - Number(body.valor) // Deduz do crédito disponível
+          : Number(saldoData.valor) - Number(body.valor) // Gasto diário
 
       // Atualizar saldo
       const { error: updateSaldoError } = await supabase
@@ -117,11 +117,15 @@ export async function POST(request: Request) {
 
       if (updateSaldoError) throw updateSaldoError
 
-      // Registrar transação de débito
       const { error: transacaoError } = await supabase.from("transacoes").insert({
-        tipo: body.tipo === "caixinha" ? "credito" : "debito",
+        tipo: "debito", // Todas deduzem do crédito disponível
         valor: body.valor,
-        descricao: body.tipo === "caixinha" ? `Depósito na caixinha: ${body.nome}` : `Gasto diário: ${body.nome}`,
+        descricao:
+          body.tipo === "poupanca"
+            ? `Depósito na poupança: ${body.nome}`
+            : body.tipo === "viagem"
+              ? `Depósito para viagem: ${body.nome}`
+              : `Gasto diário: ${body.nome}`,
         referencia_id: conta.id,
         data_transacao: body.dataGasto,
       })

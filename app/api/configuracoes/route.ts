@@ -28,6 +28,12 @@ export async function POST(request: Request) {
     const notificacoesAtivadas = body.notificacoes_ativadas ?? body.notificacoesAtivadas
     const notificarVencimento = body.notificar_vencimento ?? body.notificarVencimento
     const notificarAtraso = body.notificar_atraso ?? body.notificarAtraso
+    const whatsappAtivado = body.whatsapp_ativado ?? body.whatsappAtivado ?? false
+    const whatsappNumeros = body.whatsapp_numeros || body.whatsappNumeros || []
+    const notificarVencimentoWhatsapp = body.notificar_vencimento_whatsapp ?? body.notificarVencimentoWhatsapp ?? true
+    const notificarAtrasoWhatsapp = body.notificar_atraso_whatsapp ?? body.notificarAtrasoWhatsapp ?? true
+    const whatsappMensagemTemplate =
+      body.whatsapp_mensagem_template || body.whatsappMensagemTemplate || "🔔 *Alerta de Contas - Financeiro Gonçalves*"
 
     // Validar que email_destino não está vazio
     if (!emailDestino) {
@@ -47,6 +53,11 @@ export async function POST(request: Request) {
           notificacoes_ativadas: notificacoesAtivadas,
           notificar_vencimento: notificarVencimento,
           notificar_atraso: notificarAtraso,
+          whatsapp_ativado: whatsappAtivado,
+          whatsapp_numeros: whatsappNumeros,
+          notificar_vencimento_whatsapp: notificarVencimentoWhatsapp,
+          notificar_atraso_whatsapp: notificarAtrasoWhatsapp,
+          whatsapp_mensagem_template: whatsappMensagemTemplate,
           updated_at: new Date().toISOString(),
         })
         .eq("id", existing[0].id)
@@ -60,6 +71,11 @@ export async function POST(request: Request) {
           notificacoes_ativadas: notificacoesAtivadas,
           notificar_vencimento: notificarVencimento,
           notificar_atraso: notificarAtraso,
+          whatsapp_ativado: whatsappAtivado,
+          whatsapp_numeros: whatsappNumeros,
+          notificar_vencimento_whatsapp: notificarVencimentoWhatsapp,
+          notificar_atraso_whatsapp: notificarAtrasoWhatsapp,
+          whatsapp_mensagem_template: whatsappMensagemTemplate,
         })
         .select()
     }
