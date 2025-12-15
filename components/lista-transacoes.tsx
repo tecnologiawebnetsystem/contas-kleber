@@ -664,6 +664,14 @@ export function ListaTransacoes({
                         {conta.tipo === "caixinha" && <Badge className="text-xs bg-amber-600">Caixinha</Badge>}
                       </div>
 
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className={`text-lg font-bold ${pago || conta.tipo === "diaria" ? "text-muted-foreground" : "text-red-600 dark:text-red-400"}`}
+                        >
+                          {formatarMoeda(conta.valor)}
+                        </span>
+                      </div>
+
                       <div className="text-sm text-muted-foreground">
                         {conta.tipo === "diaria" && conta.dataGasto ? (
                           <span>
