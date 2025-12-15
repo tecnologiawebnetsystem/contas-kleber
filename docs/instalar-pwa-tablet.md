@@ -79,4 +79,4 @@ Após instalar, você pode:
 4. Compartilhar a URL para outros instalarem
 \`\`\`
 
-```typescript file="" isHidden
+\`\`\`typescript file="" isHidden
