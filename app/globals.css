@@ -39,53 +39,63 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* Tema Rosa/Violeta/Morango mais intenso para Pamela */
+/* Tema Rosa intensificado para Pamela com cores mais vibrantes */
 .theme-rosa {
-  /* Rosa morango como fundo */
-  --background: oklch(0.98 0.03 350);
-  --foreground: oklch(0.2 0.02 340);
+  /* Rosa morango vibrante como fundo */
+  --background: oklch(0.98 0.04 345);
+  --foreground: oklch(0.25 0.03 345);
 
-  /* Cards em tom rosa claro */
-  --card: oklch(1 0.01 350);
-  --card-foreground: oklch(0.2 0.02 340);
+  /* Cards em tom rosa claro vibrante */
+  --card: oklch(0.99 0.02 345);
+  --card-foreground: oklch(0.25 0.03 345);
 
   /* Popover rosa */
-  --popover: oklch(1 0.01 350);
-  --popover-foreground: oklch(0.2 0.02 340);
+  --popover: oklch(0.99 0.02 345);
+  --popover-foreground: oklch(0.25 0.03 345);
 
-  /* Rosa intenso como primário */
-  --primary: oklch(0.55 0.25 340);
-  --primary-foreground: oklch(0.99 0.01 350);
+  /* Rosa intenso e vibrante como primário */
+  --primary: oklch(0.6 0.28 340);
+  --primary-foreground: oklch(0.99 0.01 345);
 
   /* Rosa claro secundário */
-  --secondary: oklch(0.95 0.03 350);
-  --secondary-foreground: oklch(0.25 0.02 340);
+  --secondary: oklch(0.95 0.04 345);
+  --secondary-foreground: oklch(0.3 0.03 340);
 
   /* Rosa suave para muted */
-  --muted: oklch(0.96 0.02 350);
-  --muted-foreground: oklch(0.5 0.02 340);
+  --muted: oklch(0.95 0.03 345);
+  --muted-foreground: oklch(0.5 0.03 340);
 
-  /* Rosa/violeta para accent */
-  --accent: oklch(0.9 0.05 320);
-  --accent-foreground: oklch(0.2 0.02 340);
+  /* Rosa/violeta vibrante para accent */
+  --accent: oklch(0.88 0.08 330);
+  --accent-foreground: oklch(0.25 0.03 340);
 
-  /* Vermelho morango para destrutivo */
-  --destructive: oklch(0.55 0.25 10);
-  --destructive-foreground: oklch(0.99 0.01 350);
+  /* Vermelho morango vibrante para destrutivo */
+  --destructive: oklch(0.58 0.28 15);
+  --destructive-foreground: oklch(0.99 0.01 345);
 
   /* Bordas rosa suave */
-  --border: oklch(0.92 0.03 350);
-  --input: oklch(0.92 0.03 350);
+  --border: oklch(0.9 0.04 345);
+  --input: oklch(0.9 0.04 345);
 
-  /* Ring rosa */
-  --ring: oklch(0.55 0.25 340);
+  /* Ring rosa vibrante */
+  --ring: oklch(0.6 0.28 340);
 
-  /* Charts em tons de rosa/violeta/morango */
-  --chart-1: oklch(0.65 0.25 340);
-  --chart-2: oklch(0.6 0.22 320);
-  --chart-3: oklch(0.55 0.2 300);
-  --chart-4: oklch(0.7 0.23 350);
-  --chart-5: oklch(0.6 0.18 10);
+  /* Charts em tons de rosa/violeta/morango vibrantes */
+  --chart-1: oklch(0.65 0.28 340);
+  --chart-2: oklch(0.6 0.25 325);
+  --chart-3: oklch(0.55 0.22 310);
+  --chart-4: oklch(0.7 0.26 350);
+  --chart-5: oklch(0.6 0.2 15);
+
+  /* Sidebar com tema rosa vibrante */
+  --sidebar: oklch(0.99 0.02 345);
+  --sidebar-foreground: oklch(0.25 0.03 345);
+  --sidebar-primary: oklch(0.6 0.28 340);
+  --sidebar-primary-foreground: oklch(0.99 0.01 345);
+  --sidebar-accent: oklch(0.96 0.03 345);
+  --sidebar-accent-foreground: oklch(0.3 0.03 340);
+  --sidebar-border: oklch(0.92 0.04 345);
+  --sidebar-ring: oklch(0.6 0.28 340);
 }
 
 .dark {
@@ -123,53 +133,63 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
-/* Tema Rosa Dark para Pamela no modo escuro */
+/* Tema Rosa Dark intensificado para Pamela no modo escuro */
 .theme-rosa.dark {
-  /* Fundo escuro com tom rosa */
-  --background: oklch(0.15 0.03 340);
-  --foreground: oklch(0.98 0.01 350);
+  /* Fundo escuro com tom rosa vibrante */
+  --background: oklch(0.18 0.04 340);
+  --foreground: oklch(0.98 0.02 345);
 
-  /* Cards escuros com tom rosa */
-  --card: oklch(0.2 0.03 340);
-  --card-foreground: oklch(0.98 0.01 350);
+  /* Cards escuros com tom rosa vibrante */
+  --card: oklch(0.23 0.05 340);
+  --card-foreground: oklch(0.98 0.02 345);
 
-  /* Popover escuro rosa */
-  --popover: oklch(0.2 0.03 340);
-  --popover-foreground: oklch(0.98 0.01 350);
+  /* Popover escuro rosa vibrante */
+  --popover: oklch(0.23 0.05 340);
+  --popover-foreground: oklch(0.98 0.02 345);
 
-  /* Rosa brilhante como primário no dark */
-  --primary: oklch(0.7 0.28 340);
-  --primary-foreground: oklch(0.15 0.02 340);
+  /* Rosa brilhante e vibrante como primário no dark */
+  --primary: oklch(0.72 0.3 340);
+  --primary-foreground: oklch(0.18 0.03 340);
 
-  /* Cinza-rosa secundário */
-  --secondary: oklch(0.3 0.03 340);
-  --secondary-foreground: oklch(0.98 0.01 350);
+  /* Cinza-rosa secundário vibrante */
+  --secondary: oklch(0.32 0.05 340);
+  --secondary-foreground: oklch(0.98 0.02 345);
 
-  /* Muted escuro rosa */
-  --muted: oklch(0.3 0.03 340);
-  --muted-foreground: oklch(0.65 0.02 340);
+  /* Muted escuro rosa vibrante */
+  --muted: oklch(0.32 0.05 340);
+  --muted-foreground: oklch(0.68 0.03 340);
 
-  /* Accent escuro violeta */
-  --accent: oklch(0.3 0.05 320);
-  --accent-foreground: oklch(0.98 0.01 350);
+  /* Accent escuro violeta vibrante */
+  --accent: oklch(0.35 0.08 325);
+  --accent-foreground: oklch(0.98 0.02 345);
 
-  /* Destrutivo escuro */
-  --destructive: oklch(0.4 0.18 10);
-  --destructive-foreground: oklch(0.98 0.01 350);
+  /* Destrutivo escuro vibrante */
+  --destructive: oklch(0.45 0.22 15);
+  --destructive-foreground: oklch(0.98 0.02 345);
 
-  /* Bordas escuras rosa */
-  --border: oklch(0.3 0.03 340);
-  --input: oklch(0.3 0.03 340);
+  /* Bordas escuras rosa vibrantes */
+  --border: oklch(0.32 0.05 340);
+  --input: oklch(0.32 0.05 340);
 
-  /* Ring rosa brilhante */
-  --ring: oklch(0.5 0.25 340);
+  /* Ring rosa brilhante e vibrante */
+  --ring: oklch(0.55 0.28 340);
 
-  /* Charts no dark */
-  --chart-1: oklch(0.7 0.28 340);
-  --chart-2: oklch(0.65 0.24 320);
-  --chart-3: oklch(0.6 0.22 300);
-  --chart-4: oklch(0.75 0.26 350);
-  --chart-5: oklch(0.65 0.2 10);
+  /* Charts no dark com cores vibrantes */
+  --chart-1: oklch(0.72 0.3 340);
+  --chart-2: oklch(0.67 0.27 325);
+  --chart-3: oklch(0.62 0.24 310);
+  --chart-4: oklch(0.77 0.28 350);
+  --chart-5: oklch(0.67 0.22 15);
+
+  /* Sidebar dark com tema rosa vibrante */
+  --sidebar: oklch(0.23 0.05 340);
+  --sidebar-foreground: oklch(0.98 0.02 345);
+  --sidebar-primary: oklch(0.72 0.3 340);
+  --sidebar-primary-foreground: oklch(0.98 0.02 345);
+  --sidebar-accent: oklch(0.3 0.06 340);
+  --sidebar-accent-foreground: oklch(0.98 0.02 345);
+  --sidebar-border: oklch(0.3 0.05 340);
+  --sidebar-ring: oklch(0.55 0.28 340);
 }
 
 @theme inline {

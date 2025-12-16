@@ -75,17 +75,23 @@ export default function RootLayout({
                   const theme = localStorage.getItem('theme') || 
                     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
                   
+                  // Aplicar tema de usuário (rosa para Pamela, verde para Kleber)
                   if (userData) {
                     const user = JSON.parse(userData);
                     if (user.tema === 'rosa') {
                       document.documentElement.classList.add('theme-rosa');
+                    } else if (user.tema === 'verde') {
+                      // Tema verde já é o padrão, não precisa adicionar classe
                     }
                   }
                   
+                  // Aplicar modo dark/light
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                   }
-                } catch (e) {}
+                } catch (e) {
+                  console.error('[Theme] Erro ao aplicar tema:', e);
+                }
               })();
             `,
           }}

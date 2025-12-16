@@ -35,6 +35,12 @@ export default function LoginPage() {
       localStorage.setItem("auth", "true")
       localStorage.setItem("userData", JSON.stringify(usuario))
 
+      if (usuario.tema === "rosa") {
+        document.documentElement.classList.add("theme-rosa")
+      } else {
+        document.documentElement.classList.remove("theme-rosa")
+      }
+
       toast({
         title: `Seja bem-vind${usuario.tema === "rosa" ? "a" : "o"}!`,
         description: usuario.nome,

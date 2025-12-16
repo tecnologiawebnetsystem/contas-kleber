@@ -32,6 +32,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const auth = localStorage.getItem("auth")
     const userDataString = localStorage.getItem("userData")
 
+    if (userDataString) {
+      try {
+        const userData = JSON.parse(userDataString)
+        if (userData.tema === "rosa") {
+          document.documentElement.classList.add("theme-rosa")
+        } else {
+          document.documentElement.classList.remove("theme-rosa")
+        }
+      } catch (e) {
+        console.error("[v0] Erro ao aplicar tema:", e)
+      }
+    }
+
     if (pathname === "/login") {
       if (auth === "true" && userDataString) {
         router.push("/")
