@@ -15,6 +15,7 @@ import type { Conta } from "@/types/conta"
 import { WhatsAppButton } from "@/components/whatsapp-button"
 import { formatarMoeda } from "@/lib/utils"
 import { getDataAtualBrasil } from "@/lib/date-utils"
+import { format } from "date-fns"
 
 type Filtro = "todos" | "pagos" | "pendentes" | "atrasados" | "proximos"
 
@@ -30,6 +31,17 @@ export default function ConsultaPage() {
   const [diaEspecifico, setDiaEspecifico] = useState("")
   const [loading, setLoading] = useState(true)
   const [pesquisaRealizada, setPesquisaRealizada] = useState(false)
+  const [filtros, setFiltros] = useState<{
+    periodo: "mes" | "dia" | "todos"
+    mes?: string
+    ano?: string
+    dia?: string
+  }>({
+    periodo: "mes",
+    mes: "",
+    ano: "",
+    dia: "",
+  })
 
   const fetchContas = async () => {
     try {
@@ -55,6 +67,11 @@ export default function ConsultaPage() {
     const dia = String(hoje.getDate()).padStart(2, "0")
     setMesAno(`${ano}-${mes}`)
     setDiaEspecifico(`${ano}-${mes}-${dia}`)
+    setFiltros({
+      periodo: "mes",
+      mes: `${mes}`,
+      ano: `${ano}`,
+    })
   }, [])
 
   useEffect(() => {
@@ -77,10 +94,39 @@ export default function ConsultaPage() {
         params.append("dia", diaEspecifico)
       }
 
+      // Adicionar filtro de tipo
+      if (tipoSelecionado !== "todos") {
+        params.append("tipo", tipoSelecionado)
+      }
+
+      // Adicionar filtro de categoria
+      if (categoriaSelecionada !== "todos") {
+        params.append("categoria", categoriaSelecionada)
+      }
+
+      // Adicionar filtro de conta específica
+      if (contaSelecionada !== "todas") {
+        params.append("conta_id", contaSelecionada)
+      }
+
+      // Adicionar filtro de status
+      if (filtro !== "todos") {
+        params.append("status", filtro)
+      }
+
       const response = await fetch(`/api/contas?${params.toString()}`)
       if (!response.ok) throw new Error("Erro ao buscar contas")
       const data = await response.json()
-      setContasFiltradas(data)
+
+      let contasFiltradas = data
+
+      if (filtro === "atrasados") {
+        contasFiltradas = data.filter((c: Conta) => c.estaAtrasado && !c.isPago)
+      } else if (filtro === "proximos") {
+        contasFiltradas = data.filter((c: Conta) => c.estaProximo && !c.isPago)
+      }
+
+      setContasFiltradas(contasFiltradas)
     } catch (error) {
       console.error("Erro ao buscar contas:", error)
     } finally {
@@ -91,7 +137,7 @@ export default function ConsultaPage() {
 
   const contasFiltradasParaDropdown = todasContas.filter((conta) => {
     if (tipoSelecionado !== "todos" && conta.tipo !== tipoSelecionado) return false
-    if (categoriaSelecionada !== "todas" && conta.categoria !== categoriaSelecionada) return false
+    if (categoriaSelecionada !== "todos" && conta.categoria !== categoriaSelecionada) return false
     return true
   })
 
@@ -193,7 +239,11 @@ export default function ConsultaPage() {
                     <Input
                       type="month"
                       value={mesAno}
-                      onChange={(e) => setMesAno(e.target.value)}
+                      onChange={(e) => {
+                        setMesAno(e.target.value)
+                        const [ano, mes] = e.target.value.split("-")
+                        setFiltros((prev) => ({ ...prev, periodo: "mes", mes, ano }))
+                      }}
                       disabled={filtroPeriodo !== "periodo"}
                       className="disabled:opacity-50 disabled:cursor-not-allowed"
                     />
@@ -204,7 +254,10 @@ export default function ConsultaPage() {
                     <Input
                       type="date"
                       value={diaEspecifico}
-                      onChange={(e) => setDiaEspecifico(e.target.value)}
+                      onChange={(e) => {
+                        setDiaEspecifico(e.target.value)
+                        setFiltros((prev) => ({ ...prev, periodo: "dia", dia: e.target.value }))
+                      }}
                       disabled={filtroPeriodo !== "dia"}
                       className="disabled:opacity-50 disabled:cursor-not-allowed"
                     />
@@ -377,7 +430,7 @@ export default function ConsultaPage() {
                           </TableRow>
                         ) : (
                           contasFiltradas.map((conta) => (
-                            <TableRow key={`${conta.id}-${conta.parcelaAtual || "unica"}`}>
+                            <TableRow key={`${conta.id}-${conta.parcelaAtual || "unico"}`}>
                               <TableCell className="font-medium">{conta.nome}</TableCell>
                               <TableCell>
                                 <Badge variant="outline">
@@ -394,49 +447,50 @@ export default function ConsultaPage() {
                                 {conta.tipo === "parcelada" ? `${conta.parcelaAtual}/${conta.parcelas}` : "-"}
                               </TableCell>
                               <TableCell>
-                                {conta.tipo === "diaria" || conta.tipo === "caixinha"
-                                  ? new Date(conta.dataGasto! + "T00:00:00").toLocaleDateString("pt-BR")
-                                  : conta.tipo === "parcelada" && conta.dataVencimento
-                                    ? new Date(conta.dataVencimento + "T00:00:00").toLocaleDateString("pt-BR")
-                                    : `Dia ${conta.vencimento}`}
+                                {conta.tipo === "parcelada"
+                                  ? conta.dataVencimentoCompleta
+                                  : conta.tipo === "fixa"
+                                    ? format(
+                                        new Date(
+                                          Number.parseInt(filtros.ano || "0"),
+                                          Number.parseInt(filtros.mes || "0") - 1,
+                                          conta.vencimento,
+                                        ),
+                                        "dd/MM/yyyy",
+                                      )
+                                    : conta.dataGasto
+                                      ? format(new Date(conta.dataGasto + "T00:00:00"), "dd/MM/yyyy")
+                                      : "-"}
                               </TableCell>
-                              <TableCell className="font-semibold">{formatarMoeda(conta.valor)}</TableCell>
+                              <TableCell>R$ {conta.valor.toFixed(2)}</TableCell>
                               <TableCell>
                                 <Badge
                                   variant={
-                                    conta.isPago
-                                      ? "default"
-                                      : conta.estaAtrasado
-                                        ? "destructive"
-                                        : conta.estaProximo
-                                          ? "secondary"
-                                          : "outline"
+                                    conta.tipo === "parcelada"
+                                      ? conta.pago
+                                        ? "default"
+                                        : "secondary"
+                                      : conta.pagamentos && conta.pagamentos.length > 0
+                                        ? "default"
+                                        : "secondary"
                                   }
                                 >
-                                  {conta.isPago
-                                    ? "Pago"
-                                    : conta.estaAtrasado
-                                      ? "Atrasado"
-                                      : conta.estaProximo
-                                        ? "Vence em breve"
-                                        : "Pendente"}
+                                  {conta.tipo === "parcelada"
+                                    ? conta.pago
+                                      ? "Pago"
+                                      : "Pendente"
+                                    : conta.pagamentos && conta.pagamentos.length > 0
+                                      ? "Pago"
+                                      : "Pendente"}
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {conta.isPago && conta.tipo !== "diaria" && conta.tipo !== "caixinha"
-                                  ? conta.pagamentos?.find((p) => {
-                                      const dataVenc = new Date(conta.dataVencimento! + "T00:00:00")
-                                      return p.ano === dataVenc.getFullYear() && p.mes === dataVenc.getMonth() + 1
-                                    })?.dataPagamento
-                                    ? new Date(
-                                        conta.pagamentos.find((p) => {
-                                          const dataVenc = new Date(conta.dataVencimento! + "T00:00:00")
-                                          return p.ano === dataVenc.getFullYear() && p.mes === dataVenc.getMonth() + 1
-                                        })!.dataPagamento,
-                                      ).toLocaleDateString("pt-BR")
+                                {conta.tipo === "parcelada"
+                                  ? conta.dataPagamento
+                                    ? format(new Date(conta.dataPagamento + "T00:00:00"), "dd/MM/yyyy")
                                     : "-"
-                                  : conta.tipo === "diaria" || conta.tipo === "caixinha"
-                                    ? new Date(conta.dataGasto! + "T00:00:00").toLocaleDateString("pt-BR")
+                                  : conta.pagamentos && conta.pagamentos.length > 0
+                                    ? format(new Date(conta.pagamentos[0].dataPagamento + "T00:00:00"), "dd/MM/yyyy")
                                     : "-"}
                               </TableCell>
                               <TableCell className="text-right">

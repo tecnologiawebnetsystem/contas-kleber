@@ -7,6 +7,8 @@ interface EmailNotificacaoProps {
 
 export function EmailNotificacao({ contas, tipo }: EmailNotificacaoProps) {
   const hoje = new Date()
+  const mesAtual = hoje.getMonth()
+  const anoAtual = hoje.getFullYear()
   const titulo = tipo === "vencimento" ? "⚠ Contas Próximas do Vencimento" : "🚨 Contas Atrasadas"
   const corTitulo = tipo === "vencimento" ? "#f59e0b" : "#ef4444"
   const corFundo = tipo === "vencimento" ? "#fef3c7" : "#fee2e2"
@@ -146,6 +148,8 @@ export function EmailNotificacao({ contas, tipo }: EmailNotificacaoProps) {
               <tbody>
                 {contas.map((conta, index) => {
                   const diasParaVencimento = conta.vencimento - hoje.getDate()
+                  const dataVencimento = new Date(anoAtual, mesAtual, conta.vencimento).toLocaleDateString("pt-BR")
+
                   return (
                     <tr key={conta.id || index}>
                       <td
@@ -182,9 +186,7 @@ export function EmailNotificacao({ contas, tipo }: EmailNotificacaoProps) {
                         R$ {conta.valor.toFixed(2).replace(".", ",")}
                       </td>
                       <td style={{ padding: "16px", borderBottom: "1px solid #f1f5f9", textAlign: "right" }}>
-                        <div style={{ color: "#1e293b", fontSize: "15px", fontWeight: "500" }}>
-                          Dia {conta.vencimento}
-                        </div>
+                        <div style={{ color: "#1e293b", fontSize: "15px", fontWeight: "500" }}>{dataVencimento}</div>
                         {diasParaVencimento > 0 && (
                           <div style={{ color: "#f59e0b", fontSize: "12px", marginTop: "4px", fontWeight: "600" }}>
                             Em {diasParaVencimento} dia{diasParaVencimento !== 1 ? "s" : ""}

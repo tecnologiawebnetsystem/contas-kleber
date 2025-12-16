@@ -70,12 +70,14 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
     const pagamento = conta.pagamentos?.find((p) => p.mes === mesAtual && p.ano === anoAtual)
     if (!pagamento) return
 
+    const dataVencimento = new Date(anoAtual, mesAtual, conta.vencimento).toLocaleDateString("pt-BR")
+
     const mensagem =
       `✅ *Pagamento Realizado*\n\n` +
       `📄 Conta: ${conta.nome}\n` +
       `💰 Valor: R$ ${conta.valor.toFixed(2)}\n` +
       `📅 Data do Pagamento: ${new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}\n` +
-      `📌 Vencimento: dia ${conta.vencimento}\n` +
+      `📌 Vencimento: ${dataVencimento}\n` +
       `📊 Mês: ${meses[mesAtual]}/${anoAtual}`
 
     const mensagemEncoded = encodeURIComponent(mensagem)
@@ -157,7 +159,9 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
                         Data do Pagamento: {new Date(conta.data_gasto).toLocaleDateString("pt-BR")}
                       </p>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Vencimento: dia {conta.vencimento}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Vencimento: {new Date(anoAtual, mesAtual, conta.vencimento).toLocaleDateString("pt-BR")}
+                      </p>
                     )}
                     {pago && pagamento && (
                       <div className="mt-2 space-y-1">

@@ -46,7 +46,8 @@ export function WhatsAppButton({
       const dataGasto = new Date(conta.data_gasto).toLocaleDateString("pt-BR")
       linhaVencimento = `📅 *Data do Pagamento:* ${dataGasto}\n`
     } else {
-      linhaVencimento = `📅 *Vencimento:* Dia ${conta.vencimento}\n`
+      const dataVencimento = new Date(ano, mes - 1, conta.vencimento).toLocaleDateString("pt-BR")
+      linhaVencimento = `📅 *Vencimento:* ${dataVencimento}\n`
     }
 
     const mensagem =

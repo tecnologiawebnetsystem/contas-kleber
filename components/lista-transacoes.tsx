@@ -670,13 +670,13 @@ export function ListaTransacoes({
                       </div>
 
                       <div className="text-sm text-muted-foreground">
-                        {conta.tipo === "diaria" && conta.dataGasto ? (
+                        {conta.tipo === "diaria" && conta.data_gasto ? (
                           <span>
-                            Data do Pagamento: {new Date(conta.dataGasto + "T00:00:00").toLocaleDateString("pt-BR")}
+                            Data do Pagamento: {new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")}
                           </span>
-                        ) : conta.tipo === "caixinha" && conta.dataGasto ? (
+                        ) : conta.tipo === "caixinha" && conta.data_gasto ? (
                           <span>
-                            Data do Pagamento: {new Date(conta.dataGasto + "T00:00:00").toLocaleDateString("pt-BR")}
+                            Data do Pagamento: {new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")}
                           </span>
                         ) : conta.tipo === "fixa" ? (
                           <span>
@@ -711,20 +711,12 @@ export function ListaTransacoes({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                         onClick={() => handleDeleteWithUndo(conta)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-
-                    {pago && (
-                      <div className="mt-4">
-                        <p className="text-sm text-muted-foreground">
-                          Pagamento realizado em {pagamento?.data_pagamento?.toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                    )}
                   </div>
                 )
               }
