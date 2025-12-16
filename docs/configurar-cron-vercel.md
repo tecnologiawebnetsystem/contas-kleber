@@ -12,7 +12,7 @@ Um cron job é uma tarefa agendada que executa automaticamente em intervalos esp
 
 Na raiz do projeto, crie ou edite o arquivo `vercel.json` com o seguinte conteúdo:
 
-\`\`\`json
+```json
 {
   "crons": [
     {
@@ -21,7 +21,7 @@ Na raiz do projeto, crie ou edite o arquivo `vercel.json` com o seguinte conteú
     }
   ]
 }
-\`\`\`
+```
 
 ### 2. Entender a configuração do schedule
 
@@ -40,17 +40,17 @@ O formato é: `minuto hora dia mês dia-da-semana`
 
 Após criar o arquivo `vercel.json`, faça o deploy do projeto:
 
-\`\`\`bash
+```bash
 git add vercel.json
 git commit -m "Adiciona cron job para notificações"
 git push
-\`\`\`
+```
 
 Ou use o Vercel CLI:
 
-\`\`\`bash
+```bash
 vercel --prod
-\`\`\`
+```
 
 ### 4. Verificar se o cron está ativo
 
@@ -71,10 +71,10 @@ Certifique-se de que a variável `RESEND_API_KEY` está configurada:
 
 Você pode testar o endpoint manualmente antes do cron executar:
 
-\`\`\`bash
+```bash
 curl -X POST https://seu-app.vercel.app/api/verificar-contas \
   -H "Content-Type: application/json"
-\`\`\`
+```
 
 Ou use o botão "Enviar E-mail de Teste" na página de Configurações do sistema.
 

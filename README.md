@@ -70,7 +70,7 @@ Continue building your app on:
 
 ## Estrutura do Projeto
 
-\`\`\`
+```
 ├── app/                    # Páginas Next.js (App Router)
 │   ├── api/               # API Routes
 │   ├── caixinha/          # Página da caixinha
@@ -90,7 +90,7 @@ Continue building your app on:
 │   └── icon-*.png       # Ícones do app
 └── scripts/             # Scripts SQL
 
-\`\`\`
+```
 
 ## Como Funciona
 

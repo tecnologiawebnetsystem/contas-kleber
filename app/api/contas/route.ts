@@ -18,29 +18,38 @@ export async function GET() {
 
     if (pagamentosError) throw pagamentosError
 
-    const contasComPagamentos = contas.map((conta) => ({
-      id: conta.id,
-      nome: conta.nome,
-      valor: Number(conta.valor),
-      vencimento: conta.vencimento,
-      tipo: conta.tipo,
-      parcelas: conta.parcelas,
-      dataInicio: conta.data_inicio,
-      dataGasto: conta.data_gasto, // Converter data_gasto para dataGasto
-      anexoDiario: conta.anexo_diario, // Converter anexo_diario para anexoDiario
-      categoria: conta.categoria,
-      createdAt: conta.created_at,
-      updatedAt: conta.updated_at,
-      pagamentos: pagamentos
+    console.log("[v0] Total de contas encontradas:", contas.length)
+    console.log("[v0] Total de pagamentos encontrados:", pagamentos.length)
+
+    const contasComPagamentos = contas.map((conta) => {
+      const pagamentosDaConta = pagamentos
         .filter((p) => p.conta_id === conta.id)
         .map((p) => ({
-          mes: p.mes,
+          mes: p.mes + 1,
           ano: p.ano,
           pago: true,
           dataPagamento: p.data_pagamento,
           anexo: p.anexo,
-        })),
-    }))
+        }))
+
+      console.log("[v0] Conta:", conta.nome, "- Pagamentos:", pagamentosDaConta.length)
+
+      return {
+        id: conta.id,
+        nome: conta.nome,
+        valor: Number(conta.valor),
+        vencimento: conta.vencimento,
+        tipo: conta.tipo,
+        parcelas: conta.parcelas,
+        dataInicio: conta.data_inicio,
+        dataGasto: conta.data_gasto,
+        anexoDiario: conta.anexo_diario,
+        categoria: conta.categoria,
+        createdAt: conta.created_at,
+        updatedAt: conta.updated_at,
+        pagamentos: pagamentosDaConta,
+      }
+    })
 
     return NextResponse.json(contasComPagamentos)
   } catch (error) {

@@ -71,8 +71,17 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
+                  const userData = localStorage.getItem('userData');
                   const theme = localStorage.getItem('theme') || 
                     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                  
+                  if (userData) {
+                    const user = JSON.parse(userData);
+                    if (user.tema === 'rosa') {
+                      document.documentElement.classList.add('theme-rosa');
+                    }
+                  }
+                  
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                   }

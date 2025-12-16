@@ -12,10 +12,10 @@ Todos os arquivos já foram criados automaticamente:
 ## Deploy na Vercel
 
 ### 1. Publicar o Projeto
-\`\`\`bash
+```bash
 # No terminal da v0, clique em "Publish" ou
 # Use o botão "Deploy to Vercel" na interface
-\`\`\`
+```
 
 ### 2. Variáveis de Ambiente
 Adicione estas variáveis no painel da Vercel:
@@ -33,14 +33,14 @@ Adicione estas variáveis no painel da Vercel:
 ### 3. Ativar Cron Job (Notificações Automáticas)
 O arquivo `vercel.json` já configura o cron job para rodar diariamente às 9h:
 
-\`\`\`json
+```json
 {
   "crons": [{
     "path": "/api/verificar-contas",
     "schedule": "0 9 * * *"
   }]
 }
-\`\`\`
+```
 
 **Importante:** Cron jobs só funcionam em planos **Pro** da Vercel. Se você tem o plano gratuito, as notificações precisarão ser enviadas manualmente pela página de configurações.
 

@@ -1,37 +1,54 @@
 "use client"
 
 import type React from "react"
-
-import { useEffect, useState } from "react"
+import { useEffect, useState, createContext, useContext } from "react"
 import { useRouter, usePathname } from "next/navigation"
+
+type User = {
+  nome: string
+  pin: string
+  tema: "verde" | "rosa"
+}
+
+type AuthContextType = {
+  user: User | null
+  isAuthenticated: boolean
+}
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isAuthenticated: false,
+})
+
+export const useAuth = () => useContext(AuthContext)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    // Verificar se o usuário está autenticado
     const auth = localStorage.getItem("auth")
+    const userDataString = localStorage.getItem("userData")
 
     if (pathname === "/login") {
-      // Se já está autenticado e tenta acessar login, redireciona para home
-      if (auth === "true") {
+      if (auth === "true" && userDataString) {
         router.push("/")
       } else {
         setIsAuthenticated(false)
       }
     } else {
-      // Para qualquer outra rota, verificar autenticação
-      if (auth !== "true") {
+      if (auth !== "true" || !userDataString) {
         router.push("/login")
       } else {
+        const userData = JSON.parse(userDataString)
+        setUser(userData)
         setIsAuthenticated(true)
       }
     }
   }, [pathname, router])
 
-  // Mostrar loading enquanto verifica autenticação
   if (isAuthenticated === null && pathname !== "/login") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -43,5 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
   }
 
-  return <>{children}</>
+  return (
+    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated === true }}>{children}</AuthContext.Provider>
+  )
 }

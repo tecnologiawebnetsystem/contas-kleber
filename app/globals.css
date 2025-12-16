@@ -39,6 +39,55 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* Tema Rosa/Violeta/Morango mais intenso para Pamela */
+.theme-rosa {
+  /* Rosa morango como fundo */
+  --background: oklch(0.98 0.03 350);
+  --foreground: oklch(0.2 0.02 340);
+
+  /* Cards em tom rosa claro */
+  --card: oklch(1 0.01 350);
+  --card-foreground: oklch(0.2 0.02 340);
+
+  /* Popover rosa */
+  --popover: oklch(1 0.01 350);
+  --popover-foreground: oklch(0.2 0.02 340);
+
+  /* Rosa intenso como primário */
+  --primary: oklch(0.55 0.25 340);
+  --primary-foreground: oklch(0.99 0.01 350);
+
+  /* Rosa claro secundário */
+  --secondary: oklch(0.95 0.03 350);
+  --secondary-foreground: oklch(0.25 0.02 340);
+
+  /* Rosa suave para muted */
+  --muted: oklch(0.96 0.02 350);
+  --muted-foreground: oklch(0.5 0.02 340);
+
+  /* Rosa/violeta para accent */
+  --accent: oklch(0.9 0.05 320);
+  --accent-foreground: oklch(0.2 0.02 340);
+
+  /* Vermelho morango para destrutivo */
+  --destructive: oklch(0.55 0.25 10);
+  --destructive-foreground: oklch(0.99 0.01 350);
+
+  /* Bordas rosa suave */
+  --border: oklch(0.92 0.03 350);
+  --input: oklch(0.92 0.03 350);
+
+  /* Ring rosa */
+  --ring: oklch(0.55 0.25 340);
+
+  /* Charts em tons de rosa/violeta/morango */
+  --chart-1: oklch(0.65 0.25 340);
+  --chart-2: oklch(0.6 0.22 320);
+  --chart-3: oklch(0.55 0.2 300);
+  --chart-4: oklch(0.7 0.23 350);
+  --chart-5: oklch(0.6 0.18 10);
+}
+
 .dark {
   --background: oklch(0.145 0.02 240);
   --foreground: oklch(0.99 0.01 240);
@@ -72,6 +121,55 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+}
+
+/* Tema Rosa Dark para Pamela no modo escuro */
+.theme-rosa.dark {
+  /* Fundo escuro com tom rosa */
+  --background: oklch(0.15 0.03 340);
+  --foreground: oklch(0.98 0.01 350);
+
+  /* Cards escuros com tom rosa */
+  --card: oklch(0.2 0.03 340);
+  --card-foreground: oklch(0.98 0.01 350);
+
+  /* Popover escuro rosa */
+  --popover: oklch(0.2 0.03 340);
+  --popover-foreground: oklch(0.98 0.01 350);
+
+  /* Rosa brilhante como primário no dark */
+  --primary: oklch(0.7 0.28 340);
+  --primary-foreground: oklch(0.15 0.02 340);
+
+  /* Cinza-rosa secundário */
+  --secondary: oklch(0.3 0.03 340);
+  --secondary-foreground: oklch(0.98 0.01 350);
+
+  /* Muted escuro rosa */
+  --muted: oklch(0.3 0.03 340);
+  --muted-foreground: oklch(0.65 0.02 340);
+
+  /* Accent escuro violeta */
+  --accent: oklch(0.3 0.05 320);
+  --accent-foreground: oklch(0.98 0.01 350);
+
+  /* Destrutivo escuro */
+  --destructive: oklch(0.4 0.18 10);
+  --destructive-foreground: oklch(0.98 0.01 350);
+
+  /* Bordas escuras rosa */
+  --border: oklch(0.3 0.03 340);
+  --input: oklch(0.3 0.03 340);
+
+  /* Ring rosa brilhante */
+  --ring: oklch(0.5 0.25 340);
+
+  /* Charts no dark */
+  --chart-1: oklch(0.7 0.28 340);
+  --chart-2: oklch(0.65 0.24 320);
+  --chart-3: oklch(0.6 0.22 300);
+  --chart-4: oklch(0.75 0.26 350);
+  --chart-5: oklch(0.65 0.2 10);
 }
 
 @theme inline {

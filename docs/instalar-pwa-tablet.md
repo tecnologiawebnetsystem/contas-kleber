@@ -77,6 +77,6 @@ Após instalar, você pode:
 2. Usar totalmente offline
 3. Adicionar o app em tablets de funcionários
 4. Compartilhar a URL para outros instalarem
-\`\`\`
+```
 
-\`\`\`typescript file="" isHidden
+```typescript file="" isHidden

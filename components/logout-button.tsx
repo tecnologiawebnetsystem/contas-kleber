@@ -11,6 +11,11 @@ export function LogoutButton() {
 
   const handleLogout = () => {
     localStorage.removeItem("auth")
+    localStorage.removeItem("userData")
+
+    // Remove classes de tema
+    document.documentElement.classList.remove("theme-rosa")
+
     toast({
       title: "Logout realizado",
       description: "Até logo!",

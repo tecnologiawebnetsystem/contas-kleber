@@ -19,10 +19,10 @@ Você precisa ter uma conta ativa na APIBrasil: https://apibrasil.io/
 2. Vá em **Settings** → **Environment Variables**
 3. Adicione as seguintes variáveis:
 
-\`\`\`
+```
 WHATSAPP_API_TOKEN=seu_token_jwt_aqui
 WHATSAPP_DEVICE_TOKEN=seu_device_token_aqui
-\`\`\`
+```
 
 4. Clique em **Save**
 

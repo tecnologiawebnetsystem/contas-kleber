@@ -127,7 +127,7 @@ Quando você faz alterações offline:
 
 ## Estrutura Técnica
 
-\`\`\`
+```
 lib/offline/
   └── storage.ts          # Sistema IndexedDB
 
@@ -143,7 +143,7 @@ public/
 app/
   └── offline/
       └── page.tsx        # Página de fallback offline
-\`\`\`
+```
 
 ## Futuras Melhorias
 

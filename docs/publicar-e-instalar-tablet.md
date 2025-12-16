@@ -23,13 +23,13 @@
 
 Vá em **Settings > Environment Variables** e adicione:
 
-\`\`\`
+```
 NEXT_PUBLIC_SUPABASE_URL=sua_url_supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_supabase
 RESEND_API_KEY=sua_chave_resend
 WHATSAPP_API_TOKEN=seu_token_apibrasil
 WHATSAPP_DEVICE_TOKEN=seu_device_token_apibrasil
-\`\`\`
+```
 
 ---
 
