@@ -208,7 +208,11 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
           {(tipo === "diaria" || tipo === "poupanca" || tipo === "viagem") && (
             <div className="space-y-2">
               <Label htmlFor="dataGasto">
-                {tipo === "poupanca" ? "Data do Depósito" : tipo === "viagem" ? "Data do Depósito" : "Data do Gasto"}
+                {tipo === "poupanca"
+                  ? "Data do Depósito"
+                  : tipo === "viagem"
+                    ? "Data do Depósito"
+                    : "Data do Pagamento"}
               </Label>
               <Input
                 id="dataGasto"

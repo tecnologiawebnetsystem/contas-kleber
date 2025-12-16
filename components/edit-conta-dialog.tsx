@@ -188,7 +188,7 @@ export function EditContaDialog({ open, onOpenChange, onEdit, conta }: EditConta
 
           {(tipo === "diaria" || tipo === "caixinha") && (
             <div className="space-y-2">
-              <Label htmlFor="dataGasto">{tipo === "caixinha" ? "Data do Depósito" : "Data do Gasto"}</Label>
+              <Label htmlFor="dataGasto">{tipo === "caixinha" ? "Data do Depósito" : "Data do Pagamento"}</Label>
               <Input
                 id="dataGasto"
                 type="date"

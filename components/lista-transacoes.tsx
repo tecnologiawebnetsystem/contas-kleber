@@ -18,9 +18,7 @@ import {
   ChevronRight,
   Download,
   Calendar,
-  MoreVertical,
   Edit,
-  CheckCircle,
 } from "lucide-react"
 import { useState, useMemo } from "react"
 import type { Conta } from "@/types/conta"
@@ -29,7 +27,6 @@ import { EditContaDialog } from "./edit-conta-dialog"
 import { useSwipe } from "@/hooks/use-swipe"
 import { useLongPress } from "@/hooks/use-long-press"
 import { UndoToast } from "./undo-toast"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { getDataAtualBrasil } from "@/lib/date-utils"
 
 interface Transacao {
@@ -675,11 +672,11 @@ export function ListaTransacoes({
                       <div className="text-sm text-muted-foreground">
                         {conta.tipo === "diaria" && conta.dataGasto ? (
                           <span>
-                            Data do Gasto: {new Date(conta.dataGasto + "T00:00:00").toLocaleDateString("pt-BR")}
+                            Data do Pagamento: {new Date(conta.dataGasto + "T00:00:00").toLocaleDateString("pt-BR")}
                           </span>
                         ) : conta.tipo === "caixinha" && conta.dataGasto ? (
                           <span>
-                            Data do Gasto: {new Date(conta.dataGasto + "T00:00:00").toLocaleDateString("pt-BR")}
+                            Data do Pagamento: {new Date(conta.dataGasto + "T00:00:00").toLocaleDateString("pt-BR")}
                           </span>
                         ) : conta.tipo === "fixa" ? (
                           <span>
@@ -700,54 +697,34 @@ export function ListaTransacoes({
                     </div>
 
                     <div className="flex items-center gap-1">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {!pago && conta.tipo !== "diaria" && (
-                            <DropdownMenuItem onClick={() => handleMarcarPago(conta)}>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Marcar como pago
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => handleCompartilharWhatsApp(conta)}>
-                            <Share2 className="h-4 w-4 mr-2" />
-                            Compartilhar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditarConta(conta)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteWithUndo(conta)} className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Deletar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8"
                         onClick={() => handleCompartilharWhatsApp(conta)}
-                        className="h-8 w-8"
                       >
-                        <Share2 className="h-4 w-4 text-green-600" />
+                        <Share2 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleEditarConta(conta)} className="h-8 w-8">
-                        <Edit className="h-4 w-4 text-blue-600" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditarConta(conta)}>
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => handleDeleteWithUndo(conta)}
-                        className="h-8 w-8"
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
+
+                    {pago && (
+                      <div className="mt-4">
+                        <p className="text-sm text-muted-foreground">
+                          Pagamento realizado em {pagamento?.data_pagamento?.toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )
               }

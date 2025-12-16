@@ -154,7 +154,7 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
                     </div>
                     {conta.tipo === "diaria" && conta.data_gasto ? (
                       <p className="text-sm text-muted-foreground">
-                        Data do gasto: {new Date(conta.data_gasto).toLocaleDateString("pt-BR")}
+                        Data do Pagamento: {new Date(conta.data_gasto).toLocaleDateString("pt-BR")}
                       </p>
                     ) : (
                       <p className="text-sm text-muted-foreground">Vencimento: dia {conta.vencimento}</p>

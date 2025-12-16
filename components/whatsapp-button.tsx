@@ -44,7 +44,7 @@ export function WhatsAppButton({
     let linhaVencimento = ""
     if (conta.tipo === "diaria" && conta.data_gasto) {
       const dataGasto = new Date(conta.data_gasto).toLocaleDateString("pt-BR")
-      linhaVencimento = `📅 *Data do gasto:* ${dataGasto}\n`
+      linhaVencimento = `📅 *Data do Pagamento:* ${dataGasto}\n`
     } else {
       linhaVencimento = `📅 *Vencimento:* Dia ${conta.vencimento}\n`
     }
