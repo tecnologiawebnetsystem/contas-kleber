@@ -31,6 +31,7 @@ import { useOnlineStatus } from "@/hooks/use-online-status"
 import { offlineStorage } from "@/lib/offline/storage"
 import { mutate } from "swr"
 import { formatarMoeda } from "@/utils/formatar-moeda" // Import the formatarMoeda function
+import { OnlineStatus } from "@/components/online-status"
 
 export default function Home() {
   const { user, logout } = useAuth()
@@ -543,7 +544,8 @@ export default function Home() {
                 Contas - {user?.nome || "Usuário"}
               </h1>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
+              <OnlineStatus userName={user?.nome} />
               <ThemeToggle />
             </div>
           </div>
@@ -657,12 +659,13 @@ export default function Home() {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
-                  onClick={() =>
+                  onClick={() => {
+                    const percentualPago = totalMes > 0 ? ((totalPago / totalMes) * 100).toFixed(1) : "0"
                     abrirModalWhatsApp(
                       "💳 Crédito Disponível",
                       `💰 *Saldo Atual*\n\n💵 *Valor Disponível:* ${formatarMoeda(saldo)}\n📊 *Status:* ${saldo > 0 ? "✅ Positivo" : saldo < 0 ? "⚠️ Negativo" : "⚡ Zerado"}\n${saldo < 0 ? `\n🔴 *Atenção:* Você está com saldo negativo de ${formatarMoeda(Math.abs(saldo))}` : ""}\n\n_Gerencie bem seus recursos!_ 💪`,
                     )
-                  }
+                  }}
                 >
                   <Share2 className="h-3 w-3" />
                 </Button>
