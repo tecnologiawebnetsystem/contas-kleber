@@ -13,11 +13,13 @@ type User = {
 type AuthContextType = {
   user: User | null
   isAuthenticated: boolean
+  logout: () => void // Added logout function to type
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
+  logout: () => {}, // Added default logout function
 })
 
 export const useAuth = () => useContext(AuthContext)
@@ -62,6 +64,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, router])
 
+  const logout = () => {
+    localStorage.removeItem("auth")
+    localStorage.removeItem("userData")
+    document.documentElement.classList.remove("theme-rosa")
+    setUser(null)
+    setIsAuthenticated(false)
+  }
+
   if (isAuthenticated === null && pathname !== "/login") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -74,6 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated === true }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated === true, logout }}>
+      {children}
+    </AuthContext.Provider>
   )
 }
