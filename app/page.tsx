@@ -550,47 +550,50 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              onClick={() => setDialogOpen(true)}
-              size="sm"
-              className={
-                user?.nome === "Kleber Gonçalves"
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : user?.nome === "Pamela Gonçalves"
-                    ? "bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-pink-800 dark:hover:bg-pink-900 dark:text-pink-100"
-                    : ""
-              }
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nova Conta
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/relatorios">
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Relatórios
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="sm"
-              className={
-                user?.nome === "Kleber Gonçalves"
-                  ? "bg-black hover:bg-gray-800 text-white"
-                  : user?.nome === "Pamela Gonçalves"
-                    ? "bg-blue-200 hover:bg-blue-300 text-black dark:bg-blue-300 dark:hover:bg-blue-400"
-                    : ""
-              }
-            >
-              <Link href="/consulta">
-                <Search className="mr-2 h-4 w-4" />
-                Consultar
-              </Link>
-            </Button>
-            <Button onClick={() => setCreditoDialogOpen(true)} size="sm" variant="default">
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar Crédito
-            </Button>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                onClick={() => setDialogOpen(true)}
+                size="sm"
+                className={
+                  user?.nome === "Kleber Gonçalves"
+                    ? "bg-green-600 hover:bg-green-700 text-white"
+                    : user?.nome === "Pamela Gonçalves"
+                      ? "bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-pink-800 dark:hover:bg-pink-900 dark:text-pink-100"
+                      : ""
+                }
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Nova Conta
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/relatorios">
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Relatórios
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                className={
+                  user?.nome === "Kleber Gonçalves"
+                    ? "bg-black hover:bg-gray-800 text-white"
+                    : user?.nome === "Pamela Gonçalves"
+                      ? "bg-blue-200 hover:bg-blue-300 text-black dark:bg-blue-300 dark:hover:bg-blue-400"
+                      : ""
+                }
+              >
+                <Link href="/consulta">
+                  <Search className="mr-2 h-4 w-4" />
+                  Consultar
+                </Link>
+              </Button>
+              <Button onClick={() => setCreditoDialogOpen(true)} size="sm" variant="default">
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Crédito
+              </Button>
+            </div>
+
             <Button onClick={handleSair} size="sm" variant="ghost">
               <LogOut className="mr-2 h-4 w-4" />
               Sair
