@@ -12,7 +12,6 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Contas a Pagar - Financeiro Gonçalves",
   description: "Sistema completo para gerenciar suas contas fixas e parceladas",
-  generator: "v0.app",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -26,20 +25,19 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
+        url: "/icon-192.jpg",
+        sizes: "192x192",
+        type: "image/jpeg",
       },
       {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
+        url: "/icon-512.jpg",
+        sizes: "512x512",
+        type: "image/jpeg",
       },
     ],
-    apple: "/apple-icon.png",
+    apple: "/apple-icon.jpg",
   },
+    generator: 'v0.app'
 }
 
 export const viewport = {
