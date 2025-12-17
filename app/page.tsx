@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   Plus,
   Calendar,
   TrendingUp,
   Search,
   AlertCircle,
-  Settings,
   Wallet,
   Share2,
   PiggyBank,
@@ -520,59 +520,254 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-background via-accent/5 to-primary/5 dark:from-background dark:via-accent/10 dark:to-primary/10">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-              {user ? `Olá, ${user.nome}` : "Contas a Pagar"}
-            </h1>
-            <p className="text-muted-foreground mt-1">Gerencie suas contas fixas e parceladas</p>
-            <div className="flex gap-2 mt-4 flex-wrap">
-              <Button onClick={() => setDialogOpen(true)} size="lg">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Nova Conta
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/relatorios">
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Relatórios
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/consulta">
-                  <Search className="mr-2 h-4 w-4" />
-                  Consultar
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/configuracoes">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Configurações
-                </Link>
-              </Button>
+    <main className="min-h-screen bg-background">
+      <div className="container mx-auto p-4 md:p-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold">Contas - {user?.nome || "Usuário"}</h1>
+            </div>
+            <div className="flex gap-2">
+              <ThemeToggle />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => {
-                if (!isOnline) {
-                  toast({
-                    title: "Modo Offline",
-                    description: "Você está offline. Não é possível adicionar crédito.",
-                    variant: "destructive",
-                  })
-                } else {
-                  setCreditoDialogOpen(true)
-                }
-              }}
-              size="lg"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar Crédito
-            </Button>
-            <LogoutButton />
+
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-muted-foreground mt-1">Gerencie suas contas fixas e parceladas</p>
+              <div className="flex gap-2 mt-4 flex-wrap">
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  size="sm"
+                  className={
+                    user?.nome === "Kleber Gonçalves"
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : user?.nome === "Pamela Gonçalves"
+                        ? "bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-pink-800 dark:hover:bg-pink-900 dark:text-pink-100"
+                        : ""
+                  }
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Nova Conta
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/relatorios">
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Relatórios
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  size="sm"
+                  className={
+                    user?.nome === "Kleber Gonçalves"
+                      ? "bg-black hover:bg-gray-800 text-white"
+                      : user?.nome === "Pamela Gonçalves"
+                        ? "bg-blue-200 hover:bg-blue-300 text-black dark:bg-blue-300 dark:hover:bg-blue-400"
+                        : ""
+                  }
+                >
+                  <Link href="/consulta">
+                    <Search className="mr-2 h-4 w-4" />
+                    Consultar
+                  </Link>
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap justify-end">
+              <Button
+                onClick={() => {
+                  if (!navigator.onLine) {
+                    toast({
+                      title: "Modo Offline",
+                      description: "Você está offline. Não é possível adicionar crédito.",
+                      variant: "destructive",
+                    })
+                  } else {
+                    setCreditoDialogOpen(true)
+                  }
+                }}
+                size="sm"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Crédito
+              </Button>
+              <LogoutButton />
+            </div>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Card className="bg-gradient-to-br from-purple-50 via-violet-50 to-fuchsia-50 dark:from-purple-950 dark:via-violet-950 dark:to-fuchsia-950 border-purple-200 dark:border-purple-800 shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-purple-900 dark:text-purple-100">Poupança</CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                  onClick={() =>
+                    abrirModalWhatsApp(
+                      "💰 Poupança",
+                      `📊 *Saldo em Poupança*\n\n💰 *Total Poupado:* ${formatarMoeda(totalPoupanca)}\n\nContinue economizando! 🚀`,
+                    )
+                  }
+                >
+                  <Share2 className="h-3 w-3" />
+                </Button>
+                <PiggyBank className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <div className="text-xl font-bold text-amber-900 dark:text-amber-100">{formatarMoeda(totalPoupanca)}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 dark:from-blue-950 dark:via-cyan-950 dark:to-sky-950 border-blue-300 dark:border-blue-700 shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-blue-900 dark:text-blue-100">Viagem</CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  onClick={() =>
+                    abrirModalWhatsApp(
+                      "✈️ Viagem",
+                      `📊 *Fundo para Viagens*\n\n✈️ *Total Economizado:* ${formatarMoeda(totalViagem)}\n\nSua próxima aventura está chegando! 🌍`,
+                    )
+                  }
+                >
+                  <Share2 className="h-3 w-3" />
+                </Button>
+                <Plane className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <div className="text-xl font-bold text-blue-900 dark:text-blue-100">{formatarMoeda(totalViagem)}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200 dark:border-green-800">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-green-900 dark:text-green-100">
+                Crédito Disponível
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+                  onClick={() =>
+                    abrirModalWhatsApp(
+                      "💳 Crédito Disponível",
+                      `💰 *Saldo Atual*\n\n💵 *Valor Disponível:* ${formatarMoeda(saldo)}\n📊 *Status:* ${saldo > 0 ? "✅ Positivo" : saldo < 0 ? "⚠️ Negativo" : "⚡ Zerado"}\n${saldo < 0 ? `\n🔴 *Atenção:* Você está com saldo negativo de ${formatarMoeda(Math.abs(saldo))}` : ""}\n\n_Gerencie bem seus recursos!_ 💪`,
+                    )
+                  }
+                >
+                  <Share2 className="h-3 w-3" />
+                </Button>
+                <Wallet className="h-3 w-3 text-green-600 dark:text-green-400" />
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <div className="text-xl font-bold text-green-900 dark:text-green-100">{formatarMoeda(saldo)}</div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className={
+              user?.nome === "Pamela Gonçalves"
+                ? "bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950 dark:to-rose-950 border-pink-200 dark:border-pink-800"
+                : "bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950 dark:to-blue-950 border-indigo-200 dark:border-indigo-800"
+            }
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle
+                className={`text-xs font-medium ${user?.nome === "Pamela Gonçalves" ? "text-pink-900 dark:text-pink-100" : "text-indigo-900 dark:text-indigo-100"}`}
+              >
+                Total Pago
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-6 w-6 ${user?.nome === "Pamela Gonçalves" ? "text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300" : "text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"}`}
+                  onClick={() => {
+                    const percentualPago = totalMes > 0 ? ((totalPago / totalMes) * 100).toFixed(1) : "0"
+                    abrirModalWhatsApp(
+                      "✅ Total Pago",
+                      `📊 *Resumo de Pagamentos - ${meses[mesSelecionado - 1]}/${anoSelecionado}*\n\n✅ *Total Pago:* ${formatarMoeda(totalPago)}\n📝 *Contas Pagas:* ${pagas} de ${contasMesAtual.length}\n📈 *Percentual:* ${percentualPago}%\n💰 *Total do Mês:* ${formatarMoeda(totalMes)}\n\n${pagas === contasMesAtual.length ? "🎉 *Parabéns! Todas as contas foram pagas!*" : `⏳ *Faltam ${contasMesAtual.length - pagas} conta(s) para quitar*`}`,
+                    )
+                  }}
+                >
+                  <Share2 className="h-3 w-3" />
+                </Button>
+                <Calendar
+                  className={`h-3 w-3 ${user?.nome === "Pamela Gonçalves" ? "text-pink-600 dark:text-pink-400" : "text-indigo-600 dark:text-indigo-400"}`}
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <div
+                className={`text-xl font-bold ${user?.nome === "Pamela Gonçalves" ? "text-pink-900 dark:text-pink-100" : "text-indigo-900 dark:text-indigo-100"}`}
+              >
+                {formatarMoeda(totalPago)}
+              </div>
+              <p
+                className={`text-xs mt-1 ${user?.nome === "Pamela Gonçalves" ? "text-pink-700 dark:text-pink-300" : "text-indigo-700 dark:text-indigo-300"}`}
+              >
+                {pagas} de {contasMesAtual.length} contas pagas
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className={
+              user?.nome === "Pamela Gonçalves"
+                ? "bg-gradient-to-br from-fuchsia-50 to-purple-50 dark:from-fuchsia-950 dark:to-purple-950 border-fuchsia-200 dark:border-fuchsia-800"
+                : "bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950 dark:to-cyan-950 border-teal-200 dark:border-teal-800"
+            }
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle
+                className={`text-xs font-medium ${user?.nome === "Pamela Gonçalves" ? "text-fuchsia-900 dark:text-fuchsia-100" : "text-teal-900 dark:text-teal-100"}`}
+              >
+                Total Pendente
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-6 w-6 ${user?.nome === "Pamela Gonçalves" ? "text-fuchsia-600 dark:text-fuchsia-400 hover:text-fuchsia-700 dark:hover:text-fuchsia-300" : "text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300"}`}
+                  onClick={() =>
+                    abrirModalWhatsApp(
+                      "⏳ Total Pendente",
+                      `📊 *Contas Pendentes - ${meses[mesSelecionado - 1]}/${anoSelecionado}*\n\n⏳ *Total Pendente:* ${formatarMoeda(totalMes - totalPago)}\n📝 *Contas Pendentes:* ${contasMesAtual.length - pagas} de ${contasMesAtual.length}\n${contasAtrasadas.length > 0 ? `\n🔴 *Atenção:* ${contasAtrasadas.length} conta(s) atrasada(s)` : ""}\n\nFique em dia com seus compromissos! 💪`,
+                    )
+                  }
+                >
+                  <Share2 className="h-3 w-3" />
+                </Button>
+                <TrendingUp
+                  className={`h-3 w-3 ${user?.nome === "Pamela Gonçalves" ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-teal-600 dark:text-teal-400"}`}
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <div
+                className={`text-xl font-bold ${user?.nome === "Pamela Gonçalves" ? "text-fuchsia-900 dark:text-fuchsia-100" : "text-teal-900 dark:text-teal-100"}`}
+              >
+                {formatarMoeda(totalMes - totalPago)}
+              </div>
+              <p
+                className={`text-xs mt-1 ${user?.nome === "Pamela Gonçalves" ? "text-fuchsia-700 dark:text-fuchsia-300" : "text-teal-700 dark:text-teal-300"}`}
+              >
+                {contasMesAtual.length - pagas} pendentes
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {contasProximasVencimento.length > 0 && (
@@ -598,155 +793,6 @@ export default function Home() {
           </Alert>
         )}
 
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-          <Card className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950 dark:via-yellow-950 dark:to-orange-950 border-amber-300 dark:border-amber-700 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-amber-900 dark:text-amber-100">Poupança</CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
-                  onClick={() =>
-                    abrirModalWhatsApp(
-                      "💰 Poupança",
-                      `📊 *Saldo em Poupança*\n\n💰 *Total Poupado:* ${formatarMoeda(totalPoupanca)}\n\nContinue economizando! 🚀`,
-                    )
-                  }
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                <PiggyBank className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                {formatarMoeda(totalPoupanca)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 dark:from-blue-950 dark:via-cyan-950 dark:to-sky-950 border-blue-300 dark:border-blue-700 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">Viagem</CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                  onClick={() =>
-                    abrirModalWhatsApp(
-                      "✈️ Viagem",
-                      `📊 *Fundo para Viagens*\n\n✈️ *Total Economizado:* ${formatarMoeda(totalViagem)}\n\nSua próxima aventura está chegando! 🌍`,
-                    )
-                  }
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                <Plane className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{formatarMoeda(totalViagem)}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200 dark:border-green-800">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-900 dark:text-green-100">
-                Crédito Disponível
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
-                  onClick={() =>
-                    abrirModalWhatsApp(
-                      "💳 Crédito Disponível",
-                      `💰 *Saldo Atual*\n\n💵 *Valor Disponível:* ${formatarMoeda(saldo)}\n📊 *Status:* ${saldo > 0 ? "✅ Positivo" : saldo < 0 ? "⚠️ Negativo" : "⚡ Zerado"}\n${saldo < 0 ? `\n🔴 *Atenção:* Você está com saldo negativo de ${formatarMoeda(Math.abs(saldo))}` : ""}\n\n_Gerencie bem seus recursos!_ 💪`,
-                    )
-                  }
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-900 dark:text-green-100">{formatarMoeda(saldo)}</div>
-              <Button
-                onClick={() => setCreditoDialogOpen(true)}
-                size="sm"
-                variant="ghost"
-                className="mt-2 text-xs text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
-              >
-                <Plus className="mr-1 h-3 w-3" />
-                Adicionar crédito
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card dark:bg-card border-border dark:border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-foreground dark:text-foreground">Total Pago</CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-foreground"
-                  onClick={() => {
-                    const percentualPago = totalMes > 0 ? ((totalPago / totalMes) * 100).toFixed(1) : "0"
-                    abrirModalWhatsApp(
-                      "✅ Total Pago",
-                      `📊 *Resumo de Pagamentos - ${meses[mesSelecionado - 1]}/${anoSelecionado}*\n\n✅ *Total Pago:* ${formatarMoeda(totalPago)}\n📝 *Contas Pagas:* ${pagas} de ${contasMesAtual.length}\n📈 *Percentual:* ${percentualPago}%\n💰 *Total do Mês:* ${formatarMoeda(totalMes)}\n\n${pagas === contasMesAtual.length ? "🎉 *Parabéns! Todas as contas foram pagas!*" : `⏳ *Faltam ${contasMesAtual.length - pagas} conta(s) para quitar*`}`,
-                    )
-                  }}
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                <Calendar className="h-4 w-4 text-muted-foreground dark:text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground dark:text-foreground">{formatarMoeda(totalPago)}</div>
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground mt-1">
-                {pagas} de {contasMesAtual.length} contas pagas
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card dark:bg-card border-border dark:border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-foreground dark:text-foreground">Total Pendente</CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-foreground"
-                  onClick={() =>
-                    abrirModalWhatsApp(
-                      "⏳ Total Pendente",
-                      `📊 *Contas Pendentes - ${meses[mesSelecionado - 1]}/${anoSelecionado}*\n\n⏳ *Total Pendente:* ${formatarMoeda(totalMes - totalPago)}\n📝 *Contas Pendentes:* ${contasMesAtual.length - pagas} de ${contasMesAtual.length}\n${contasAtrasadas.length > 0 ? `\n🔴 *Atenção:* ${contasAtrasadas.length} conta(s) atrasada(s)` : ""}\n\nFique em dia com seus compromissos! 💪`,
-                    )
-                  }
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                <TrendingUp className="h-4 w-4 text-muted-foreground dark:text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground dark:text-foreground">
-                {formatarMoeda(totalMes - totalPago)}
-              </div>
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground mt-1">
-                {contasMesAtual.length - pagas} pendentes
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
         <ListaTransacoes
           transacoes={transacoes}
           contas={contas}
@@ -762,8 +808,8 @@ export default function Home() {
           onToggleMostrarHoje={setMostrarApenasHoje}
         />
       </div>
-      <AddContaDialog isOpen={dialogOpen} onClose={() => setDialogOpen(false)} onAdd={addConta} />
-      <AddCreditoDialog isOpen={creditoDialogOpen} onClose={() => setCreditoDialogOpen(false)} onAdd={addCredito} />
+      <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} />
+      <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
     </main>
   )
 }
