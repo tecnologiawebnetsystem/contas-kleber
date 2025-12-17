@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { LogOut } from "lucide-react" // Import the LogOut icon
 import {
   Plus,
   Calendar,
@@ -24,7 +25,6 @@ import type { Conta } from "@/types/conta"
 import { ListaTransacoes } from "@/components/lista-transacoes"
 import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
-import { LogoutButton } from "@/components/logout-button"
 import { useAuth } from "@/components/auth-provider"
 import { useRouter } from "next/navigation"
 import { useOnlineStatus } from "@/hooks/use-online-status"
@@ -33,7 +33,7 @@ import { mutate } from "swr"
 import { formatarMoeda } from "@/utils/formatar-moeda" // Import the formatarMoeda function
 
 export default function Home() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { toast } = useToast()
   const [contas, setContas] = useState<Conta[]>([])
   const [saldo, setSaldo] = useState(0)
@@ -367,6 +367,11 @@ export default function Home() {
     setWhatsappDialogOpen(true)
   }
 
+  const handleSair = () => {
+    logout()
+    router.push("/login")
+  }
+
   const diaAtual = hoje.getDate()
 
   const contasProximasVencimento = contas.filter((conta) => {
@@ -521,80 +526,73 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="container mx-auto p-4 md:p-6 space-y-6">
+      <div className="container mx-auto p-4 md:p-6 space-y-8">
         {/* Header */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold">Contas - {user?.nome || "Usuário"}</h1>
+              <h1
+                className={`text-4xl md:text-5xl font-bold ${
+                  user?.nome === "Kleber Gonçalves"
+                    ? "text-green-700 dark:text-green-500"
+                    : user?.nome === "Pamela Gonçalves"
+                      ? "text-pink-600 dark:text-pink-400"
+                      : ""
+                }`}
+              >
+                Contas - {user?.nome || "Usuário"}
+              </h1>
             </div>
             <div className="flex gap-2">
               <ThemeToggle />
             </div>
           </div>
 
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-muted-foreground mt-1">Gerencie suas contas fixas e parceladas</p>
-              <div className="flex gap-2 mt-4 flex-wrap">
-                <Button
-                  onClick={() => setDialogOpen(true)}
-                  size="sm"
-                  className={
-                    user?.nome === "Kleber Gonçalves"
-                      ? "bg-green-600 hover:bg-green-700 text-white"
-                      : user?.nome === "Pamela Gonçalves"
-                        ? "bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-pink-800 dark:hover:bg-pink-900 dark:text-pink-100"
-                        : ""
-                  }
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Nova Conta
-                </Button>
-                <Button asChild size="sm" variant="outline">
-                  <Link href="/relatorios">
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    Relatórios
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="sm"
-                  className={
-                    user?.nome === "Kleber Gonçalves"
-                      ? "bg-black hover:bg-gray-800 text-white"
-                      : user?.nome === "Pamela Gonçalves"
-                        ? "bg-blue-200 hover:bg-blue-300 text-black dark:bg-blue-300 dark:hover:bg-blue-400"
-                        : ""
-                  }
-                >
-                  <Link href="/consulta">
-                    <Search className="mr-2 h-4 w-4" />
-                    Consultar
-                  </Link>
-                </Button>
-              </div>
-            </div>
-            <div className="flex gap-2 flex-wrap justify-end">
-              <Button
-                onClick={() => {
-                  if (!navigator.onLine) {
-                    toast({
-                      title: "Modo Offline",
-                      description: "Você está offline. Não é possível adicionar crédito.",
-                      variant: "destructive",
-                    })
-                  } else {
-                    setCreditoDialogOpen(true)
-                  }
-                }}
-                size="sm"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Crédito
-              </Button>
-              <LogoutButton />
-            </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={() => setDialogOpen(true)}
+              size="sm"
+              className={
+                user?.nome === "Kleber Gonçalves"
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : user?.nome === "Pamela Gonçalves"
+                    ? "bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-pink-800 dark:hover:bg-pink-900 dark:text-pink-100"
+                    : ""
+              }
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nova Conta
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/relatorios">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Relatórios
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              className={
+                user?.nome === "Kleber Gonçalves"
+                  ? "bg-black hover:bg-gray-800 text-white"
+                  : user?.nome === "Pamela Gonçalves"
+                    ? "bg-blue-200 hover:bg-blue-300 text-black dark:bg-blue-300 dark:hover:bg-blue-400"
+                    : ""
+              }
+            >
+              <Link href="/consulta">
+                <Search className="mr-2 h-4 w-4" />
+                Consultar
+              </Link>
+            </Button>
+            <Button onClick={() => setCreditoDialogOpen(true)} size="sm" variant="default">
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar Crédito
+            </Button>
+            <Button onClick={handleSair} size="sm" variant="ghost">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </Button>
           </div>
         </div>
 
