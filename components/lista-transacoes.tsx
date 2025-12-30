@@ -317,6 +317,10 @@ export function ListaTransacoes({
 
   const getParcelaAtual = (conta: Conta) => {
     if (conta.tipo !== "parcelada") return null
+    if (conta.parcelaAtual) {
+      return conta.parcelaAtual
+    }
+    // Fallback to calculation if not expanded
     const inicio = new Date(conta.dataInicio!)
     const parcelaAtual = (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - (inicio.getMonth() + 1)) + 1
     return parcelaAtual

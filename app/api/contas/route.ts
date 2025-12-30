@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 // GET - Buscar todas as contas com filtros
 export async function GET(request: Request) {
   try {
+    console.log("[v0] Iniciando busca de contas")
     const supabase = await createClient()
 
     const { searchParams } = new URL(request.url)
@@ -33,7 +34,12 @@ export async function GET(request: Request) {
 
     const { data: contas, error: contasError } = await query
 
-    if (contasError) throw contasError
+    console.log("[v0] Resultado da busca de contas:", { contas: contas?.length, error: contasError })
+
+    if (contasError) {
+      console.error("[v0] Erro do Supabase ao buscar contas:", contasError)
+      throw contasError
+    }
 
     // Buscar pagamentos para cada conta
     const { data: pagamentos, error: pagamentosError } = await supabase.from("pagamentos").select("*")
@@ -180,9 +186,15 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(contasFiltradas)
-  } catch (error) {
-    console.error("[v0] Erro ao buscar contas:", error)
-    return NextResponse.json({ error: "Erro ao buscar contas" }, { status: 500 })
+  } catch (error: any) {
+    console.error("Erro ao buscar contas:", error)
+    return NextResponse.json(
+      {
+        error: "Erro ao buscar contas",
+        details: error?.message || String(error),
+      },
+      { status: 500 },
+    )
   }
 }
 

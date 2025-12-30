@@ -14,9 +14,15 @@ export async function GET() {
     if (error) throw error
 
     return NextResponse.json(transacoes || [])
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao buscar transações:", error)
-    return NextResponse.json({ error: "Erro ao buscar transações" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Erro ao buscar transações",
+        details: error?.message || String(error),
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -40,8 +46,14 @@ export async function POST(request: Request) {
     if (error) throw error
 
     return NextResponse.json(data)
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao criar transação:", error)
-    return NextResponse.json({ error: "Erro ao criar transação" }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: "Erro ao criar transação",
+        details: error?.message || String(error),
+      },
+      { status: 500 },
+    )
   }
 }
