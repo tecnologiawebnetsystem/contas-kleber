@@ -23,6 +23,7 @@ const categorias: Categoria[] = [
   "Saúde",
   "Educação",
   "Lazer",
+  "Gasto Viagem",
   "Vestuário",
   "Serviços",
   "Outros",
@@ -163,19 +164,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="valor">Valor (R$)</Label>
-            <Input
-              id="valor"
-              type="number"
-              step="0.01"
-              placeholder="0,00"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              required
-            />
-          </div>
-
+          {/* Tipo de Conta moved to second place */}
           <div className="space-y-2">
             <Label htmlFor="tipo">Tipo de Conta</Label>
             <Select value={tipo} onValueChange={(v) => setTipo(v as TipoConta)}>
@@ -190,6 +179,19 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
                 <SelectItem value="viagem">Viagem</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="valor">Valor (R$)</Label>
+            <Input
+              id="valor"
+              type="number"
+              step="0.01"
+              placeholder="0,00"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              required
+            />
           </div>
 
           {tipo !== "diaria" && tipo !== "poupanca" && tipo !== "viagem" && (

@@ -7,6 +7,7 @@ export type Categoria =
   | "Saúde"
   | "Educação"
   | "Lazer"
+  | "Gasto Viagem"
   | "Vestuário"
   | "Serviços"
   | "Outros"

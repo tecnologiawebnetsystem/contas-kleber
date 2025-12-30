@@ -39,55 +39,31 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* Tema Rosa intensificado para Pamela com cores mais vibrantes */
 .theme-rosa {
-  /* Rosa morango vibrante como fundo */
   --background: oklch(0.98 0.04 345);
   --foreground: oklch(0.25 0.03 345);
-
-  /* Cards em tom rosa claro vibrante */
   --card: oklch(0.99 0.02 345);
   --card-foreground: oklch(0.25 0.03 345);
-
-  /* Popover rosa */
   --popover: oklch(0.99 0.02 345);
   --popover-foreground: oklch(0.25 0.03 345);
-
-  /* Rosa intenso e vibrante como primário */
   --primary: oklch(0.6 0.28 340);
   --primary-foreground: oklch(0.99 0.01 345);
-
-  /* Rosa claro secundário */
   --secondary: oklch(0.95 0.04 345);
   --secondary-foreground: oklch(0.3 0.03 340);
-
-  /* Rosa suave para muted */
   --muted: oklch(0.95 0.03 345);
   --muted-foreground: oklch(0.5 0.03 340);
-
-  /* Rosa/violeta vibrante para accent */
   --accent: oklch(0.88 0.08 330);
   --accent-foreground: oklch(0.25 0.03 340);
-
-  /* Vermelho morango vibrante para destrutivo */
   --destructive: oklch(0.58 0.28 15);
   --destructive-foreground: oklch(0.99 0.01 345);
-
-  /* Bordas rosa suave */
   --border: oklch(0.9 0.04 345);
   --input: oklch(0.9 0.04 345);
-
-  /* Ring rosa vibrante */
   --ring: oklch(0.6 0.28 340);
-
-  /* Charts em tons de rosa/violeta/morango vibrantes */
   --chart-1: oklch(0.65 0.28 340);
   --chart-2: oklch(0.6 0.25 325);
   --chart-3: oklch(0.55 0.22 310);
   --chart-4: oklch(0.7 0.26 350);
   --chart-5: oklch(0.6 0.2 15);
-
-  /* Sidebar com tema rosa vibrante */
   --sidebar: oklch(0.99 0.02 345);
   --sidebar-foreground: oklch(0.25 0.03 345);
   --sidebar-primary: oklch(0.6 0.28 340);
@@ -133,55 +109,31 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
-/* Tema Rosa Dark intensificado para Pamela no modo escuro */
 .theme-rosa.dark {
-  /* Fundo escuro com tom rosa vibrante */
   --background: oklch(0.18 0.04 340);
   --foreground: oklch(0.98 0.02 345);
-
-  /* Cards escuros com tom rosa vibrante */
   --card: oklch(0.23 0.05 340);
   --card-foreground: oklch(0.98 0.02 345);
-
-  /* Popover escuro rosa vibrante */
   --popover: oklch(0.23 0.05 340);
   --popover-foreground: oklch(0.98 0.02 345);
-
-  /* Rosa brilhante e vibrante como primário no dark */
   --primary: oklch(0.72 0.3 340);
   --primary-foreground: oklch(0.18 0.03 340);
-
-  /* Cinza-rosa secundário vibrante */
   --secondary: oklch(0.32 0.05 340);
   --secondary-foreground: oklch(0.98 0.02 345);
-
-  /* Muted escuro rosa vibrante */
   --muted: oklch(0.32 0.05 340);
   --muted-foreground: oklch(0.68 0.03 340);
-
-  /* Accent escuro violeta vibrante */
   --accent: oklch(0.35 0.08 325);
   --accent-foreground: oklch(0.98 0.02 345);
-
-  /* Destrutivo escuro vibrante */
   --destructive: oklch(0.45 0.22 15);
   --destructive-foreground: oklch(0.98 0.02 345);
-
-  /* Bordas escuras rosa vibrantes */
   --border: oklch(0.32 0.05 340);
   --input: oklch(0.32 0.05 340);
-
-  /* Ring rosa brilhante e vibrante */
   --ring: oklch(0.55 0.28 340);
-
-  /* Charts no dark com cores vibrantes */
   --chart-1: oklch(0.72 0.3 340);
   --chart-2: oklch(0.67 0.27 325);
   --chart-3: oklch(0.62 0.24 310);
   --chart-4: oklch(0.77 0.28 350);
   --chart-5: oklch(0.67 0.22 15);
-
-  /* Sidebar dark com tema rosa vibrante */
   --sidebar: oklch(0.23 0.05 340);
   --sidebar-foreground: oklch(0.98 0.02 345);
   --sidebar-primary: oklch(0.72 0.3 340);
@@ -193,6 +145,7 @@
 }
 
 @theme inline {
+  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
   --font-sans: "Geist", "Geist Fallback";
   --font-mono: "Geist Mono", "Geist Mono Fallback";
   --color-background: var(--background);
@@ -241,8 +194,6 @@
     @apply bg-background text-foreground;
   }
 
-  /* Otimizações para PWA e tablets */
-  /* Prevenir zoom em inputs no iOS */
   @media screen and (max-width: 768px) {
     input,
     select,
@@ -251,26 +202,22 @@
     }
   }
 
-  /* Otimizar scroll em tablets */
   * {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Melhorar área de toque em tablets */
   button,
   a {
     min-height: 44px;
     min-width: 44px;
   }
 
-  /* Desabilitar seleção de texto em áreas interativas */
   .no-select {
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Animação suave para instalação PWA */
   @keyframes slide-in-bottom {
     from {
       transform: translateY(100%);

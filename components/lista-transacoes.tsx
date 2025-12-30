@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { WhatsAppSendDialog } from "./whatsapp-send-dialog"
+import { EmailCompartilharDialog } from "./email-compartilhar-dialog"
 import {
   ArrowUpCircle,
   Trash2,
@@ -52,31 +53,35 @@ interface ItemListado {
 interface ListaTransacoesProps {
   transacoes: Transacao[]
   contas: Conta[]
-  onTogglePago: (id: string, mes: number, ano: number) => void
-  onDelete: (id: string) => void
-  onAddPagamento: (id: string, mes: number, ano: number, dataPagamento: string, anexo?: string) => void
-  onEdit: (id: string, conta: Partial<Conta>) => void
+  onTogglePago: (contaId: number, mes: number, ano: number) => void
+  onDeleteConta: (contaId: number) => void
+  onUpdateConta: (conta: Conta) => void
+  abrirModalWhatsApp: (titulo: string, mensagem: string) => void
+  userName?: string
   mesSelecionado: number
   anoSelecionado: number
   onMesChange: (mes: number) => void
   onAnoChange: (ano: number) => void
   mostrarApenasHoje?: boolean
   onToggleMostrarHoje?: (mostrar: boolean) => void
+  onAddPagamento: (id: string, mes: number, ano: number, dataPagamento: string, anexo?: string) => void
 }
 
 export function ListaTransacoes({
   transacoes,
   contas,
   onTogglePago,
-  onDelete,
-  onAddPagamento,
-  onEdit,
+  onDeleteConta,
+  onUpdateConta,
+  abrirModalWhatsApp,
+  userName,
   mesSelecionado,
   anoSelecionado,
   onMesChange,
   onAnoChange,
   mostrarApenasHoje = false,
   onToggleMostrarHoje,
+  onAddPagamento,
 }: ListaTransacoesProps) {
   const [busca, setBusca] = useState("")
   const [filtroTipo, setFiltroTipo] = useState<string>("todos")
@@ -89,10 +94,10 @@ export function ListaTransacoes({
   const [contaParaEditar, setContaParaEditar] = useState<Conta | null>(null)
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
-
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+  const [assuntoEmail, setAssuntoEmail] = useState("")
+  const [mensagemEmail, setMensagemEmail] = useState("")
   const [swipedItemId, setSwipedItemId] = useState<string | null>(null)
-  const [undoData, setUndoData] = useState<{ action: string; conta: Conta } | null>(null)
-  const [showUndo, setShowUndo] = useState(false)
 
   const meses = [
     "Janeiro",
@@ -311,8 +316,109 @@ export function ListaTransacoes({
         `\n⚠️ *Aguardando pagamento*`
     }
 
-    setMensagemWhatsApp(mensagem)
-    setWhatsappDialogOpen(true)
+    abrirModalWhatsApp("Pagamento", mensagem)
+  }
+
+  const handleCompartilharEmail = (conta: Conta) => {
+    const pagamento = conta.pagamentos?.find((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
+
+    let assunto = ""
+    let mensagem = ""
+    let linhaVencimento = ""
+    let linhaParcela = ""
+    let linhaAnexo = ""
+    let linhaCategoria = ""
+
+    // Definir categoria
+    if (conta.categoria) {
+      linhaCategoria = `Categoria: ${conta.categoria}\n`
+    }
+
+    // Definir vencimento
+    if (conta.tipo === "diaria" && conta.data_gasto) {
+      const dataGasto = new Date(conta.data_gasto).toLocaleDateString("pt-BR")
+      linhaVencimento = `Data: ${dataGasto}\n`
+    } else {
+      linhaVencimento = `Vencimento: dia ${conta.vencimento}\n`
+    }
+
+    // Definir parcela
+    if (conta.tipo === "parcelada") {
+      const parcelaAtual = getParcelaAtual(conta)
+      linhaParcela = `Parcela: ${parcelaAtual} de ${conta.parcelas}x\n`
+    }
+
+    // Se tem pagamento registrado
+    if (pagamento) {
+      const anexoUrl = pagamento.anexo || conta.anexoDiario
+      if (anexoUrl) {
+        linhaAnexo = `\nComprovante: ${anexoUrl}\n`
+      }
+
+      assunto = `Pagamento Realizado - ${conta.nome}`
+      mensagem =
+        `PAGAMENTO REALIZADO\n\n` +
+        `Conta: ${conta.nome}\n` +
+        `Valor: ${formatarMoeda(conta.valor)}\n` +
+        `Data do Pagamento: ${new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}\n` +
+        linhaVencimento +
+        linhaParcela +
+        linhaCategoria +
+        `Mês de Referência: ${meses[mesSelecionado]}/${anoSelecionado}` +
+        linhaAnexo +
+        `\n\n---\nSistema de Gestão Financeira`
+    } else {
+      // Conta pendente
+      assunto = `Conta Pendente - ${conta.nome}`
+
+      // Template diferente para cada tipo
+      if (conta.tipo === "parcelada") {
+        const parcelaAtual = getParcelaAtual(conta)
+        mensagem =
+          `COBRANÇA - PAGAMENTO PARCELADO\n\n` +
+          `Prezado(a),\n\n` +
+          `Segue informação da parcela pendente:\n\n` +
+          `Conta: ${conta.nome}\n` +
+          `Valor da Parcela: ${formatarMoeda(conta.valor)}\n` +
+          `Parcela: ${parcelaAtual} de ${conta.parcelas}x\n` +
+          linhaVencimento +
+          linhaCategoria +
+          `Mês de Referência: ${meses[mesSelecionado]}/${anoSelecionado}\n` +
+          `\nAguardamos a confirmação do pagamento.\n\n` +
+          `Atenciosamente,\n` +
+          `Gestão Financeira`
+      } else if (conta.categoria === "Gasto Viagem") {
+        mensagem =
+          `DESPESA DE VIAGEM/LAZER\n\n` +
+          `Conta: ${conta.nome}\n` +
+          `Valor: ${formatarMoeda(conta.valor)}\n` +
+          linhaVencimento +
+          linhaCategoria +
+          `Mês: ${meses[mesSelecionado]}/${anoSelecionado}\n` +
+          `\nEsta é uma despesa relacionada a viagem/lazer.\n` +
+          `Aguardando processamento do pagamento.\n\n` +
+          `---\nSistema de Gestão Financeira`
+      } else {
+        // Template genérico para conta pendente
+        mensagem =
+          `CONTA PENDENTE DE PAGAMENTO\n\n` +
+          `Prezado(a),\n\n` +
+          `Segue informação da conta pendente:\n\n` +
+          `Conta: ${conta.nome}\n` +
+          `Valor: ${formatarMoeda(conta.valor)}\n` +
+          linhaVencimento +
+          linhaParcela +
+          linhaCategoria +
+          `Mês: ${meses[mesSelecionado]}/${anoSelecionado}\n` +
+          `\nPor favor, realize o pagamento até o vencimento.\n\n` +
+          `Atenciosamente,\n` +
+          `Gestão Financeira`
+      }
+    }
+
+    setAssuntoEmail(assunto)
+    setMensagemEmail(mensagem)
+    setEmailDialogOpen(true)
   }
 
   const getParcelaAtual = (conta: Conta) => {
@@ -382,7 +488,7 @@ export function ListaTransacoes({
     // Aguardar 5 segundos antes de deletar
     setTimeout(() => {
       if (showUndo) {
-        onDelete(conta.id)
+        onDeleteConta(conta.id)
         setShowUndo(false)
       }
     }, 5000)
@@ -413,6 +519,11 @@ export function ListaTransacoes({
       setContaSelecionada(contaSelecionada!)
     },
   })
+
+  const [undoData, setUndoData] = useState<{ action: string; conta: Conta } | null>(null)
+  const [showUndo, setShowUndo] = useState(false)
+
+  const isSomenteLeitura = userName === "Pamela Gonçalves"
 
   if (itensFiltrados.length === 0) {
     return (
@@ -615,24 +726,34 @@ export function ListaTransacoes({
                     }`}
                     {...swipeHandlers}
                     {...longPressHandlers}
+                    onMouseEnter={() => setSwipedItemId(item.id)}
+                    onMouseLeave={() => setSwipedItemId(null)}
                   >
-                    <Checkbox
-                      checked={pago || conta.tipo === "diaria"}
-                      onCheckedChange={() => {
-                        if (pago) {
-                          onTogglePago(conta.id, mesSelecionado, anoSelecionado)
-                        } else {
-                          handleMarcarPago(conta)
-                        }
-                      }}
-                      disabled={conta.tipo === "diaria"}
-                      className="h-5 w-5 mt-1"
-                    />
+                    {!isSomenteLeitura && (
+                      <Checkbox
+                        checked={pago || conta.tipo === "diaria"}
+                        onCheckedChange={() => {
+                          if (pago) {
+                            onTogglePago(conta.id, mesSelecionado, anoSelecionado)
+                          } else {
+                            handleMarcarPago(conta)
+                          }
+                        }}
+                        disabled={conta.tipo === "diaria"}
+                        className={`h-5 w-5 mt-1 ${conta.categoria === "Gasto Viagem" ? "border-white data-[state=checked]:bg-white data-[state=checked]:text-red-700" : ""}`}
+                      />
+                    )}
 
-                    <div className="flex-1">
+                    <div className="flex-1 relative z-10">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3
-                          className={`font-semibold ${pago || conta.tipo === "diaria" ? "line-through text-muted-foreground" : ""}`}
+                          className={`font-semibold ${
+                            conta.categoria === "Gasto Viagem"
+                              ? "text-white"
+                              : pago || conta.tipo === "diaria"
+                                ? "line-through text-muted-foreground"
+                                : ""
+                          }`}
                         >
                           {conta.nome}
                         </h3>
@@ -644,36 +765,69 @@ export function ListaTransacoes({
                               const anexoUrl = pagamento?.anexo || conta.anexoDiario || null
                               setAnexoVisualizar(anexoUrl)
                             }}
-                            className="h-6 px-2 gap-1 text-xs"
+                            className={`h-6 px-2 gap-1 text-xs ${conta.categoria === "Gasto Viagem" ? "text-white hover:bg-red-800" : ""}`}
                           >
                             <Paperclip className="h-3 w-3" />
                             Anexo
                           </Button>
                         )}
                         {conta.categoria && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs ${
+                              conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white border-white/30" : ""
+                            }`}
+                          >
                             {conta.categoria}
                           </Badge>
                         )}
-                        {conta.tipo === "fixa" && <Badge className="text-xs bg-blue-600">Fixa</Badge>}
+                        {conta.tipo === "fixa" && (
+                          <Badge
+                            className={`text-xs ${conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white" : "bg-blue-600"}`}
+                          >
+                            Fixa
+                          </Badge>
+                        )}
                         {conta.tipo === "parcelada" && (
-                          <Badge className="text-xs bg-purple-600">
+                          <Badge
+                            className={`text-xs ${conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white" : "bg-purple-600"}`}
+                          >
                             {parcelaAtual}/{conta.parcelas}x
                           </Badge>
                         )}
-                        {conta.tipo === "diaria" && <Badge className="text-xs bg-purple-600">Gasto Diário</Badge>}
-                        {conta.tipo === "caixinha" && <Badge className="text-xs bg-amber-600">Caixinha</Badge>}
+                        {conta.tipo === "diaria" && (
+                          <Badge
+                            className={`text-xs ${conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white" : "bg-purple-600"}`}
+                          >
+                            Gasto Diário
+                          </Badge>
+                        )}
+                        {conta.tipo === "caixinha" && (
+                          <Badge
+                            className={`text-xs ${conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white" : "bg-amber-600"}`}
+                          >
+                            Caixinha
+                          </Badge>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2 mb-2">
                         <span
-                          className={`text-lg font-bold ${pago || conta.tipo === "diaria" ? "text-muted-foreground" : "text-red-600 dark:text-red-400"}`}
+                          className={`text-lg font-bold ${
+                            conta.categoria === "Gasto Viagem"
+                              ? "text-white"
+                              : pago || conta.tipo === "diaria"
+                                ? "text-muted-foreground"
+                                : "text-red-600 dark:text-red-400"
+                          }`}
                         >
                           {formatarMoeda(conta.valor)}
                         </span>
                       </div>
 
-                      <div className="text-sm text-muted-foreground">
+                      <div
+                        className={`text-sm ${conta.categoria === "Gasto Viagem" ? "text-white/90" : "text-muted-foreground"}`}
+                      >
                         {conta.tipo === "diaria" && conta.data_gasto ? (
                           <span>
                             Data do Pagamento: {new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")}
@@ -700,27 +854,42 @@ export function ListaTransacoes({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleCompartilharWhatsApp(conta)}
-                      >
-                        <Share2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditarConta(conta)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                        onClick={() => handleDeleteWithUndo(conta)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    {!isSomenteLeitura && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleCompartilharWhatsApp(conta)}
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleEditarConta(conta)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                          onClick={() => handleDeleteWithUndo(conta)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleCompartilharEmail(conta)}
+                        >
+                          Email
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )
               }
@@ -767,9 +936,20 @@ export function ListaTransacoes({
         </DialogContent>
       </Dialog>
 
-      <EditContaDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} conta={contaParaEditar} onEdit={onEdit} />
+      <EditContaDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        conta={contaParaEditar}
+        onEdit={onUpdateConta}
+      />
 
       <WhatsAppSendDialog open={whatsappDialogOpen} onOpenChange={setWhatsappDialogOpen} mensagem={mensagemWhatsApp} />
+      <EmailCompartilharDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+        assunto={assuntoEmail}
+        mensagem={mensagemEmail}
+      />
     </div>
   )
 }

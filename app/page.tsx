@@ -20,7 +20,6 @@ import {
 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
-import Link from "next/link"
 import type { Conta } from "@/types/conta"
 import { ListaTransacoes } from "@/components/lista-transacoes"
 import { useAuth } from "@/components/auth-provider"
@@ -30,6 +29,7 @@ import { offlineStorage } from "@/lib/offline/storage"
 import { mutate } from "swr"
 import { formatarMoeda } from "@/utils/formatar-moeda" // Import the formatarMoeda function
 import { OnlineStatus } from "@/components/online-status"
+import { AddContaDialog } from "@/components/add-conta-dialog"
 
 export default function Home() {
   const { user, logout } = useAuth()
@@ -555,7 +555,7 @@ export default function Home() {
                           : ""
                     }`}
                   >
-                    Contas - {user?.nome || "Usuário"}
+                    {user?.nome || "Usuário"}
                   </h1>
                 </div>
                 <div className="flex items-center gap-3">
@@ -566,59 +566,85 @@ export default function Home() {
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Button
-                    onClick={() => setDialogOpen(true)}
-                    size="sm"
-                    disabled={user?.nome === "Pamela Gonçalves"}
-                    className={`w-[155px] ${
-                      user?.nome === "Kleber Gonçalves"
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : user?.nome === "Pamela Gonçalves"
-                          ? "bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-pink-800 dark:hover:bg-pink-900 dark:text-pink-100 opacity-50 cursor-not-allowed"
+                  {user?.nome !== "Pamela Gonçalves" && (
+                    <Button
+                      onClick={() => setDialogOpen(true)}
+                      size="sm"
+                      className={`w-[155px] ${
+                        user?.nome === "Kleber Gonçalves"
+                          ? "bg-green-600 hover:bg-green-700 text-white dark:bg-green-500 dark:hover:bg-green-600"
                           : ""
-                    }`}
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Nova Conta
-                  </Button>
-                  <Button asChild size="sm" variant="outline" className="w-[155px] bg-transparent">
-                    <Link href="/relatorios">
+                      }`}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Nova Conta
+                    </Button>
+                  )}
+
+                  {user?.nome !== "Pamela Gonçalves" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-[155px] bg-transparent"
+                      onClick={() => router.push("/relatorios")}
+                    >
                       <BarChart3 className="mr-2 h-4 w-4" />
                       Relatórios
-                    </Link>
-                  </Button>
+                    </Button>
+                  )}
+
                   <Button
-                    asChild
+                    variant="outline"
                     size="sm"
-                    className={`w-[155px] ${
-                      user?.nome === "Kleber Gonçalves"
-                        ? "bg-black hover:bg-gray-800 text-white"
-                        : user?.nome === "Pamela Gonçalves"
-                          ? "bg-blue-200 hover:bg-blue-300 text-black dark:bg-blue-300 dark:hover:bg-blue-400"
-                          : ""
-                    }`}
+                    className="w-[155px] bg-transparent"
+                    onClick={() => router.push("/consulta")}
                   >
-                    <Link href="/consulta">
-                      <Search className="mr-2 h-4 w-4" />
-                      Consultar
-                    </Link>
-                  </Button>
-                  <Button
-                    onClick={() => setCreditoDialogOpen(true)}
-                    size="sm"
-                    variant="default"
-                    disabled={user?.nome === "Pamela Gonçalves"}
-                    className={`w-[155px] ${user?.nome === "Pamela Gonçalves" ? "opacity-50 cursor-not-allowed" : ""}`}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Crédito
+                    <Search className="mr-2 h-4 w-4" />
+                    Consultar
                   </Button>
                 </div>
 
-                <Button onClick={handleSair} size="sm" variant="ghost" className="w-[100px] shrink-0">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sair
-                </Button>
+                {user?.nome !== "Pamela Gonçalves" && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => setCreditoDialogOpen(true)}
+                      size="sm"
+                      className={`w-[155px] ${
+                        user?.nome === "Kleber Gonçalves"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                          : ""
+                      }`}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar Crédito
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        logout()
+                        router.push("/login")
+                      }}
+                      className="shrink-0"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {user?.nome === "Pamela Gonçalves" && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      logout()
+                      router.push("/login")
+                    }}
+                    className="shrink-0"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -834,9 +860,13 @@ export default function Home() {
               onAnoChange={setAnoSelecionado}
               mostrarApenasHoje={mostrarApenasHoje}
               onToggleMostrarHoje={setMostrarApenasHoje}
+              abrirModalWhatsApp={abrirModalWhatsApp}
+              userName={user?.nome}
             />
           </CardContent>
         </Card>
+        {/* Dialog for adding a new account */}
+        <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
       </div>
     </main>
   )
