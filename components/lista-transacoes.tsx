@@ -150,6 +150,7 @@ export function ListaTransacoes({
     )
 
     // Processar contas
+    // As contas parceladas já vêm expandidas da API com parcelaAtual correto
     const contasFiltradas = contas
       .filter((conta) => {
         if (conta.tipo === "fixa") return true
@@ -159,6 +160,11 @@ export function ListaTransacoes({
           return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
         }
         if (conta.tipo === "parcelada") {
+          // Se a conta já vem expandida da API (tem mesVencimento e anoVencimento)
+          if (conta.mesVencimento && conta.anoVencimento) {
+            return conta.mesVencimento === mesSelecionado && conta.anoVencimento === anoSelecionado
+          }
+          // Fallback para cálculo se não vier expandida
           const inicio = new Date(conta.dataInicio!)
           const parcelaAtual =
             (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - (inicio.getMonth() + 1)) + 1
@@ -172,13 +178,13 @@ export function ListaTransacoes({
         return false
       })
       .map((conta) => ({
-        id: conta.id,
+        id: `${conta.id}-${conta.parcelaAtual || 0}`, // ID único para cada parcela
         tipo: "conta" as const,
         nome: conta.nome,
         valor: conta.valor,
         data: conta.tipo === "diaria" && conta.data_gasto ? new Date(conta.data_gasto) : new Date(),
         created_at: new Date(conta.created_at),
-        conta: conta,
+        conta: conta, // Preserva o parcelaAtual que vem da API
       }))
 
     todosItens.push(...contasFiltradas)

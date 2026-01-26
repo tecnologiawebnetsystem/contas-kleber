@@ -30,6 +30,7 @@ import { mutate } from "swr"
 import { formatarMoeda } from "@/utils/formatar-moeda" // Import the formatarMoeda function
 import { OnlineStatus } from "@/components/online-status"
 import { AddContaDialog } from "@/components/add-conta-dialog"
+import { AddCreditoDialog } from "@/components/add-credito-dialog"
 
 export default function Home() {
   const { user, logout } = useAuth()
@@ -51,6 +52,10 @@ export default function Home() {
   const [mesSelecionado, setMesSelecionado] = useState(hoje.getMonth() + 1)
   const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear())
   const [mostrarApenasHoje, setMostrarApenasHoje] = useState(false)
+
+  // Permissões baseadas no perfil - Pamela tem apenas visualização
+  const isPamela = user?.nome === "Pamela Gonçalves"
+  const podeEditar = !isPamela
 
   useEffect(() => {
     fetchContas()
@@ -566,22 +571,18 @@ export default function Home() {
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2 flex-wrap">
-                  {user?.nome !== "Pamela Gonçalves" && (
+                  {podeEditar && (
                     <Button
                       onClick={() => setDialogOpen(true)}
                       size="sm"
-                      className={`w-[155px] ${
-                        user?.nome === "Kleber Gonçalves"
-                          ? "bg-green-600 hover:bg-green-700 text-white dark:bg-green-500 dark:hover:bg-green-600"
-                          : ""
-                      }`}
+                      className="w-[155px] bg-green-600 hover:bg-green-700 text-white dark:bg-green-500 dark:hover:bg-green-600"
                     >
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Nova Conta
                     </Button>
                   )}
 
-                  {user?.nome !== "Pamela Gonçalves" && (
+                  {podeEditar && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -602,49 +603,30 @@ export default function Home() {
                     <Search className="mr-2 h-4 w-4" />
                     Consultar
                   </Button>
-                </div>
 
-                {user?.nome !== "Pamela Gonçalves" && (
-                  <div className="flex items-center gap-2">
+                  {podeEditar && (
                     <Button
                       onClick={() => setCreditoDialogOpen(true)}
                       size="sm"
-                      className={`w-[155px] ${
-                        user?.nome === "Kleber Gonçalves"
-                          ? "bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
-                          : ""
-                      }`}
+                      className="w-[155px] bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Adicionar Crédito
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        logout()
-                        router.push("/login")
-                      }}
-                      className="shrink-0"
-                    >
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {user?.nome === "Pamela Gonçalves" && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      logout()
-                      router.push("/login")
-                    }}
-                    className="shrink-0"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    logout()
+                    router.push("/login")
+                  }}
+                  className="shrink-0 bg-transparent"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
@@ -867,6 +849,7 @@ export default function Home() {
         </Card>
         {/* Dialog for adding a new account */}
         <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
+        <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
       </div>
     </main>
   )
