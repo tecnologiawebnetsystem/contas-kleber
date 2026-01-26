@@ -30,6 +30,7 @@ import { mutate } from "swr"
 import { formatarMoeda } from "@/utils/formatar-moeda" // Import the formatarMoeda function
 import { OnlineStatus } from "@/components/online-status"
 import { AddContaDialog } from "@/components/add-conta-dialog"
+import { AddCreditoDialog } from "@/components/add-credito-dialog"
 
 export default function Home() {
   const { user, logout } = useAuth()
@@ -848,6 +849,7 @@ export default function Home() {
         </Card>
         {/* Dialog for adding a new account */}
         <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
+        <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
       </div>
     </main>
   )
