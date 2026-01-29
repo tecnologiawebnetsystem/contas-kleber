@@ -29,6 +29,7 @@ import { formatarMoeda } from "@/utils/formatar-moeda"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useOnlineStatus } from "@/hooks/use-online-status"
 import { offlineStorage } from "@/lib/offline/storage"
+import { OnlineStatus } from "@/components/online-status"
 import { WifiOff } from "lucide-react"
 
 type PagamentoCarro = {
@@ -62,6 +63,21 @@ export default function CarroPage() {
     }
     fetchPagamentos()
   }, [isKleber, router])
+
+  // Recarregar dados quando voltar online
+  useEffect(() => {
+    const handleOnline = () => {
+      if (navigator.onLine) {
+        // Aguarda um pouco para a sincronização terminar e recarrega os dados
+        setTimeout(() => {
+          fetchPagamentos()
+        }, 2000)
+      }
+    }
+
+    window.addEventListener("online", handleOnline)
+    return () => window.removeEventListener("online", handleOnline)
+  }, [])
 
   const fetchPagamentos = async () => {
     try {
@@ -285,7 +301,10 @@ export default function CarroPage() {
                   </div>
                 </div>
               </div>
-              <ThemeToggle />
+              <div className="flex items-center gap-2">
+                <OnlineStatus userName={user?.nome} />
+                <ThemeToggle />
+              </div>
             </div>
           </div>
 

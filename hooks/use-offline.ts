@@ -90,6 +90,29 @@ export function useOffline() {
   const executeOperation = async (operation: any) => {
     const { type, table, data } = operation
 
+    // Tratamento especial para tabela carro
+    if (table === "carro") {
+      switch (type) {
+        case "insert":
+          // Remover o id temporário antes de enviar
+          const { id: tempId, ...carroData } = data
+          await fetch("/api/carro", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(carroData),
+          })
+          break
+
+        case "delete":
+          await fetch(`/api/carro?id=${data.id}`, {
+            method: "DELETE",
+          })
+          break
+      }
+      return
+    }
+
+    // Tratamento padrão para outras tabelas
     switch (type) {
       case "insert":
         await fetch(`/api/${table}`, {
