@@ -180,15 +180,32 @@ export default function Home() {
 
   const fetchTotalCarro = async () => {
     try {
-      const response = await fetch("/api/carro")
-      if (!response.ok) {
-        throw new Error("Erro ao buscar pagamentos do carro")
+      if (isOnline) {
+        const response = await fetch("/api/carro")
+        if (!response.ok) {
+          throw new Error("Erro ao buscar pagamentos do carro")
+        }
+        const data = await response.json()
+        const total = data.reduce((sum: number, p: any) => sum + Number(p.valor), 0)
+        setTotalPagoCarro(total)
+        // Salvar no cache offline
+        await offlineStorage.savePagamentosCarro(data)
+      } else {
+        // Buscar do cache offline
+        const cachedData = await offlineStorage.getPagamentosCarro()
+        const total = cachedData.reduce((sum: number, p: any) => sum + Number(p.valor), 0)
+        setTotalPagoCarro(total)
       }
-      const data = await response.json()
-      const total = data.reduce((sum: number, p: any) => sum + Number(p.valor), 0)
-      setTotalPagoCarro(total)
     } catch (error) {
       console.error("[v0] Erro ao buscar total do carro:", error)
+      // Tentar carregar do cache em caso de erro
+      try {
+        const cachedData = await offlineStorage.getPagamentosCarro()
+        const total = cachedData.reduce((sum: number, p: any) => sum + Number(p.valor), 0)
+        setTotalPagoCarro(total)
+      } catch {
+        console.error("[v0] Erro ao carregar cache do carro")
+      }
     }
   }
 

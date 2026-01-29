@@ -10,7 +10,7 @@ interface OfflineOperation {
 
 class OfflineStorage {
   private dbName = "ContasKleberDB"
-  private version = 1
+  private version = 2
   private db: IDBDatabase | null = null
 
   async init() {
@@ -57,6 +57,12 @@ class OfflineStorage {
             autoIncrement: true,
           })
           pendingStore.createIndex("timestamp", "timestamp", { unique: false })
+        }
+
+        // Store para pagamentos do carro
+        if (!db.objectStoreNames.contains("pagamentos_carro")) {
+          const carroStore = db.createObjectStore("pagamentos_carro", { keyPath: "id" })
+          carroStore.createIndex("data_pagamento", "data_pagamento", { unique: false })
         }
       }
     })
@@ -210,6 +216,52 @@ class OfflineStorage {
     const transaction = this.db!.transaction(["pending_operations"], "readwrite")
     const store = transaction.objectStore("pending_operations")
     await store.clear()
+  }
+
+  // Salvar pagamentos do carro localmente
+  async savePagamentosCarro(pagamentos: any[]) {
+    if (!this.db) await this.init()
+    const transaction = this.db!.transaction(["pagamentos_carro"], "readwrite")
+    const store = transaction.objectStore("pagamentos_carro")
+
+    await store.clear()
+    for (const pagamento of pagamentos) {
+      await store.put(pagamento)
+    }
+  }
+
+  // Buscar pagamentos do carro localmente
+  async getPagamentosCarro(): Promise<any[]> {
+    if (!this.db) await this.init()
+    const transaction = this.db!.transaction(["pagamentos_carro"], "readonly")
+    const store = transaction.objectStore("pagamentos_carro")
+
+    return new Promise((resolve, reject) => {
+      const request = store.getAll()
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  // Adicionar pagamento do carro localmente (para uso offline)
+  async addPagamentoCarro(pagamento: any) {
+    if (!this.db) await this.init()
+    const transaction = this.db!.transaction(["pagamentos_carro"], "readwrite")
+    const store = transaction.objectStore("pagamentos_carro")
+
+    return new Promise((resolve, reject) => {
+      const request = store.add(pagamento)
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  // Remover pagamento do carro localmente
+  async removePagamentoCarro(id: string) {
+    if (!this.db) await this.init()
+    const transaction = this.db!.transaction(["pagamentos_carro"], "readwrite")
+    const store = transaction.objectStore("pagamentos_carro")
+    await store.delete(id)
   }
 }
 
