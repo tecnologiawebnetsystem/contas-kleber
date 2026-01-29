@@ -17,6 +17,7 @@ import {
   BarChart3,
   Plane,
   PlusCircle,
+  Car,
 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
@@ -43,6 +44,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [dataPoupanca, setDataPoupanca] = useState<any | null>(null)
   const [dataViagem, setDataViagem] = useState<any | null>(null)
+  const [totalPagoCarro, setTotalPagoCarro] = useState(0)
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
   const router = useRouter()
@@ -56,13 +58,17 @@ export default function Home() {
   // Permissões baseadas no perfil - Pamela tem apenas visualização
   const isPamela = user?.nome === "Pamela Gonçalves"
   const podeEditar = !isPamela
+  const isKleber = user?.pin === "080754"
 
   useEffect(() => {
     fetchContas()
     fetchSaldo()
     fetchTransacoes()
     fetchPoupancaEViagem()
-  }, [])
+    if (isKleber) {
+      fetchTotalCarro()
+    }
+  }, [isKleber])
 
   const fetchSaldo = async () => {
     try {
@@ -169,6 +175,20 @@ export default function Home() {
       }
     } catch (error) {
       console.error("[v0] Erro ao buscar poupança e viagem:", error)
+    }
+  }
+
+  const fetchTotalCarro = async () => {
+    try {
+      const response = await fetch("/api/carro")
+      if (!response.ok) {
+        throw new Error("Erro ao buscar pagamentos do carro")
+      }
+      const data = await response.json()
+      const total = data.reduce((sum: number, p: any) => sum + Number(p.valor), 0)
+      setTotalPagoCarro(total)
+    } catch (error) {
+      console.error("[v0] Erro ao buscar total do carro:", error)
     }
   }
 
@@ -630,7 +650,26 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {/* Widget Carro - Apenas para Kleber */}
+              {isKleber && (
+                <Card
+                  className="bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100 dark:from-slate-950 dark:via-gray-950 dark:to-zinc-950 border-slate-300 dark:border-slate-700 shadow-lg cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                  onClick={() => router.push("/carro")}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-xs font-medium text-slate-900 dark:text-slate-100">Carro</CardTitle>
+                    <Car className="h-3 w-3 text-slate-600 dark:text-slate-400" />
+                  </CardHeader>
+                  <CardContent className="pb-3">
+                    <div className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                      {formatarMoeda(totalPagoCarro)}
+                    </div>
+                    <p className="text-xs mt-1 text-slate-600 dark:text-slate-400">Total pago</p>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card className="bg-gradient-to-br from-purple-50 via-violet-50 to-fuchsia-50 dark:from-purple-950 dark:via-violet-950 dark:to-fuchsia-950 border-purple-200 dark:border-purple-800 shadow-lg">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xs font-medium text-purple-900 dark:text-purple-100">Poupança</CardTitle>
