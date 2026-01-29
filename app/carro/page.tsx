@@ -27,6 +27,10 @@ import { useAuth } from "@/components/auth-provider"
 import { useToast } from "@/hooks/use-toast"
 import { formatarMoeda } from "@/utils/formatar-moeda"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useOnlineStatus } from "@/hooks/use-online-status"
+import { offlineStorage } from "@/lib/offline/storage"
+import { OnlineStatus } from "@/components/online-status"
+import { WifiOff } from "lucide-react"
 
 type PagamentoCarro = {
   id: string
@@ -40,6 +44,7 @@ export default function CarroPage() {
   const router = useRouter()
   const { user } = useAuth()
   const { toast } = useToast()
+  const isOnline = useOnlineStatus()
   const [pagamentos, setPagamentos] = useState<PagamentoCarro[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -59,19 +64,64 @@ export default function CarroPage() {
     fetchPagamentos()
   }, [isKleber, router])
 
+  // Recarregar dados quando voltar online
+  useEffect(() => {
+    const handleOnline = () => {
+      if (navigator.onLine) {
+        // Aguarda um pouco para a sincronização terminar e recarrega os dados
+        setTimeout(() => {
+          fetchPagamentos()
+        }, 2000)
+      }
+    }
+
+    window.addEventListener("online", handleOnline)
+    return () => window.removeEventListener("online", handleOnline)
+  }, [])
+
   const fetchPagamentos = async () => {
     try {
-      const response = await fetch("/api/carro")
-      if (!response.ok) throw new Error("Erro ao buscar pagamentos")
-      const data = await response.json()
-      setPagamentos(data)
+      if (isOnline) {
+        const response = await fetch("/api/carro")
+        if (!response.ok) throw new Error("Erro ao buscar pagamentos")
+        const data = await response.json()
+        setPagamentos(data)
+        // Salvar no cache offline
+        await offlineStorage.savePagamentosCarro(data)
+      } else {
+        // Buscar do cache offline
+        const cachedData = await offlineStorage.getPagamentosCarro()
+        setPagamentos(cachedData.sort((a, b) => 
+          new Date(b.data_pagamento).getTime() - new Date(a.data_pagamento).getTime()
+        ))
+      }
     } catch (error) {
       console.error("[v0] Erro ao buscar pagamentos:", error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os pagamentos.",
-        variant: "destructive",
-      })
+      // Tentar carregar do cache em caso de erro
+      try {
+        const cachedData = await offlineStorage.getPagamentosCarro()
+        if (cachedData.length > 0) {
+          setPagamentos(cachedData.sort((a, b) => 
+            new Date(b.data_pagamento).getTime() - new Date(a.data_pagamento).getTime()
+          ))
+          toast({
+            title: "Modo Offline",
+            description: "Mostrando dados salvos localmente.",
+          })
+        } else {
+          toast({
+            title: "Erro",
+            description: "Não foi possível carregar os pagamentos.",
+            variant: "destructive",
+          })
+        }
+      } catch {
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os pagamentos.",
+          variant: "destructive",
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -88,23 +138,45 @@ export default function CarroPage() {
     }
 
     setSubmitting(true)
+    const novoPagamento = {
+      id: `temp-${Date.now()}`,
+      valor: parseFloat(valor.replace(/\D/g, "")) / 100,
+      data_pagamento: dataPagamento,
+      descricao: descricao || "Pagamento do carro",
+      created_at: new Date().toISOString(),
+    }
+
     try {
-      const response = await fetch("/api/carro", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          valor: parseFloat(valor.replace(/\D/g, "")) / 100,
-          data_pagamento: dataPagamento,
-          descricao: descricao || "Pagamento do carro",
-        }),
-      })
+      if (isOnline) {
+        const response = await fetch("/api/carro", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            valor: novoPagamento.valor,
+            data_pagamento: novoPagamento.data_pagamento,
+            descricao: novoPagamento.descricao,
+          }),
+        })
 
-      if (!response.ok) throw new Error("Erro ao adicionar pagamento")
+        if (!response.ok) throw new Error("Erro ao adicionar pagamento")
 
-      toast({
-        title: "Sucesso",
-        description: "Pagamento adicionado com sucesso!",
-      })
+        toast({
+          title: "Sucesso",
+          description: "Pagamento adicionado com sucesso!",
+        })
+      } else {
+        // Salvar localmente quando offline
+        await offlineStorage.addPagamentoCarro(novoPagamento)
+        await offlineStorage.addPendingOperation({
+          type: "insert",
+          table: "carro",
+          data: novoPagamento,
+        })
+        toast({
+          title: "Salvo localmente",
+          description: "Pagamento será sincronizado quando estiver online.",
+        })
+      }
 
       setValor("")
       setDataPagamento("")
@@ -125,16 +197,30 @@ export default function CarroPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/carro?id=${id}`, {
-        method: "DELETE",
-      })
+      if (isOnline) {
+        const response = await fetch(`/api/carro?id=${id}`, {
+          method: "DELETE",
+        })
 
-      if (!response.ok) throw new Error("Erro ao deletar pagamento")
+        if (!response.ok) throw new Error("Erro ao deletar pagamento")
 
-      toast({
-        title: "Sucesso",
-        description: "Pagamento removido com sucesso!",
-      })
+        toast({
+          title: "Sucesso",
+          description: "Pagamento removido com sucesso!",
+        })
+      } else {
+        // Remover localmente quando offline
+        await offlineStorage.removePagamentoCarro(id)
+        await offlineStorage.addPendingOperation({
+          type: "delete",
+          table: "carro",
+          data: { id },
+        })
+        toast({
+          title: "Removido localmente",
+          description: "A remoção será sincronizada quando estiver online.",
+        })
+      }
 
       fetchPagamentos()
     } catch (error) {
@@ -203,13 +289,22 @@ export default function CarroPage() {
                     <h1 className="text-2xl md:text-3xl font-bold text-white">
                       Pagamentos do Carro
                     </h1>
-                    <p className="text-white/70 text-sm">
+                    <p className="text-white/70 text-sm flex items-center gap-2">
                       Controle de pagamentos do veículo
+                      {!isOnline && (
+                        <span className="inline-flex items-center gap-1 bg-yellow-500/20 text-yellow-200 px-2 py-0.5 rounded-full text-xs">
+                          <WifiOff className="h-3 w-3" />
+                          Offline
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
               </div>
-              <ThemeToggle />
+              <div className="flex items-center gap-2">
+                <OnlineStatus userName={user?.nome} />
+                <ThemeToggle />
+              </div>
             </div>
           </div>
 
