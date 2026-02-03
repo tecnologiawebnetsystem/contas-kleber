@@ -29,6 +29,7 @@ import { useSwipe } from "@/hooks/use-swipe"
 import { useLongPress } from "@/hooks/use-long-press"
 import { UndoToast } from "./undo-toast"
 import { getDataAtualBrasil } from "@/lib/date-utils"
+import { ParcelaProgress } from "@/components/parcela-progress"
 
 interface Transacao {
   id: string
@@ -795,11 +796,20 @@ export function ListaTransacoes({
                           </Badge>
                         )}
                         {conta.tipo === "parcelada" && (
-                          <Badge
-                            className={`text-xs ${conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white" : "bg-purple-600"}`}
-                          >
-                            {parcelaAtual}/{conta.parcelas}x
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              className={`text-xs ${conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white" : "bg-purple-600"}`}
+                            >
+                              {parcelaAtual}/{conta.parcelas}x
+                            </Badge>
+                            <ParcelaProgress 
+                              parcelaAtual={parcelaAtual} 
+                              totalParcelas={conta.parcelas || 1} 
+                              showLabel={false}
+                              size="sm"
+                              className="w-16 hidden sm:flex"
+                            />
+                          </div>
                         )}
                         {conta.tipo === "diaria" && (
                           <Badge

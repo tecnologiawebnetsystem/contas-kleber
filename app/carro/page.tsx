@@ -289,15 +289,21 @@ export default function CarroPage() {
                     <h1 className="text-2xl md:text-3xl font-bold text-white">
                       Pagamentos do Carro
                     </h1>
-                    <p className="text-white/70 text-sm flex items-center gap-2">
-                      Controle de pagamentos do veículo
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-1">
+                      <span className="text-white/90 text-sm font-medium">
+                        FIAT / PALIO SPORTING 1.8
+                      </span>
+                      <span className="hidden sm:inline text-white/50">|</span>
+                      <span className="text-white/70 text-sm">
+                        Placa: <span className="font-mono font-semibold text-white/90">IUL2213</span>
+                      </span>
                       {!isOnline && (
-                        <span className="inline-flex items-center gap-1 bg-yellow-500/20 text-yellow-200 px-2 py-0.5 rounded-full text-xs">
+                        <span className="inline-flex items-center gap-1 bg-yellow-500/20 text-yellow-200 px-2 py-0.5 rounded-full text-xs w-fit">
                           <WifiOff className="h-3 w-3" />
                           Offline
                         </span>
                       )}
-                    </p>
+                    </div>
                   </div>
                 </div>
               </div>

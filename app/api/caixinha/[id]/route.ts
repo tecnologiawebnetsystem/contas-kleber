@@ -1,10 +1,11 @@
-import { createClient } from "@/lib/supabase"
+import { createServerSupabaseClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const body = await request.json()
-    const supabase = createClient()
+    const supabase = await createServerSupabaseClient()
 
     const { data, error } = await supabase
       .from("caixinha_depositos")
@@ -13,7 +14,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         observacao: body.observacao,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single()
 
@@ -21,7 +22,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
     // Recalcular valores futuros se necessário
     if (body.recalcular) {
-      await recalcularDepositos(params.id)
+      await recalcularDepositos(id)
     }
 
     return NextResponse.json(data)
@@ -32,7 +33,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 async function recalcularDepositos(depositoId: string) {
-  const supabase = createClient()
+  const supabase = await createServerSupabaseClient()
 
   // Buscar configuração e todos os depósitos
   const { data: config } = await supabase.from("caixinha_config").select("*").single()
