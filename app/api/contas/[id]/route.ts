@@ -2,8 +2,9 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +19,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     )
 
     const body = await request.json()
-    const { id } = params
 
     // Converter camelCase para snake_case para o banco
     const dadosAtualizados: any = {
@@ -74,8 +74,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -88,8 +89,6 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         },
       },
     )
-
-    const { id } = params
 
     const { error } = await supabase.from("contas").delete().eq("id", id)
 

@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase"
+import { createServerSupabaseClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-    const supabase = createClient()
+    const supabase = await createServerSupabaseClient()
 
     // Buscar configuração
     const { data: config, error: configError } = await supabase.from("caixinha_config").select("*").single()
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { acao, ...data } = body
-    const supabase = createClient()
+    const supabase = await createServerSupabaseClient()
 
     if (acao === "gerar_depositos") {
       const { data: config } = await supabase.from("caixinha_config").select("meta_valor").single()
