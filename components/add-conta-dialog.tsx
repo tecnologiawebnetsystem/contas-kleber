@@ -80,9 +80,11 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
     }
 
     if (tipo === "parcelada") {
-      novaConta.parcelas = Number.parseInt(parcelas)
+      const numParcelas = parseInt(parcelas, 10)
+      novaConta.parcelas = isNaN(numParcelas) || numParcelas < 1 ? 1 : numParcelas
       novaConta.dataInicio = dataInicio
       novaConta.parcelaAtual = 1
+
     }
 
     if (tipo === "diaria" || tipo === "poupanca" || tipo === "viagem") {
@@ -268,10 +270,17 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
                 <Input
                   id="parcelas"
                   type="number"
-                  min="2"
+                  min="1"
+                  max="120"
                   placeholder="12"
                   value={parcelas}
-                  onChange={(e) => setParcelas(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    // Só permite números válidos
+                    if (val === "" || (parseInt(val, 10) >= 1 && parseInt(val, 10) <= 120)) {
+                      setParcelas(val)
+                    }
+                  }}
                   required
                 />
               </div>

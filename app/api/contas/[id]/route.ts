@@ -30,9 +30,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     if (body.tipo === "parcelada") {
-      dadosAtualizados.parcelas = body.parcelas
+      // Garantir que parcelas seja um número inteiro válido
+      const numParcelas = parseInt(String(body.parcelas), 10)
+      dadosAtualizados.parcelas = isNaN(numParcelas) || numParcelas < 1 ? 1 : numParcelas
       dadosAtualizados.data_inicio = body.dataInicio
       dadosAtualizados.parcela_atual = body.parcelaAtual
+
     }
 
     if (body.tipo === "diaria") {

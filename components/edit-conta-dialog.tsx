@@ -108,8 +108,10 @@ export function EditContaDialog({ open, onOpenChange, onEdit, conta }: EditConta
     }
 
     if (tipo === "parcelada") {
-      contaAtualizada.parcelas = Number.parseInt(parcelas)
+      const numParcelas = parseInt(parcelas, 10)
+      contaAtualizada.parcelas = isNaN(numParcelas) || numParcelas < 1 ? 1 : numParcelas
       contaAtualizada.dataInicio = dataInicio
+
     }
 
     if (tipo === "diaria" || tipo === "caixinha") {
@@ -207,10 +209,16 @@ export function EditContaDialog({ open, onOpenChange, onEdit, conta }: EditConta
                 <Input
                   id="parcelas"
                   type="number"
-                  min="2"
+                  min="1"
+                  max="120"
                   placeholder="12"
                   value={parcelas}
-                  onChange={(e) => setParcelas(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (val === "" || (parseInt(val, 10) >= 1 && parseInt(val, 10) <= 120)) {
+                      setParcelas(val)
+                    }
+                  }}
                   required
                 />
               </div>

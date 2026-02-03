@@ -213,8 +213,11 @@ export async function POST(request: Request) {
     }
 
     if (body.tipo === "parcelada") {
-      contaData.parcelas = body.parcelas
+      // Garantir que parcelas seja um número inteiro válido
+      const numParcelas = parseInt(String(body.parcelas), 10)
+      contaData.parcelas = isNaN(numParcelas) || numParcelas < 1 ? 1 : numParcelas
       contaData.data_inicio = body.dataInicio
+
     }
 
     if (body.tipo === "diaria" || body.tipo === "poupanca" || body.tipo === "viagem") {
