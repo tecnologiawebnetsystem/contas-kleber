@@ -32,6 +32,8 @@ import { formatarMoeda } from "@/utils/formatar-moeda" // Import the formatarMoe
 import { OnlineStatus } from "@/components/online-status"
 import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
+import { BottomNav } from "@/components/bottom-nav"
+import { DashboardSummary } from "@/components/dashboard-summary"
 
 export default function Home() {
   const { user, logout } = useAuth()
@@ -568,6 +570,32 @@ export default function Home() {
   const totalPoupanca = dataPoupanca?.totalDepositado || 0
   const totalViagem = dataViagem?.totalDepositado || 0
 
+  // Calculo de gastos por categoria para o grafico
+  const gastosPorCategoria = contasMesAtual.reduce((acc, conta) => {
+    const categoria = conta.tipo === "fixa" ? "Fixas" 
+      : conta.tipo === "parcelada" ? "Parceladas"
+      : conta.tipo === "diaria" ? "Diarias"
+      : conta.tipo === "poupanca" ? "Poupanca"
+      : conta.tipo === "viagem" ? "Viagem"
+      : "Outras"
+    
+    const existing = acc.find(c => c.categoria === categoria)
+    if (existing) {
+      existing.valor += conta.valor
+    } else {
+      const cores: Record<string, string> = {
+        "Fixas": "#3b82f6",
+        "Parceladas": "#8b5cf6",
+        "Diarias": "#f59e0b",
+        "Poupanca": "#10b981",
+        "Viagem": "#06b6d4",
+        "Outras": "#6b7280"
+      }
+      acc.push({ categoria, valor: conta.valor, cor: cores[categoria] || "#6b7280" })
+    }
+    return acc
+  }, [] as { categoria: string; valor: number; cor: string }[]).sort((a, b) => b.valor - a.valor)
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -666,6 +694,17 @@ export default function Home() {
                 </Button>
               </div>
             </div>
+
+            {/* Dashboard Summary com cards de resumo e grafico */}
+            <DashboardSummary
+              totalMes={totalMes}
+              totalPago={totalPago}
+              totalPendente={totalMes - totalPago}
+              contasAtrasadas={contasAtrasadas.length}
+              contasProximas={contasProximasVencimento.length}
+              saldo={saldo}
+              gastosPorCategoria={gastosPorCategoria}
+            />
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {/* Widget Carro - Apenas para Kleber */}
@@ -907,6 +946,12 @@ export default function Home() {
         <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
         <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
       </div>
+      
+      {/* Navegacao inferior para mobile */}
+      <BottomNav isKleber={isKleber} />
+      
+      {/* Espaco extra no final para nao sobrepor a nav */}
+      <div className="h-16 md:hidden" />
     </main>
   )
 }
