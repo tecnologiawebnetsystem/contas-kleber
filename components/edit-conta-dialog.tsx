@@ -111,7 +111,6 @@ export function EditContaDialog({ open, onOpenChange, onEdit, conta }: EditConta
       const numParcelas = parseInt(parcelas, 10)
       contaAtualizada.parcelas = isNaN(numParcelas) || numParcelas < 1 ? 1 : numParcelas
       contaAtualizada.dataInicio = dataInicio
-
     }
 
     if (tipo === "diaria" || tipo === "caixinha") {

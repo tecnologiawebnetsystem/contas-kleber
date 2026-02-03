@@ -217,7 +217,6 @@ export async function POST(request: Request) {
       const numParcelas = parseInt(String(body.parcelas), 10)
       contaData.parcelas = isNaN(numParcelas) || numParcelas < 1 ? 1 : numParcelas
       contaData.data_inicio = body.dataInicio
-
     }
 
     if (body.tipo === "diaria" || body.tipo === "poupanca" || body.tipo === "viagem") {

@@ -84,7 +84,6 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
       novaConta.parcelas = isNaN(numParcelas) || numParcelas < 1 ? 1 : numParcelas
       novaConta.dataInicio = dataInicio
       novaConta.parcelaAtual = 1
-
     }
 
     if (tipo === "diaria" || tipo === "poupanca" || tipo === "viagem") {

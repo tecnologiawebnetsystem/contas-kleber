@@ -35,7 +35,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       dadosAtualizados.parcelas = isNaN(numParcelas) || numParcelas < 1 ? 1 : numParcelas
       dadosAtualizados.data_inicio = body.dataInicio
       dadosAtualizados.parcela_atual = body.parcelaAtual
-
     }
 
     if (body.tipo === "diaria") {
