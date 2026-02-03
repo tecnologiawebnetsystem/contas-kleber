@@ -22,7 +22,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     // Recalcular valores futuros se necessário
     if (body.recalcular) {
-      await recalcularDepositos(params.id)
+      await recalcularDepositos(id)
     }
 
     return NextResponse.json(data)
