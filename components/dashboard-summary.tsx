@@ -20,10 +20,7 @@ import {
   ResponsiveContainer,
   Tooltip,
   Cell,
-  PieChart,
-  Pie,
 } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 
 interface DashboardSummaryProps {
   totalMes: number
@@ -50,12 +47,6 @@ export function DashboardSummary({
   const variacao = comparativoMesAnterior !== 0 
     ? ((totalMes - comparativoMesAnterior) / comparativoMesAnterior) * 100 
     : 0
-
-  const chartConfig = {
-    valor: {
-      label: "Valor",
-    },
-  }
 
   return (
     <div className="space-y-4">
@@ -163,7 +154,7 @@ export function DashboardSummary({
             <CardTitle className="text-sm font-medium">Gastos por Categoria</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[200px] w-full">
+            <div className="h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={gastosPorCategoria} layout="vertical" margin={{ left: 0, right: 16 }}>
                   <XAxis type="number" hide />
@@ -173,11 +164,17 @@ export function DashboardSummary({
                     tickLine={false} 
                     axisLine={false}
                     width={80}
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 11, fill: "currentColor" }}
                   />
-                  <ChartTooltip 
-                    content={<ChartTooltipContent />}
+                  <Tooltip 
                     formatter={(value) => formatarMoeda(Number(value))}
+                    contentStyle={{ 
+                      backgroundColor: "hsl(var(--background))", 
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      fontSize: "12px"
+                    }}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
                   />
                   <Bar dataKey="valor" radius={[0, 4, 4, 0]} maxBarSize={24}>
                     {gastosPorCategoria.map((entry, index) => (
@@ -186,7 +183,7 @@ export function DashboardSummary({
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </ChartContainer>
+            </div>
           </CardContent>
         </Card>
       )}
