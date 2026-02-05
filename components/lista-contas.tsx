@@ -165,7 +165,7 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
                     )}
                     {pago && pagamento && (
                       <div className="mt-2 space-y-1">
-                        <p className="text-sm text-green-600 dark:text-green-400">
+                        <p className="text-sm text-primary">
                           Pago em: {new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}
                         </p>
                         {pagamento.anexo && (
@@ -201,7 +201,7 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
                         variant="ghost"
                         size="icon"
                         onClick={() => handleCompartilharWhatsApp(conta)}
-                        className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+                        className="text-primary hover:text-primary/80 hover:bg-primary/5"
                         title="Compartilhar no WhatsApp"
                       >
                         <Share2 className="h-4 w-4" />

@@ -98,7 +98,7 @@ export function WhatsAppSendDialog({ open, onOpenChange, mensagem }: WhatsAppSen
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Send className="h-5 w-5 text-green-600" />
+            <Send className="h-5 w-5 text-primary" />
             Enviar via WhatsApp
           </DialogTitle>
           <p className="text-sm text-muted-foreground pt-2">
@@ -140,7 +140,7 @@ export function WhatsAppSendDialog({ open, onOpenChange, mensagem }: WhatsAppSen
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={enviando}>
             Cancelar
           </Button>
-          <Button onClick={handleEnviar} disabled={enviando} className="bg-green-600 hover:bg-green-700">
+          <Button onClick={handleEnviar} disabled={enviando} className="bg-primary hover:bg-primary/90 text-primary-foreground">
             {enviando ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
