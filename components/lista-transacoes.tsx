@@ -694,10 +694,10 @@ export function ListaTransacoes({
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-4 rounded-lg border bg-green-50 dark:bg-green-950/20 hover:bg-green-100 dark:hover:bg-green-950/30 transition-colors"
+                    className="flex items-center justify-between p-4 rounded-lg border bg-primary/5 hover:bg-primary/10 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <ArrowUpCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <ArrowUpCircle className="h-5 w-5 text-primary" />
                       <div>
                         <p className="font-medium text-sm">{item.nome}</p>
                         <p className="text-xs text-muted-foreground">
@@ -706,10 +706,10 @@ export function ListaTransacoes({
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge variant="default" className="bg-green-600">
+                      <Badge variant="default" className="bg-primary text-primary-foreground">
                         Entrada
                       </Badge>
-                      <span className="font-bold text-green-600 dark:text-green-400">
+                      <span className="font-bold text-primary">
                         + {formatarMoeda(item.valor)}
                       </span>
                     </div>

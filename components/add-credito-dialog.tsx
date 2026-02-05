@@ -38,7 +38,7 @@ export function AddCreditoDialog({ open, onOpenChange, onAdd }: AddCreditoDialog
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <PlusCircle className="h-5 w-5 text-green-600" />
+            <PlusCircle className="h-5 w-5 text-primary" />
             Adicionar Crédito
           </DialogTitle>
           <DialogDescription>
@@ -83,7 +83,7 @@ export function AddCreditoDialog({ open, onOpenChange, onAdd }: AddCreditoDialog
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancelar
             </Button>
-            <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">
+            <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
               <PlusCircle className="mr-2 h-4 w-4" />
               Adicionar
             </Button>

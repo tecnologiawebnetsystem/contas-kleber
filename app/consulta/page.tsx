@@ -367,7 +367,7 @@ export default function ConsultaPage() {
                     <CardTitle className="text-sm font-medium">Total Pago</CardTitle>
                   </CardHeader>
                   <CardContent className="pb-4">
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-primary">
                       {formatarMoeda(
                         contasFiltradas.filter((c) => c.isPago).reduce((sum, conta) => sum + conta.valor, 0),
                       )}

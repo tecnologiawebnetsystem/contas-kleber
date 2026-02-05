@@ -11,44 +11,30 @@ interface OnlineStatusProps {
 export function OnlineStatus({ userName }: OnlineStatusProps) {
   const { isOnline, isSyncing, pendingCount, syncPendingOperations } = useOffline()
 
-  // Cores baseadas no usuário
-  const isKleber = userName === "Kleber Gonçalves"
-  const isPamela = userName === "Pamela Gonçalves"
-
   return (
     <div className="flex items-center gap-2">
       {/* Status Online/Offline */}
       <div
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
           isOnline
-            ? isKleber
-              ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-              : isPamela
-                ? "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400"
-                : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-            : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400"
+            ? "bg-primary/10 text-primary"
+            : "bg-muted text-muted-foreground"
         }`}
       >
         {isOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
-        <span className="text-sm font-medium">
+        <span>
           {isOnline ? "Online" : "Offline"}
           {pendingCount > 0 && ` (${pendingCount})`}
         </span>
       </div>
 
-      {/* Botão Sincronizar */}
+      {/* Sync Button */}
       {isOnline && (
         <Button
           onClick={syncPendingOperations}
           disabled={isSyncing}
           size="sm"
-          className={
-            isKleber
-              ? "bg-green-600 hover:bg-green-700 text-white"
-              : isPamela
-                ? "bg-pink-500 hover:bg-pink-600 text-white"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
-          }
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
           {isSyncing ? "Sincronizando..." : "Sincronizar"}
