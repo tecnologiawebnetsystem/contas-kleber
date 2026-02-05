@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Lock, Delete, Receipt, Wallet, CreditCard, TrendingUp, DollarSign, PiggyBank } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import { Logo } from "@/components/logo"
 
 const USUARIOS = [
-  { pin: "191018", nome: "Pamela Gonçalves", tema: "rosa" as const },
-  { pin: "080754", nome: "Kleber Gonçalves", tema: "verde" as const },
+  { pin: "191018", nome: "Pamela Goncalves", tema: "rosa" as const },
+  { pin: "080754", nome: "Kleber Goncalves", tema: "verde" as const },
 ]
 
 export default function LoginPage() {
@@ -81,51 +82,55 @@ export default function LoginPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-900 dark:via-emerald-950 dark:to-teal-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       {/* Floating financial icons background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[10%] left-[5%] animate-float">
-          <div className="bg-emerald-500/10 dark:bg-emerald-400/10 p-6 rounded-2xl backdrop-blur-sm">
-            <Receipt className="h-12 w-12 text-emerald-600 dark:text-emerald-400" />
+          <div className="bg-primary/5 p-6 rounded-2xl">
+            <Receipt className="h-12 w-12 text-primary/30" />
           </div>
         </div>
         <div className="absolute top-[20%] right-[8%] animate-float-delayed">
-          <div className="bg-blue-500/10 dark:bg-blue-400/10 p-6 rounded-2xl backdrop-blur-sm">
-            <Wallet className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+          <div className="bg-[#1e3a5f]/10 p-6 rounded-2xl">
+            <Wallet className="h-12 w-12 text-[#1e3a5f]/40 dark:text-[#3b82f6]/30" />
           </div>
         </div>
         <div className="absolute bottom-[25%] left-[10%] animate-float-slow">
-          <div className="bg-purple-500/10 dark:bg-purple-400/10 p-6 rounded-2xl backdrop-blur-sm">
-            <CreditCard className="h-12 w-12 text-purple-600 dark:text-purple-400" />
+          <div className="bg-accent/5 p-6 rounded-2xl">
+            <CreditCard className="h-12 w-12 text-accent/30" />
           </div>
         </div>
         <div className="absolute bottom-[15%] right-[15%] animate-float">
-          <div className="bg-amber-500/10 dark:bg-amber-400/10 p-6 rounded-2xl backdrop-blur-sm">
-            <TrendingUp className="h-12 w-12 text-amber-600 dark:text-amber-400" />
+          <div className="bg-primary/5 p-6 rounded-2xl">
+            <TrendingUp className="h-12 w-12 text-primary/30" />
           </div>
         </div>
         <div className="absolute top-[50%] left-[15%] animate-float-delayed">
-          <div className="bg-pink-500/10 dark:bg-pink-400/10 p-6 rounded-2xl backdrop-blur-sm">
-            <DollarSign className="h-12 w-12 text-pink-600 dark:text-pink-400" />
+          <div className="bg-[#1e3a5f]/10 p-6 rounded-2xl">
+            <DollarSign className="h-12 w-12 text-[#1e3a5f]/40 dark:text-[#3b82f6]/30" />
           </div>
         </div>
         <div className="absolute top-[60%] right-[20%] animate-float-slow">
-          <div className="bg-teal-500/10 dark:bg-teal-400/10 p-6 rounded-2xl backdrop-blur-sm">
-            <PiggyBank className="h-12 w-12 text-teal-600 dark:text-teal-400" />
+          <div className="bg-accent/5 p-6 rounded-2xl">
+            <PiggyBank className="h-12 w-12 text-accent/30" />
           </div>
         </div>
       </div>
 
-      <Card className="w-full max-w-md shadow-2xl border-0 relative z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
-        <CardHeader className="space-y-3 text-center pb-6">
-          <div className="mx-auto bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 w-20 h-20 rounded-3xl flex items-center justify-center mb-2 shadow-lg shadow-emerald-500/30 dark:shadow-emerald-500/20">
-            <Lock className="h-10 w-10 text-white" />
+      {/* Ambient glow effects */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#1e3a5f]/10 rounded-full blur-3xl pointer-events-none" />
+
+      <Card className="w-full max-w-md shadow-2xl border border-border/50 relative z-10 bg-card/90 backdrop-blur-xl">
+        <CardHeader className="space-y-4 text-center pb-6">
+          <div className="flex justify-center mb-2">
+            <Logo variant="icon" size="xl" glow />
           </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400 bg-clip-text text-transparent">
-            Financeiro Gonçalves
+          <CardTitle className="text-3xl font-heading font-bold text-gradient">
+            Financeiro Goncalves
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground">
-            Gestão financeira familiar inteligente
+            Gestao financeira familiar inteligente
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 pb-8">
@@ -136,8 +141,8 @@ export default function LoginPage() {
                 key={i}
                 className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
                   i < pin.length
-                    ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 border-transparent scale-125 shadow-lg shadow-emerald-500/50"
-                    : "bg-background border-muted-foreground/30"
+                    ? "bg-primary border-transparent scale-125 glow-red"
+                    : "bg-muted border-muted-foreground/30"
                 }`}
               />
             ))}
@@ -159,7 +164,7 @@ export default function LoginPage() {
                         size="lg"
                         onClick={handleBackspace}
                         disabled={loading || pin.length === 0}
-                        className="h-16 text-xl font-bold hover:bg-gradient-to-br hover:from-red-50 hover:to-pink-50 hover:text-red-600 hover:border-red-300 dark:hover:from-red-950 dark:hover:to-pink-950 dark:hover:text-red-400 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-2 transition-all hover:scale-105 active:scale-95 shadow-md"
+                        className="h-16 text-xl font-bold hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 bg-card border-border transition-all hover:scale-105 active:scale-95"
                       >
                         <Delete className="h-6 w-6" />
                       </Button>
@@ -173,7 +178,7 @@ export default function LoginPage() {
                       size="lg"
                       onClick={() => handleNumberClick(num)}
                       disabled={loading}
-                      className="h-16 text-2xl font-bold hover:bg-gradient-to-br hover:from-emerald-50 hover:via-teal-50 hover:to-cyan-50 hover:text-emerald-700 hover:border-emerald-400 dark:hover:from-emerald-950 dark:hover:via-teal-950 dark:hover:to-cyan-950 dark:hover:text-emerald-300 hover:scale-105 transition-all active:scale-95 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-2 shadow-md"
+                      className="h-16 text-2xl font-bold hover:bg-primary/10 hover:text-primary hover:border-primary/50 hover:scale-105 transition-all active:scale-95 bg-card border-border"
                     >
                       {num}
                     </Button>
@@ -184,14 +189,16 @@ export default function LoginPage() {
           </div>
 
           {loading && (
-            <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 pt-2">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-600 dark:border-emerald-400"></div>
+            <div className="flex items-center justify-center gap-2 text-primary pt-2">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
               <span className="text-sm font-semibold">Verificando...</span>
             </div>
           )}
 
-          <div className="pt-4 border-t border-emerald-200/50 dark:border-emerald-800/50 text-center space-y-2">
-            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Digite seu PIN de 6 dígitos</p>
+          <div className="pt-4 border-t border-border/50 text-center space-y-2">
+            <p className="text-sm font-medium text-foreground">
+              Digite seu PIN de 6 digitos
+            </p>
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Lock className="h-3 w-3" />
               <span>Acesso seguro e protegido</span>
@@ -199,9 +206,6 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
-
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-emerald-400/20 to-teal-400/20 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-cyan-400/20 to-blue-400/20 rounded-full blur-3xl pointer-events-none"></div>
     </div>
   )
 }

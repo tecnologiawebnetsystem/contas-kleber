@@ -172,19 +172,20 @@ export default function CaixinhaPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200 dark:border-green-800">
+            <Card className="border-primary/20 bg-card relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-green-900 dark:text-green-100">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   Total Depositado
                 </CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <TrendingUp className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                <div className="text-2xl font-bold font-heading text-foreground">
                   {formatarMoeda(totalDepositado)}
                 </div>
                 <Progress value={progresso} className="mt-2" />
-                <p className="text-xs text-green-700 dark:text-green-300 mt-1">{progresso.toFixed(1)}% da meta</p>
+                <p className="text-xs text-muted-foreground mt-1">{progresso.toFixed(1)}% da meta</p>
               </CardContent>
             </Card>
 
@@ -222,8 +223,8 @@ export default function CaixinhaPage() {
                       key={deposito.id}
                       className={`flex items-center justify-between p-4 rounded-lg border ${
                         depositado
-                          ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
-                          : "bg-white dark:bg-gray-900"
+                          ? "bg-primary/5 border-primary/20"
+                          : "bg-card"
                       }`}
                     >
                       <div className="flex items-center gap-4 flex-1">
@@ -237,7 +238,7 @@ export default function CaixinhaPage() {
                             Planejado: {formatarMoeda(deposito.valor_planejado)}
                           </p>
                           {depositado && (
-                            <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                            <p className="text-sm text-primary font-medium">
                               Depositado: {formatarMoeda(deposito.valor_depositado!)}
                             </p>
                           )}
@@ -258,7 +259,7 @@ export default function CaixinhaPage() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="text-green-600"
+                              className="text-primary"
                               onClick={() => salvarDeposito(deposito.id, Number(valorEdicao))}
                             >
                               <Check className="h-4 w-4" />

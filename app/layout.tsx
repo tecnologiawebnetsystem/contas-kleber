@@ -1,12 +1,13 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Inter, Space_Grotesk, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/components/auth-provider"
 import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"] })
+const _inter = Inter({ subsets: ["latin"] })
+const _spaceGrotesk = Space_Grotesk({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
@@ -46,8 +47,8 @@ export const viewport = {
   maximumScale: 5,
   userScalable: true,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#10b981" },
-    { media: "(prefers-color-scheme: dark)", color: "#059669" },
+    { media: "(prefers-color-scheme: light)", color: "#dc2626" },
+    { media: "(prefers-color-scheme: dark)", color: "#ef4444" },
   ],
 }
 

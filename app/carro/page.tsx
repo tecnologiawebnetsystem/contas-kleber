@@ -310,21 +310,22 @@ export default function CarroPage() {
 
           <CardContent className="p-6 space-y-6">
             {/* Widget de total pago */}
-            <Card className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-emerald-950 dark:via-green-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800 shadow-lg">
+            <Card className="border-primary/20 bg-card shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="bg-emerald-100 dark:bg-emerald-900/50 p-4 rounded-2xl">
-                      <Wallet className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                    <div className="bg-primary/10 p-4 rounded-2xl">
+                      <Wallet className="h-8 w-8 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                      <p className="text-sm font-medium text-muted-foreground">
                         Total Pago
                       </p>
-                      <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
+                      <p className="text-3xl font-bold font-heading text-foreground">
                         {formatarMoeda(totalPago)}
                       </p>
-                      <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {pagamentos.length} pagamento(s) registrado(s)
                       </p>
                     </div>
@@ -381,7 +382,7 @@ export default function CarroPage() {
                             <TableCell className="text-muted-foreground">
                               {pagamento.descricao}
                             </TableCell>
-                            <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400">
+                            <TableCell className="text-right font-bold text-primary">
                               {formatarMoeda(Number(pagamento.valor))}
                             </TableCell>
                             <TableCell>
@@ -463,7 +464,7 @@ export default function CarroPage() {
             <Button
               onClick={handleSubmit}
               disabled={submitting}
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {submitting ? "Salvando..." : "Salvar"}
             </Button>
