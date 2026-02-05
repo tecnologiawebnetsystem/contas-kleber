@@ -58,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -71,23 +71,21 @@ export default function RootLayout({
               (function() {
                 try {
                   const userData = localStorage.getItem('userData');
-                  const theme = localStorage.getItem('theme') || 
-                    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                  const theme = localStorage.getItem('theme') || 'dark';
                   
-                  // Aplicar tema de usuário (rosa para Pamela, verde para Kleber)
+                  // Aplicar tema de usuario (rosa para Pamela)
                   if (userData) {
                     const user = JSON.parse(userData);
                     if (user.tema === 'rosa') {
                       document.documentElement.classList.add('theme-rosa');
-                    } else if (user.tema === 'verde') {
-                      // Tema verde já é o padrão, não precisa adicionar classe
                     }
                   }
                   
-                  // Aplicar modo dark/light
-                  if (theme === 'dark') {
-                    document.documentElement.classList.add('dark');
+                  // Aplicar modo dark/light (dark e o padrao)
+                  if (theme === 'light') {
+                    document.documentElement.classList.remove('dark');
                   }
+                  // Se dark (padrao), a classe ja esta no html
                 } catch (e) {
                   console.error('[Theme] Erro ao aplicar tema:', e);
                 }
