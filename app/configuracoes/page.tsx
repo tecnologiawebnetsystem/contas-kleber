@@ -34,7 +34,7 @@ export default function ConfiguracoesPage() {
     whatsappNumeros: [],
     notificarVencimentoWhatsapp: true,
     notificarAtrasoWhatsapp: true,
-    whatsappMensagemTemplate: "🔔 *Alerta de Contas - Financeiro Gonçalves*\n\n",
+    whatsappMensagemTemplate: "🔔 *Alerta de Contas - Talent Money Family*\n\n",
   })
   const [novoNumero, setNovoNumero] = useState("")
   const [enviandoEmail, setEnviandoEmail] = useState(false)
@@ -62,7 +62,7 @@ export default function ConfiguracoesPage() {
           notificarVencimentoWhatsapp: data.notificar_vencimento_whatsapp ?? true,
           notificarAtrasoWhatsapp: data.notificar_atraso_whatsapp ?? true,
           whatsappMensagemTemplate:
-            data.whatsapp_mensagem_template || "🔔 *Alerta de Contas - Financeiro Gonçalves*\n\n",
+            data.whatsapp_mensagem_template || "🔔 *Alerta de Contas - Talent Money Family*\n\n",
         })
       }
     } catch (error) {
