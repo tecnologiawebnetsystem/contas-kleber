@@ -53,16 +53,11 @@ export default function CarroPage() {
   const [descricao, setDescricao] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
-  // Verificar se o usuário é o Kleber (PIN 080754)
   const isKleber = user?.pin === "080754"
 
   useEffect(() => {
-    if (!isKleber) {
-      router.push("/")
-      return
-    }
     fetchPagamentos()
-  }, [isKleber, router])
+  }, [])
 
   // Recarregar dados quando voltar online
   useEffect(() => {
@@ -250,9 +245,8 @@ export default function CarroPage() {
     return data.toLocaleDateString("pt-BR")
   }
 
-  if (!isKleber) {
-    return null
-  }
+  // Pamela pode visualizar, mas apenas Kleber pode adicionar/deletar
+  const podeEditar = isKleber
 
   if (loading) {
     return (
@@ -334,16 +328,18 @@ export default function CarroPage() {
               </CardContent>
             </Card>
 
-            {/* Botão adicionar */}
-            <div className="flex justify-end">
-              <Button
-                onClick={() => setDialogOpen(true)}
-                className="bg-gradient-to-r from-slate-700 via-gray-700 to-zinc-700 hover:from-slate-800 hover:via-gray-800 hover:to-zinc-800 text-white shadow-lg"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Pagamento
-              </Button>
-            </div>
+            {/* Botão adicionar - apenas Kleber */}
+            {podeEditar && (
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  className="bg-gradient-to-r from-slate-700 via-gray-700 to-zinc-700 hover:from-slate-800 hover:via-gray-800 hover:to-zinc-800 text-white shadow-lg"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar Pagamento
+                </Button>
+              </div>
+            )}
 
             {/* Tabela de pagamentos */}
             <Card className="border-2">
@@ -367,7 +363,7 @@ export default function CarroPage() {
                           <TableHead className="font-semibold">Data</TableHead>
                           <TableHead className="font-semibold">Descrição</TableHead>
                           <TableHead className="font-semibold text-right">Valor</TableHead>
-                          <TableHead className="w-[50px]"></TableHead>
+                          {podeEditar && <TableHead className="w-[50px]"></TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -385,16 +381,18 @@ export default function CarroPage() {
                             <TableCell className="text-right font-bold text-primary">
                               {formatarMoeda(Number(pagamento.valor))}
                             </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(pagamento.id)}
-                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
+                            {podeEditar && (
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDelete(pagamento.id)}
+                                  className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                       </TableBody>

@@ -69,10 +69,8 @@ export default function Home() {
     fetchSaldo()
     fetchTransacoes()
     fetchPoupancaEViagem()
-    if (isKleber) {
-      fetchTotalCarro()
-    }
-  }, [isKleber])
+    fetchTotalCarro()
+  }, [])
 
   const fetchSaldo = async () => {
     try {
@@ -835,25 +833,23 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          {/* Carro - Apenas para Kleber */}
-          {isKleber && (
-            <Card
-              className="border-border/50 bg-card relative overflow-hidden cursor-pointer hover:border-primary/30 transition-colors"
-              onClick={() => router.push("/carro")}
-            >
-              <div className="absolute top-0 left-0 w-full h-1 bg-muted-foreground" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Carro</CardTitle>
-                <Car className="h-3.5 w-3.5 text-muted-foreground" />
-              </CardHeader>
-              <CardContent className="pb-3">
-                <div className="text-xl font-bold font-heading text-foreground">
-                  {formatarMoeda(totalPagoCarro)}
-                </div>
-                <p className="text-xs mt-1 text-muted-foreground">Total pago</p>
-              </CardContent>
-            </Card>
-          )}
+          {/* Carro */}
+          <Card
+            className="border-border/50 bg-card relative overflow-hidden cursor-pointer hover:border-primary/30 transition-colors"
+            onClick={() => router.push("/carro")}
+          >
+            <div className="absolute top-0 left-0 w-full h-1 bg-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Carro</CardTitle>
+              <Car className="h-3.5 w-3.5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="pb-3">
+              <div className="text-xl font-bold font-heading text-foreground">
+                {formatarMoeda(totalPagoCarro)}
+              </div>
+              <p className="text-xs mt-1 text-muted-foreground">Total pago</p>
+            </CardContent>
+          </Card>
         </section>
 
         {/* Progress Bar */}
