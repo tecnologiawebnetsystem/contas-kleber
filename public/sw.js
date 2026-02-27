@@ -1,6 +1,6 @@
 // Service Worker para cachear arquivos e funcionar offline
 
-const CACHE_NAME = "contas-kleber-v2"
+const CACHE_NAME = "talent-money-v3"
 const OFFLINE_URL = "/offline"
 
 // Arquivos para cachear durante a instalação
@@ -44,30 +44,29 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Retornar do cache se existir
-      if (response) {
+    // Network-first: tenta a rede primeiro, usa cache como fallback
+    fetch(event.request)
+      .then((response) => {
+        // Cache apenas GET requests bem sucedidas
+        if (event.request.method === "GET" && response.status === 200) {
+          const responseToCache = response.clone()
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache)
+          })
+        }
         return response
-      }
-
-      // Tentar buscar da rede
-      return fetch(event.request)
-        .then((response) => {
-          // Cache apenas GET requests
-          if (event.request.method === "GET" && response.status === 200) {
-            const responseToCache = response.clone()
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache)
-            })
+      })
+      .catch(() => {
+        // Se a rede falhar, tentar retornar do cache
+        return caches.match(event.request).then((response) => {
+          if (response) {
+            return response
           }
-          return response
-        })
-        .catch(() => {
-          // Se falhar, retornar página offline para navegação
+          // Se nao tiver no cache e for navegacao, retornar pagina offline
           if (event.request.mode === "navigate") {
             return caches.match(OFFLINE_URL)
           }
         })
-    }),
+      }),
   )
 })
