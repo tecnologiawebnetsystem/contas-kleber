@@ -11,15 +11,15 @@ const _spaceGrotesk = Space_Grotesk({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Contas a Pagar - Financeiro Gonçalves",
+  title: "Contas a Pagar - Talent Money Family",
   description: "Sistema completo para gerenciar suas contas fixas e parceladas",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "ContasKleber",
+    title: "Talent Money Family",
   },
-  applicationName: "ContasKleber",
+  applicationName: "Talent Money Family",
   formatDetection: {
     telephone: false,
   },
@@ -64,7 +64,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="ContasKleber" />
+        <meta name="apple-mobile-web-app-title" content="Talent Money Family" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

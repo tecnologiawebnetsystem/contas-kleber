@@ -127,7 +127,7 @@ export default function LoginPage() {
             <Logo variant="icon" size="xl" glow />
           </div>
           <CardTitle className="text-3xl font-heading font-bold text-gradient">
-            Financeiro Goncalves
+            Talent Money Family
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground">
             Gestao financeira familiar inteligente

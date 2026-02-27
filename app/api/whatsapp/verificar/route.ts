@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Construir mensagem
-    let mensagem = config.whatsapp_mensagem_template || "🔔 *Alerta de Contas - Financeiro Gonçalves*\n\n"
+    let mensagem = config.whatsapp_mensagem_template || "🔔 *Alerta de Contas - Talent Money Family*\n\n"
 
     if (contasProximasVencimento.length > 0) {
       mensagem += "⚠️ *Contas próximas do vencimento:*\n\n"

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const notificarVencimentoWhatsapp = body.notificar_vencimento_whatsapp ?? body.notificarVencimentoWhatsapp ?? true
     const notificarAtrasoWhatsapp = body.notificar_atraso_whatsapp ?? body.notificarAtrasoWhatsapp ?? true
     const whatsappMensagemTemplate =
-      body.whatsapp_mensagem_template || body.whatsappMensagemTemplate || "🔔 *Alerta de Contas - Financeiro Gonçalves*"
+      body.whatsapp_mensagem_template || body.whatsappMensagemTemplate || "🔔 *Alerta de Contas - Talent Money Family*"
 
     // Validar que email_destino não está vazio
     if (!emailDestino) {
