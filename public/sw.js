@@ -1,6 +1,6 @@
 // Service Worker para cachear arquivos e funcionar offline
 
-const CACHE_NAME = "contas-kleber-v1"
+const CACHE_NAME = "contas-kleber-v2"
 const OFFLINE_URL = "/offline"
 
 // Arquivos para cachear durante a instalação
