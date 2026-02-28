@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload, X, FileText } from "lucide-react"
+import { Upload, X, FileText, AlertCircle } from "lucide-react"
 import type { Conta, TipoConta, Categoria } from "@/types/conta"
 
 interface EditContaDialogProps {
@@ -130,8 +130,17 @@ export function EditContaDialog({ open, onOpenChange, onEdit, conta }: EditConta
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Editar Conta</DialogTitle>
-          <DialogDescription>Altere os dados da conta</DialogDescription>
+          <DialogDescription>Altere os dados da conta inteira</DialogDescription>
         </DialogHeader>
+
+        {conta?.tipo === "parcelada" && (
+          <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2.5 flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Alteracoes aqui afetam <strong>todas as parcelas</strong> desta conta. Para alterar apenas uma parcela especifica, use "Editar Parcela".
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

@@ -251,12 +251,18 @@ export default function ConsultaPage() {
               <h1 className="text-2xl md:text-3xl font-bold text-foreground text-balance">Consulta de Pagamentos</h1>
               <p className="text-sm text-muted-foreground mt-1">Pesquise e gerencie seus pagamentos</p>
             </div>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/">
-                <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-                Voltar
-              </Link>
-            </Button>
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button asChild variant="outline" size="icon" className="h-8 w-8">
+          <Link href="/">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Voltar</TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
           </div>
 
           {/* Filtros */}
@@ -388,24 +394,38 @@ export default function ConsultaPage() {
               </div>
 
               {/* Botoes */}
-              <div className="flex items-center gap-2">
-                <Button onClick={executarPesquisa} size="sm" disabled={loading}>
-                  <Search className="mr-1.5 h-3.5 w-3.5" />
-                  {loading ? "Buscando..." : "Pesquisar"}
-                </Button>
-                {pesquisaRealizada && (
-                  <>
-                    <Button onClick={exportarParaPDF} size="sm" variant="outline">
-                      <FileDown className="mr-1.5 h-3.5 w-3.5" />
-                      PDF
-                    </Button>
-                    <Button onClick={exportarParaExcel} size="sm" variant="outline">
-                      <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
-                      Excel
-                    </Button>
-                  </>
-                )}
-              </div>
+              <TooltipProvider>
+                <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={executarPesquisa} size="icon" disabled={loading} className="h-8 w-8">
+                        <Search className={`h-4 w-4 ${loading ? "animate-pulse" : ""}`} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{loading ? "Buscando..." : "Pesquisar"}</TooltipContent>
+                  </Tooltip>
+                  {pesquisaRealizada && (
+                    <>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button onClick={exportarParaPDF} size="icon" variant="outline" className="h-8 w-8">
+                            <FileDown className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Exportar PDF</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button onClick={exportarParaExcel} size="icon" variant="outline" className="h-8 w-8">
+                            <FileSpreadsheet className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Exportar Excel</TooltipContent>
+                      </Tooltip>
+                    </>
+                  )}
+                </div>
+              </TooltipProvider>
             </CardContent>
           </Card>
 
