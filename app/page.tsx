@@ -282,7 +282,12 @@ export default function Home() {
   const togglePago = async (id: string, mes: number, ano: number) => {
     try {
       const conta = contas.find((c) => c.id === id)
-      const isPago = conta?.pagamentos?.some((p) => p.mes === mes && p.ano === ano)
+      let isPago = false
+      if (conta?.tipo === "parcelada" && conta.pago !== undefined) {
+        isPago = conta.pago
+      } else {
+        isPago = conta?.pagamentos?.some((p) => p.mes === mes && p.ano === ano) || false
+      }
 
       if (isPago) {
         const response = await fetch(`/api/pagamentos?contaId=${id}&mes=${mes}&ano=${ano}`, {
@@ -414,10 +419,17 @@ export default function Home() {
 
   const diaAtual = hoje.getDate()
 
+  // Helper: verifica se uma conta está paga (suporta parceladas expandidas da API)
+  const isContaPaga = (conta: any) => {
+    if (conta.tipo === "parcelada" && conta.pago !== undefined) {
+      return conta.pago
+    }
+    return conta.pagamentos?.some((p: any) => p.mes === mesSelecionado && p.ano === anoSelecionado) || false
+  }
+
   const contasProximasVencimento = contas.filter((conta) => {
     if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return false
-    const isPago = conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
-    if (isPago) return false
+    if (isContaPaga(conta)) return false
 
     const diasParaVencimento = conta.vencimento - diaAtual
     return diasParaVencimento > 0 && diasParaVencimento <= 3
@@ -425,8 +437,7 @@ export default function Home() {
 
   const contasAtrasadas = contas.filter((conta) => {
     if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return false
-    const isPago = conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
-    if (isPago) return false
+    if (isContaPaga(conta)) return false
 
     let dataVencimento: Date
 
@@ -525,13 +536,13 @@ export default function Home() {
   const totalMes = contasMesAtual.reduce((sum, conta) => sum + conta.valor, 0)
   const pagas = contasMesAtual.filter((conta) => {
     if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return true
-    return conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
+    return isContaPaga(conta)
   }).length
 
   const totalPago = contasMesAtual
     .filter((conta) => {
       if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return true
-      return conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
+      return isContaPaga(conta)
     })
     .reduce((sum, conta) => sum + conta.valor, 0)
 

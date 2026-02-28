@@ -253,7 +253,13 @@ export function ListaTransacoes({
     if (filtroStatus !== "todos") {
       itens = itens.filter((item) => {
         if (item.tipo === "credito") return filtroStatus === "pago"
-        const pago = item.conta?.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado) || false
+        const conta = item.conta
+        let pago = false
+        if (conta?.tipo === "parcelada" && conta.pago !== undefined) {
+          pago = conta.pago
+        } else {
+          pago = conta?.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado) || false
+        }
         return filtroStatus === "pago" ? pago : !pago
       })
     }
@@ -439,6 +445,10 @@ export function ListaTransacoes({
   }
 
   const isPago = (conta: Conta) => {
+    // Contas parceladas expandidas da API têm campo `pago` direto, sem array `pagamentos`
+    if (conta.tipo === "parcelada" && conta.pago !== undefined) {
+      return conta.pago
+    }
     return conta.pagamentos?.some((p) => p.mes === mesSelecionado && p.ano === anoSelecionado) || false
   }
 

@@ -26,12 +26,23 @@ export interface Conta {
   valor: number
   tipo: TipoConta
   vencimento: number
-  categoria?: Categoria // Adicionando categoria
+  categoria?: Categoria
   parcelas?: number
   parcelaAtual?: number
   dataInicio?: string
   dataGasto?: string
-  anexoDiario?: string // Adicionando campo para anexo de gastos diários
+  data_gasto?: string
+  data_inicio?: string
+  anexoDiario?: string
   pagamentos?: Pagamento[]
   created_at?: string
+  createdAt?: string
+  updatedAt?: string
+  // Campos de contas parceladas expandidas pela API
+  pago?: boolean
+  mesVencimento?: number
+  anoVencimento?: number
+  dataPagamento?: string
+  anexo?: string
+  dataVencimentoCompleta?: string
 }
