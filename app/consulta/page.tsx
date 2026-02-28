@@ -586,7 +586,19 @@ export default function ConsultaPage() {
                                       </TooltipTrigger>
                                       <TooltipContent>Editar conta</TooltipContent>
                                     </Tooltip>
-                                    <WhatsAppButton conta={conta} />
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span>
+                                          <WhatsAppButton
+                                            conta={conta}
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                                          />
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Enviar por WhatsApp</TooltipContent>
+                                    </Tooltip>
                                   </div>
                                 </TooltipProvider>
                               </TableCell>

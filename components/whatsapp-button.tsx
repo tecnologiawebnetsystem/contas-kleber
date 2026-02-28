@@ -11,7 +11,8 @@ interface WhatsAppButtonProps {
   dataPagamento: string
   anexo?: string
   variant?: "default" | "outline" | "ghost"
-  size?: "default" | "sm" | "lg"
+  size?: "default" | "sm" | "lg" | "icon"
+  className?: string
 }
 
 export function WhatsAppButton({
@@ -22,6 +23,7 @@ export function WhatsAppButton({
   anexo,
   variant = "default",
   size = "default",
+  className,
 }: WhatsAppButtonProps) {
   const meses = [
     "Janeiro",
@@ -64,9 +66,9 @@ export function WhatsAppButton({
   }
 
   return (
-    <Button onClick={handleWhatsApp} variant={variant} size={size} className="gap-2">
+    <Button onClick={handleWhatsApp} variant={variant} size={size} className={className || "gap-2"}>
       <MessageCircle className="h-4 w-4" />
-      {size !== "sm" && "WhatsApp"}
+      {size !== "sm" && size !== "icon" && "WhatsApp"}
     </Button>
   )
 }
