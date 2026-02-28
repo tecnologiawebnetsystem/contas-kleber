@@ -62,7 +62,7 @@ export function PoupancaDialog({ open, onOpenChange, onUpdate }: PoupancaDialogP
           valor: parseFloat(valor),
           tipo: "poupanca",
           vencimento: new Date().getDate(),
-          data_gasto: hoje,
+          dataGasto: hoje,
         }),
       })
       if (!res.ok) throw new Error("Erro ao adicionar")

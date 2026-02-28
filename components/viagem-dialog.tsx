@@ -62,7 +62,7 @@ export function ViagemDialog({ open, onOpenChange, onUpdate }: ViagemDialogProps
           valor: parseFloat(valor),
           tipo: "viagem",
           vencimento: new Date().getDate(),
-          data_gasto: hoje,
+          dataGasto: hoje,
         }),
       })
       if (!res.ok) throw new Error("Erro ao adicionar")
