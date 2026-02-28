@@ -61,7 +61,8 @@ export async function GET(request: Request) {
           const totalMeses = mesOriginal + i
           const mesVencimento = totalMeses % 12 // 0-11
           const anoVencimento = anoOriginal + Math.floor(totalMeses / 12)
-          const diaVencimento = conta.vencimento || dataInicio.getDate()
+          // Para parceladas, priorizar o dia da data_inicio como dia de vencimento
+          const diaVencimento = dataInicio.getDate() || conta.vencimento
 
           // Verificar se esta parcela foi paga
           const pagamento = pagamentos.find(
