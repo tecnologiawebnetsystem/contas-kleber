@@ -466,12 +466,9 @@ export function ListaTransacoes({
     if (conta.tipo === "fixa") {
       dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
     } else if (conta.tipo === "parcelada") {
-      const dataInicioStr = conta.dataInicio || conta.createdAt
-      if (dataInicioStr) {
-        const dataInicio = new Date(dataInicioStr + "T00:00:00")
-        const mesesDiferenca =
-          (anoSelecionado - dataInicio.getFullYear()) * 12 + (mesSelecionado - 1 - dataInicio.getMonth())
-
+      if (conta.mesVencimento && conta.anoVencimento) {
+        dataVencimento = new Date(conta.anoVencimento, conta.mesVencimento - 1, conta.vencimento)
+      } else {
         dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
       }
     } else if (conta.tipo === "diaria" || conta.tipo === "caixinha") {
@@ -850,9 +847,12 @@ export function ListaTransacoes({
                           <>
                             <span>
                               Parcela {parcelaAtual} - Vencimento:{" "}
-                              {new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString(
-                                "pt-BR",
-                              )}
+                              {conta.dataVencimentoCompleta ||
+                                new Date(
+                                  conta.anoVencimento || anoSelecionado,
+                                  (conta.mesVencimento || mesSelecionado) - 1,
+                                  conta.vencimento,
+                                ).toLocaleDateString("pt-BR")}
                             </span>
                           </>
                         ) : null}
