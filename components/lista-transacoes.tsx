@@ -638,20 +638,14 @@ export function ListaTransacoes({
     return (
       <div
         key={item.id}
-        className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
+        className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/8 transition-colors"
       >
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-emerald-500/10 p-2">
-            <ArrowUpCircle className="h-4 w-4 text-emerald-500" />
-          </div>
-          <div>
-            <p className="font-medium text-sm text-foreground">{item.nome}</p>
-            <p className="text-xs text-muted-foreground">
-              {dataFormatada} as {horaFormatada}
-            </p>
-          </div>
-        </div>
-        <span className="font-bold text-emerald-500 text-sm">
+        <ArrowUpCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+        <span className="font-medium text-sm text-foreground truncate flex-1">{item.nome}</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
+          {dataFormatada} as {horaFormatada}
+        </span>
+        <span className="font-bold text-emerald-500 text-sm whitespace-nowrap shrink-0">
           + {formatarMoeda(item.valor)}
         </span>
       </div>
@@ -703,128 +697,97 @@ export function ListaTransacoes({
     return (
       <div
         key={item.id}
-        className={`group rounded-xl border border-border/40 bg-card hover:bg-accent/30 transition-all border-l-[3px] ${getBorderColor()}`}
+        className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border/40 bg-card hover:bg-accent/30 transition-all border-l-[3px] ${getBorderColor()}`}
       >
-        <div className="flex items-start gap-3 p-3">
-          {/* Checkbox */}
-          {!isSomenteLeitura && (
-            <Checkbox
-              checked={pago || conta.tipo === "diaria"}
-              onCheckedChange={() => {
-                if (pago) {
-                  onTogglePago(conta.id, mesSelecionado, anoSelecionado)
-                } else {
-                  handleMarcarPago(conta)
-                }
-              }}
-              disabled={conta.tipo === "diaria"}
-              className="h-5 w-5 mt-0.5 shrink-0"
-            />
+        {/* Checkbox */}
+        {!isSomenteLeitura && (
+          <Checkbox
+            checked={pago || conta.tipo === "diaria"}
+            onCheckedChange={() => {
+              if (pago) {
+                onTogglePago(conta.id, mesSelecionado, anoSelecionado)
+              } else {
+                handleMarcarPago(conta)
+              }
+            }}
+            disabled={conta.tipo === "diaria"}
+            className="h-4 w-4 shrink-0"
+          />
+        )}
+
+        {/* Name + badges */}
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span
+            className={`text-sm font-medium truncate ${
+              pago || conta.tipo === "diaria"
+                ? "line-through text-muted-foreground"
+                : "text-foreground"
+            }`}
+          >
+            {conta.nome}
+          </span>
+          {typeBadge && (
+            <span className={`hidden sm:inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium border shrink-0 ${typeBadge.className}`}>
+              {typeBadge.label}
+            </span>
           )}
-
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                {/* Name row */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h3
-                    className={`font-medium text-sm ${
-                      pago || conta.tipo === "diaria"
-                        ? "line-through text-muted-foreground"
-                        : "text-foreground"
-                    }`}
-                  >
-                    {conta.nome}
-                  </h3>
-                  {typeBadge && (
-                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${typeBadge.className}`}>
-                      {typeBadge.label}
-                    </span>
-                  )}
-                  {conta.categoria && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
-                      {conta.categoria}
-                    </span>
-                  )}
-                  {temAnexo && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const anexoUrl = pagamento?.anexo || conta.anexoDiario || null
-                        setAnexoVisualizar(anexoUrl)
-                      }}
-                      className="inline-flex items-center text-muted-foreground hover:text-foreground"
-                    >
-                      <Paperclip className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-                {/* Date info */}
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {conta.tipo === "diaria" && conta.data_gasto
-                    ? new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")
-                    : conta.tipo === "caixinha" && conta.data_gasto
-                      ? new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")
-                      : conta.tipo === "fixa"
-                        ? `Venc. ${new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}`
-                        : conta.tipo === "parcelada"
-                          ? `Parcela ${parcelaAtual} - Venc. ${conta.dataVencimentoCompleta || new Date(conta.anoVencimento || anoSelecionado, (conta.mesVencimento || mesSelecionado) - 1, conta.vencimento).toLocaleDateString("pt-BR")}`
-                          : null}
-                </p>
-              </div>
-
-              {/* Value */}
-              <span
-                className={`text-sm font-bold whitespace-nowrap ${
-                  pago || conta.tipo === "diaria"
-                    ? "text-muted-foreground"
-                    : "text-foreground"
-                }`}
-              >
-                {formatarMoeda(conta.valor)}
-              </span>
-            </div>
-          </div>
+          {conta.categoria && (
+            <span className="hidden md:inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium bg-muted text-muted-foreground shrink-0">
+              {conta.categoria}
+            </span>
+          )}
+          {temAnexo && (
+            <button
+              type="button"
+              onClick={() => {
+                const anexoUrl = pagamento?.anexo || conta.anexoDiario || null
+                setAnexoVisualizar(anexoUrl)
+              }}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+            >
+              <Paperclip className="h-3 w-3" />
+            </button>
+          )}
         </div>
 
-        {/* Actions - visible on hover */}
+        {/* Date info */}
+        <span className="hidden lg:inline text-xs text-muted-foreground whitespace-nowrap shrink-0">
+          {conta.tipo === "diaria" && conta.data_gasto
+            ? new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")
+            : conta.tipo === "caixinha" && conta.data_gasto
+              ? new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")
+              : conta.tipo === "fixa"
+                ? `Venc. ${new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}`
+                : conta.tipo === "parcelada"
+                  ? `P${parcelaAtual} - ${conta.dataVencimentoCompleta || new Date(conta.anoVencimento || anoSelecionado, (conta.mesVencimento || mesSelecionado) - 1, conta.vencimento).toLocaleDateString("pt-BR")}`
+                  : ""}
+        </span>
+
+        {/* Actions */}
         {!isSomenteLeitura && (
-          <div className="flex items-center justify-end gap-0.5 px-3 pb-2 pt-0 opacity-60 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={() => handleCompartilharWhatsApp(conta)}
-            >
-              <Share2 className="h-3.5 w-3.5" />
+          <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => handleCompartilharWhatsApp(conta)}>
+              <Share2 className="h-3 w-3" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-blue-500"
-              onClick={() => handleEditarConta(conta)}
-            >
-              <Edit className="h-3.5 w-3.5" />
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-blue-500" onClick={() => handleEditarConta(conta)}>
+              <Edit className="h-3 w-3" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-red-500"
-              onClick={() => handleDeleteWithUndo(conta)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs text-muted-foreground hover:text-foreground px-2"
-              onClick={() => handleCompartilharEmail(conta)}
-            >
-              Email
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-red-500" onClick={() => handleDeleteWithUndo(conta)}>
+              <Trash2 className="h-3 w-3" />
             </Button>
           </div>
         )}
+
+        {/* Value */}
+        <span
+          className={`text-sm font-bold whitespace-nowrap shrink-0 ${
+            pago || conta.tipo === "diaria"
+              ? "text-muted-foreground"
+              : "text-foreground"
+          }`}
+        >
+          {formatarMoeda(conta.valor)}
+        </span>
       </div>
     )
   }
