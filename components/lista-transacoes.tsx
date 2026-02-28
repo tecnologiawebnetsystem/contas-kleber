@@ -53,9 +53,9 @@ interface ItemListado {
 interface ListaTransacoesProps {
   transacoes: Transacao[]
   contas: Conta[]
-  onTogglePago: (contaId: number, mes: number, ano: number) => void
-  onDeleteConta: (contaId: string | number) => void
-  onUpdateConta: (conta: Conta) => void
+  onTogglePago: (contaId: string, mes: number, ano: number) => void
+  onDeleteConta: (contaId: string) => void
+  onUpdateConta: (id: string, contaAtualizada: Partial<Conta>) => void
   abrirModalWhatsApp: (titulo: string, mensagem: string) => void
   userName?: string
   mesSelecionado: number
@@ -497,35 +497,11 @@ export function ListaTransacoes({
     return "bg-card hover:bg-accent/50"
   }
 
-  const undoTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const undoCancelledRef = useRef(false)
-
   const handleDeleteWithUndo = (conta: Conta) => {
-    // Limpar timer anterior se existir
-    if (undoTimerRef.current) {
-      clearTimeout(undoTimerRef.current)
+    const confirmar = window.confirm(`Tem certeza que deseja excluir "${conta.nome}"?`)
+    if (confirmar) {
+      onDeleteConta(conta.id)
     }
-    undoCancelledRef.current = false
-    setUndoData({ action: "delete", conta })
-    setShowUndo(true)
-
-    // Aguardar 5 segundos antes de deletar
-    undoTimerRef.current = setTimeout(() => {
-      if (!undoCancelledRef.current) {
-        onDeleteConta(conta.id)
-        setShowUndo(false)
-        setUndoData(null)
-      }
-    }, 5000)
-  }
-
-  const handleUndo = () => {
-    undoCancelledRef.current = true
-    if (undoTimerRef.current) {
-      clearTimeout(undoTimerRef.current)
-    }
-    setShowUndo(false)
-    setUndoData(null)
   }
 
   const swipeHandlers = useSwipe(
