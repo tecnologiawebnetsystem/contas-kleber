@@ -20,11 +20,14 @@ import {
   Download,
   Calendar,
   Edit,
+  Settings,
 } from "lucide-react"
 import { useState, useMemo } from "react"
 import type { Conta } from "@/types/conta"
 import { formatarMoeda } from "@/lib/utils"
 import { EditContaDialog } from "./edit-conta-dialog"
+import { EditParcelaDialog } from "./edit-parcela-dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useSwipe } from "@/hooks/use-swipe"
 import { useLongPress } from "@/hooks/use-long-press"
 import { UndoToast } from "./undo-toast"
@@ -92,6 +95,8 @@ export function ListaTransacoes({
   const [anexoVisualizar, setAnexoVisualizar] = useState<string | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [contaParaEditar, setContaParaEditar] = useState<Conta | null>(null)
+  const [parcelaDialogOpen, setParcelaDialogOpen] = useState(false)
+  const [contaParaEditarParcela, setContaParaEditarParcela] = useState<Conta | null>(null)
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
@@ -457,6 +462,26 @@ export function ListaTransacoes({
     setEditDialogOpen(true)
   }
 
+  const handleEditarParcela = (conta: Conta) => {
+    setContaParaEditarParcela(conta)
+    setParcelaDialogOpen(true)
+  }
+
+  const handleSalvarParcela = async (contaId: string, mes: number, ano: number, valorAjustado: number | null, vencimentoAjustado: number | null) => {
+    try {
+      const res = await fetch(`/api/contas/${contaId}/parcela`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mes, ano, valorAjustado, vencimentoAjustado }),
+      })
+      if (!res.ok) throw new Error("Erro ao salvar parcela")
+      // Recarregar a pagina para refletir os novos dados
+      window.location.reload()
+    } catch (error) {
+      console.error("Erro ao salvar ajuste de parcela:", error)
+    }
+  }
+
   const getCorPorStatus = (conta: Conta, pago: boolean) => {
     const hoje = getDataAtualBrasil()
     hoje.setHours(0, 0, 0, 0)
@@ -658,6 +683,8 @@ export function ListaTransacoes({
     const parcelaAtual = getParcelaAtual(conta)
     const pagamento = conta.pagamentos?.find((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
     const temAnexo = pagamento?.anexo || conta.anexoDiario
+    const valorExibido = pagamento?.valorAjustado != null ? pagamento.valorAjustado : conta.valor
+    const temAjuste = pagamento?.valorAjustado != null || pagamento?.vencimentoAjustado != null
 
     // Determine left border color
     const getBorderColor = () => {
@@ -765,17 +792,44 @@ export function ListaTransacoes({
 
         {/* Actions */}
         {!isSomenteLeitura && (
-          <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => handleCompartilharWhatsApp(conta)}>
-              <Share2 className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-blue-500" onClick={() => handleEditarConta(conta)}>
-              <Edit className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-red-500" onClick={() => handleDeleteWithUndo(conta)}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => handleCompartilharWhatsApp(conta)}>
+                    <Share2 className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Compartilhar</TooltipContent>
+              </Tooltip>
+              {(conta.tipo === "parcelada" || conta.tipo === "fixa") && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-amber-500" onClick={() => handleEditarParcela(conta)}>
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Editar Parcela</TooltipContent>
+                </Tooltip>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-blue-500" onClick={() => handleEditarConta(conta)}>
+                    <Settings className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Editar Conta</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-red-500" onClick={() => handleDeleteWithUndo(conta)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Excluir</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         )}
 
         {/* Value */}
@@ -784,9 +838,9 @@ export function ListaTransacoes({
             pago || conta.tipo === "diaria"
               ? "text-muted-foreground"
               : "text-foreground"
-          }`}
+          } ${temAjuste ? "underline decoration-amber-500/50 decoration-dotted underline-offset-2" : ""}`}
         >
-          {formatarMoeda(conta.valor)}
+          {formatarMoeda(valorExibido)}
         </span>
       </div>
     )
@@ -869,6 +923,15 @@ export function ListaTransacoes({
         onOpenChange={setEditDialogOpen}
         conta={contaParaEditar}
         onEdit={onUpdateConta}
+      />
+
+      <EditParcelaDialog
+        open={parcelaDialogOpen}
+        onOpenChange={setParcelaDialogOpen}
+        conta={contaParaEditarParcela}
+        mes={mesSelecionado}
+        ano={anoSelecionado}
+        onSave={handleSalvarParcela}
       />
 
       <WhatsAppSendDialog open={whatsappDialogOpen} onOpenChange={setWhatsappDialogOpen} mensagem={mensagemWhatsApp} />

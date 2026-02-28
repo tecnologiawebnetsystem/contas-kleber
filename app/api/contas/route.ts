@@ -69,27 +69,38 @@ export async function GET(request: Request) {
             (p) => p.conta_id === conta.id && p.mes === mesVencimento && p.ano === anoVencimento,
           )
 
+          // Usar vencimento ajustado se existir
+          const diaVencimentoFinal = pagamento?.vencimento_ajustado || diaVencimento
+
           contasExpandidas.push({
             id: conta.id,
             nome: conta.nome,
             valor: Number(conta.valor),
-            vencimento: diaVencimento,
+            vencimento: diaVencimentoFinal,
             tipo: conta.tipo,
             parcelas: conta.parcelas,
-            parcelaAtual: i + 1, // Número da parcela atual (1, 2, 3...)
+            parcelaAtual: i + 1,
             dataInicio: conta.data_inicio,
             dataGasto: conta.data_gasto,
             anexoDiario: conta.anexo_diario,
             categoria: conta.categoria,
             createdAt: conta.created_at,
             updatedAt: conta.updated_at,
-            // Dados específicos desta parcela
-            mesVencimento: mesVencimento + 1, // 1-12 para exibição
+            mesVencimento: mesVencimento + 1,
             anoVencimento: anoVencimento,
-            dataVencimentoCompleta: `${String(diaVencimento).padStart(2, "0")}/${String(mesVencimento + 1).padStart(2, "0")}/${anoVencimento}`,
-            pago: !!pagamento,
+            dataVencimentoCompleta: `${String(diaVencimentoFinal).padStart(2, "0")}/${String(mesVencimento + 1).padStart(2, "0")}/${anoVencimento}`,
+            pago: !!pagamento?.data_pagamento,
             dataPagamento: pagamento?.data_pagamento || null,
             anexo: pagamento?.anexo || null,
+            pagamentos: pagamento ? [{
+              mes: mesVencimento + 1,
+              ano: anoVencimento,
+              pago: !!pagamento.data_pagamento,
+              dataPagamento: pagamento.data_pagamento,
+              anexo: pagamento.anexo,
+              valorAjustado: pagamento.valor_ajustado ? Number(pagamento.valor_ajustado) : null,
+              vencimentoAjustado: pagamento.vencimento_ajustado || null,
+            }] : [],
           })
         }
       } else {
@@ -102,6 +113,8 @@ export async function GET(request: Request) {
             pago: true,
             dataPagamento: p.data_pagamento,
             anexo: p.anexo,
+            valorAjustado: p.valor_ajustado ? Number(p.valor_ajustado) : null,
+            vencimentoAjustado: p.vencimento_ajustado || null,
           }))
 
         contasExpandidas.push({

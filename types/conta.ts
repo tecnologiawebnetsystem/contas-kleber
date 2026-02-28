@@ -18,6 +18,8 @@ export interface Pagamento {
   pago: boolean
   dataPagamento?: string
   anexo?: string
+  valorAjustado?: number | null
+  vencimentoAjustado?: number | null
 }
 
 export interface Conta {
