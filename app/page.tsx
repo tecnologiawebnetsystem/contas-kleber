@@ -24,6 +24,7 @@ import {
   Clock,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Conta } from "@/types/conta"
 import { ListaTransacoes } from "@/components/lista-transacoes"
 import { useAuth } from "@/components/auth-provider"
@@ -607,53 +608,74 @@ export default function Home() {
         <section className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground text-balance">
-              Ola, <span className="text-gradient">{user?.nome?.split(" ")[0] || "Usuario"}</span>
+              {'Olá, '}<span className="text-gradient">{user?.nome?.split(" ")[0] || "Usuario"}</span>
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
               {meses[mesSelecionado - 1]} de {anoSelecionado}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {podeEditar && (
-              <Button
-                onClick={() => setDialogOpen(true)}
-                size="sm"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
-              >
-                <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
-                Nova Conta
-              </Button>
-            )}
-            {podeEditar && (
-              <Button
-                onClick={() => setCreditoDialogOpen(true)}
-                size="sm"
-                variant="outline"
-              >
-                <CircleDollarSign className="mr-1.5 h-3.5 w-3.5" />
-                Credito
-              </Button>
-            )}
-            {podeEditar && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/relatorios")}
-              >
-                <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
-                Relatorios
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/consulta")}
-            >
-              <Search className="mr-1.5 h-3.5 w-3.5" />
-              Consultar
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="flex items-center gap-1">
+              {podeEditar && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setDialogOpen(true)}
+                      size="icon"
+                      className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Nova Conta</TooltipContent>
+                </Tooltip>
+              )}
+              {podeEditar && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setCreditoDialogOpen(true)}
+                      size="icon"
+                      variant="outline"
+                      className="h-8 w-8"
+                    >
+                      <CircleDollarSign className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Adicionar Credito</TooltipContent>
+                </Tooltip>
+              )}
+              {podeEditar && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => router.push("/relatorios")}
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Relatorios</TooltipContent>
+                </Tooltip>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => router.push("/consulta")}
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Consultar</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </section>
 
         {/* Alerts */}
