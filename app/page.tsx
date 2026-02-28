@@ -38,6 +38,8 @@ import { OnlineStatus } from "@/components/online-status"
 import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
 import { EmprestimoDialog } from "@/components/emprestimo-dialog"
+import { PoupancaDialog } from "@/components/poupanca-dialog"
+import { ViagemDialog } from "@/components/viagem-dialog"
 
 export default function Home() {
   const { user, logout } = useAuth()
@@ -55,6 +57,8 @@ export default function Home() {
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
   const [tipoInicialConta, setTipoInicialConta] = useState<string | null>(null)
   const [emprestimoDialogOpen, setEmprestimoDialogOpen] = useState(false)
+  const [poupancaDialogOpen, setPoupancaDialogOpen] = useState(false)
+  const [viagemDialogOpen, setViagemDialogOpen] = useState(false)
   const [totalEmprestado, setTotalEmprestado] = useState(0)
   const router = useRouter()
   const isOnline = useOnlineStatus()
@@ -797,7 +801,7 @@ export default function Home() {
           <button
             type="button"
             className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-amber-500/30 hover:shadow-sm group"
-            onClick={() => { setTipoInicialConta("poupanca"); setDialogOpen(true) }}
+            onClick={() => setPoupancaDialogOpen(true)}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="rounded-lg bg-amber-500/10 p-2">
@@ -813,7 +817,7 @@ export default function Home() {
           <button
             type="button"
             className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-sky-500/30 hover:shadow-sm group"
-            onClick={() => { setTipoInicialConta("viagem"); setDialogOpen(true) }}
+            onClick={() => setViagemDialogOpen(true)}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="rounded-lg bg-sky-500/10 p-2">
@@ -883,6 +887,8 @@ export default function Home() {
       <AddContaDialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setTipoInicialConta(null) }} onAdd={addConta} user={user} tipoInicial={tipoInicialConta as any} />
       <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
       <EmprestimoDialog open={emprestimoDialogOpen} onOpenChange={setEmprestimoDialogOpen} onUpdate={fetchEmprestimos} />
+      <PoupancaDialog open={poupancaDialogOpen} onOpenChange={setPoupancaDialogOpen} onUpdate={fetchPoupancaEViagem} />
+      <ViagemDialog open={viagemDialogOpen} onOpenChange={setViagemDialogOpen} onUpdate={fetchPoupancaEViagem} />
       </main>
   )
 }
