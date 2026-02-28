@@ -14,6 +14,7 @@ interface AddContaDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAdd: (conta: Omit<Conta, "id">) => void
+  tipoInicial?: TipoConta | null
 }
 
 const categorias: Categoria[] = [
@@ -29,10 +30,18 @@ const categorias: Categoria[] = [
   "Outros",
 ]
 
-export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProps) {
+export function AddContaDialog({ open, onOpenChange, onAdd, tipoInicial }: AddContaDialogProps) {
   const [nome, setNome] = useState("")
   const [valor, setValor] = useState("")
-  const [tipo, setTipo] = useState<TipoConta>("fixa")
+  const [tipo, setTipo] = useState<TipoConta>(tipoInicial || "fixa")
+
+  useEffect(() => {
+    if (open && tipoInicial) {
+      setTipo(tipoInicial)
+    } else if (open && !tipoInicial) {
+      setTipo("fixa")
+    }
+  }, [open, tipoInicial])
   const [dataVencimento, setDataVencimento] = useState(new Date().toISOString().split("T")[0])
   const [parcelas, setParcelas] = useState("")
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().split("T")[0])
