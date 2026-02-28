@@ -54,7 +54,7 @@ interface ListaTransacoesProps {
   transacoes: Transacao[]
   contas: Conta[]
   onTogglePago: (contaId: number, mes: number, ano: number) => void
-  onDeleteConta: (contaId: number) => void
+  onDeleteConta: (contaId: string | number) => void
   onUpdateConta: (conta: Conta) => void
   abrirModalWhatsApp: (titulo: string, mensagem: string) => void
   userName?: string
@@ -497,20 +497,33 @@ export function ListaTransacoes({
     return "bg-card hover:bg-accent/50"
   }
 
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const undoCancelledRef = useRef(false)
+
   const handleDeleteWithUndo = (conta: Conta) => {
+    // Limpar timer anterior se existir
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current)
+    }
+    undoCancelledRef.current = false
     setUndoData({ action: "delete", conta })
     setShowUndo(true)
 
     // Aguardar 5 segundos antes de deletar
-    setTimeout(() => {
-      if (showUndo) {
+    undoTimerRef.current = setTimeout(() => {
+      if (!undoCancelledRef.current) {
         onDeleteConta(conta.id)
         setShowUndo(false)
+        setUndoData(null)
       }
     }, 5000)
   }
 
   const handleUndo = () => {
+    undoCancelledRef.current = true
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current)
+    }
     setShowUndo(false)
     setUndoData(null)
   }

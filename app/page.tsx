@@ -891,9 +891,9 @@ export default function Home() {
             transacoes={transacoes}
             contas={contas}
             onTogglePago={togglePago}
-            onDelete={deleteConta}
+            onDeleteConta={deleteConta}
             onAddPagamento={addPagamento}
-            onEdit={editConta}
+            onUpdateConta={editConta}
             mesSelecionado={mesSelecionado}
             anoSelecionado={anoSelecionado}
             onMesChange={setMesSelecionado}
