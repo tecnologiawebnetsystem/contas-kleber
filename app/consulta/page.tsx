@@ -1,15 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Search, ArrowLeft, FileDown, FileSpreadsheet, Check, X, Pencil } from "lucide-react"
+import { Search, ArrowLeft, FileDown, FileSpreadsheet, Check, X, Pencil, Calendar, Filter, DollarSign, Clock, TrendingUp, TrendingDown } from "lucide-react"
 import Link from "next/link"
 import type { Conta } from "@/types/conta"
 import { WhatsAppButton } from "@/components/whatsapp-button"
@@ -22,7 +20,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 type Filtro = "todos" | "pagos" | "pendentes" | "atrasados" | "proximos"
 
-// Helper: verifica se uma conta esta paga (suporta parceladas expandidas)
 const isContaPaga = (conta: Conta): boolean => {
   if (conta.tipo === "parcelada" && conta.pago !== undefined) {
     return conta.pago
@@ -60,12 +57,10 @@ export default function ConsultaPage() {
   const togglePago = async (conta: Conta) => {
     try {
       const pago = isContaPaga(conta)
-      // Para parceladas, usa mesVencimento/anoVencimento
       const mes = conta.mesVencimento || (conta.pagamentos?.[0]?.mes ? conta.pagamentos[0].mes + 1 : new Date().getMonth() + 1)
       const ano = conta.anoVencimento || conta.pagamentos?.[0]?.ano || new Date().getFullYear()
 
       if (pago) {
-        // Despagar
         const response = await fetch(
           `/api/pagamentos?contaId=${conta.id}&mes=${mes}&ano=${ano}`,
           { method: "DELETE" }
@@ -73,7 +68,6 @@ export default function ConsultaPage() {
         if (!response.ok) throw new Error("Erro ao remover pagamento")
         toast({ title: "Pagamento removido" })
       } else {
-        // Pagar
         const hoje = getDataAtualBrasil()
         const dataPagamento = format(hoje, "yyyy-MM-dd")
         const response = await fetch("/api/pagamentos", {
@@ -90,7 +84,6 @@ export default function ConsultaPage() {
         if (!response.ok) throw new Error("Erro ao adicionar pagamento")
         toast({ title: "Pagamento registrado" })
       }
-      // Recarregar dados
       executarPesquisa()
     } catch (error) {
       console.error("Erro ao alterar pagamento:", error)
@@ -165,22 +158,18 @@ export default function ConsultaPage() {
         params.append("dia", diaEspecifico)
       }
 
-      // Adicionar filtro de tipo
       if (tipoSelecionado !== "todos") {
         params.append("tipo", tipoSelecionado)
       }
 
-      // Adicionar filtro de categoria
       if (categoriaSelecionada !== "todos") {
         params.append("categoria", categoriaSelecionada)
       }
 
-      // Adicionar filtro de conta específica
       if (contaSelecionada !== "todas") {
         params.append("conta_id", contaSelecionada)
       }
 
-      // Adicionar filtro de status
       if (filtro !== "todos") {
         params.append("status", filtro)
       }
@@ -219,18 +208,8 @@ export default function ConsultaPage() {
   const categoriasUnicas = Array.from(new Set(todasContas.map((c) => c.categoria).filter(Boolean)))
 
   const meses = [
-    "Janeiro",
-    "Fevereiro",
-    "Março",
-    "Abril",
-    "Maio",
-    "Junho",
-    "Julho",
-    "Agosto",
-    "Setembro",
-    "Outubro",
-    "Novembro",
-    "Dezembro",
+    "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
   ]
 
   const [anoSelecionado, mesSelecionado] = mesAno
@@ -238,14 +217,19 @@ export default function ConsultaPage() {
     : [new Date().getFullYear(), new Date().getMonth() + 1]
 
   const exportarParaPDF = () => {
-    alert("Funcionalidade de exportar para PDF será implementada em breve!")
+    alert("Funcionalidade de exportar para PDF sera implementada em breve!")
   }
 
   const exportarParaExcel = () => {
-    alert("Funcionalidade de exportar para Excel será implementada em breve!")
+    alert("Funcionalidade de exportar para Excel sera implementada em breve!")
   }
 
-  if (loading) {
+  const totalPago = contasFiltradas.filter((c) => isContaPaga(c)).reduce((sum, conta) => sum + conta.valor, 0)
+  const totalPendente = contasFiltradas.filter((c) => !isContaPaga(c)).reduce((sum, conta) => sum + conta.valor, 0)
+  const qtdPagas = contasFiltradas.filter((c) => isContaPaga(c)).length
+  const qtdPendentes = contasFiltradas.filter((c) => !isContaPaga(c)).length
+
+  if (loading && !pesquisaRealizada) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -258,147 +242,141 @@ export default function ConsultaPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-4 md:p-8 max-w-7xl">
-        <div className="flex flex-col gap-6">
+      <div className="container mx-auto p-4 md:p-6 max-w-7xl">
+        <div className="flex flex-col gap-5">
+
+          {/* Header */}
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">Consulta de Pagamentos</h1>
-            <Button asChild variant="outline">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground text-balance">Consulta de Pagamentos</h1>
+              <p className="text-sm text-muted-foreground mt-1">Pesquise e gerencie seus pagamentos</p>
+            </div>
+            <Button asChild variant="outline" size="sm">
               <Link href="/">
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
                 Voltar
               </Link>
             </Button>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Filtros</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                <div className="flex flex-col gap-3">
-                  <label className="text-sm font-medium">Período</label>
-                  <RadioGroup
-                    value={filtroPeriodo}
-                    onValueChange={(v) => setFiltroPeriodo(v as "periodo" | "todos" | "dia")}
-                    className="flex flex-wrap gap-4"
+          {/* Filtros */}
+          <Card className="border-border/50">
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-semibold text-foreground">Filtros</span>
+              </div>
+
+              {/* Periodo tabs */}
+              <div className="flex gap-1 p-1 bg-muted/50 rounded-lg w-fit mb-4">
+                {[
+                  { value: "periodo", label: "Por mes" },
+                  { value: "dia", label: "Por dia" },
+                  { value: "todos", label: "Todos" },
+                ].map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setFiltroPeriodo(tab.value as "periodo" | "todos" | "dia")}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      filtroPeriodo === tab.value
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="periodo" id="com-periodo" />
-                      <Label htmlFor="com-periodo" className="cursor-pointer">
-                        Filtrar por mês/ano
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="dia" id="por-dia" />
-                      <Label htmlFor="por-dia" className="cursor-pointer">
-                        Por dia
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="todos" id="todos-periodos" />
-                      <Label htmlFor="todos-periodos" className="cursor-pointer">
-                        Todos os períodos
-                      </Label>
-                    </div>
-                  </RadioGroup>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Filtros grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Mes/Ano</label>
+                  <Input
+                    type="month"
+                    value={mesAno}
+                    onChange={(e) => {
+                      setMesAno(e.target.value)
+                      const [ano, mes] = e.target.value.split("-")
+                      setFiltros((prev) => ({ ...prev, periodo: "mes", mes, ano }))
+                    }}
+                    disabled={filtroPeriodo !== "periodo"}
+                    className="h-9 text-sm disabled:opacity-40"
+                  />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-5">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium">Mês/Ano</label>
-                    <Input
-                      type="month"
-                      value={mesAno}
-                      onChange={(e) => {
-                        setMesAno(e.target.value)
-                        const [ano, mes] = e.target.value.split("-")
-                        setFiltros((prev) => ({ ...prev, periodo: "mes", mes, ano }))
-                      }}
-                      disabled={filtroPeriodo !== "periodo"}
-                      className="disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium">Dia Específico</label>
-                    <Input
-                      type="date"
-                      value={diaEspecifico}
-                      onChange={(e) => {
-                        setDiaEspecifico(e.target.value)
-                        setFiltros((prev) => ({ ...prev, periodo: "dia", dia: e.target.value }))
-                      }}
-                      disabled={filtroPeriodo !== "dia"}
-                      className="disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium">Tipo de Conta</label>
-                    <Select value={tipoSelecionado} onValueChange={setTipoSelecionado}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos os tipos</SelectItem>
-                        {tiposUnicos.map((tipo) => (
-                          <SelectItem key={tipo} value={tipo}>
-                            {tipo === "fixa"
-                              ? "Fixa"
-                              : tipo === "parcelada"
-                                ? "Parcelada"
-                                : tipo === "diaria"
-                                  ? "Diária"
-                                  : "Caixinha"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium">Categoria</label>
-                    <Select value={categoriaSelecionada} onValueChange={setCategoriaSelecionada}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todas">Todas as categorias</SelectItem>
-                        {categoriasUnicas.map((categoria) => (
-                          <SelectItem key={categoria} value={categoria}>
-                            {categoria}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium">Status</label>
-                    <Select value={filtro} onValueChange={(value) => setFiltro(value as Filtro)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos</SelectItem>
-                        <SelectItem value="pagos">Pagos</SelectItem>
-                        <SelectItem value="pendentes">Pendentes</SelectItem>
-                        <SelectItem value="atrasados">Atrasados</SelectItem>
-                        <SelectItem value="proximos">Próximos do Vencimento</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Dia</label>
+                  <Input
+                    type="date"
+                    value={diaEspecifico}
+                    onChange={(e) => {
+                      setDiaEspecifico(e.target.value)
+                      setFiltros((prev) => ({ ...prev, periodo: "dia", dia: e.target.value }))
+                    }}
+                    disabled={filtroPeriodo !== "dia"}
+                    className="h-9 text-sm disabled:opacity-40"
+                  />
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">Conta</label>
-                  <Select value={contaSelecionada} onValueChange={setContaSelecionada}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas as contas" />
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Tipo</label>
+                  <Select value={tipoSelecionado} onValueChange={setTipoSelecionado}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="todas">Todas as contas</SelectItem>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {tiposUnicos.map((tipo) => (
+                        <SelectItem key={tipo} value={tipo}>
+                          {tipo === "fixa" ? "Fixa" : tipo === "parcelada" ? "Parcelada" : tipo === "diaria" ? "Diaria" : "Caixinha"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Categoria</label>
+                  <Select value={categoriaSelecionada} onValueChange={setCategoriaSelecionada}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas</SelectItem>
+                      {categoriasUnicas.map((categoria) => (
+                        <SelectItem key={categoria} value={categoria}>
+                          {categoria}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Status</label>
+                  <Select value={filtro} onValueChange={(value) => setFiltro(value as Filtro)}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="pagos">Pagos</SelectItem>
+                      <SelectItem value="pendentes">Pendentes</SelectItem>
+                      <SelectItem value="atrasados">Atrasados</SelectItem>
+                      <SelectItem value="proximos">Proximos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Conta</label>
+                  <Select value={contaSelecionada} onValueChange={setContaSelecionada}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas</SelectItem>
                       {nomesContasUnicas.map((conta) => (
                         <SelectItem key={conta.id} value={conta.id}>
                           {conta.nome}
@@ -407,203 +385,251 @@ export default function ConsultaPage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
-                <div className="flex flex-wrap gap-2 justify-end">
-                  <Button onClick={executarPesquisa} size="lg">
-                    <Search className="mr-2 h-4 w-4" />
-                    Pesquisar
-                  </Button>
-                  {pesquisaRealizada && (
-                    <>
-                      <Button onClick={exportarParaPDF} size="lg" variant="outline">
-                        <FileDown className="mr-2 h-4 w-4" />
-                        Exportar PDF
-                      </Button>
-                      <Button onClick={exportarParaExcel} size="lg" variant="outline">
-                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                        Exportar Excel
-                      </Button>
-                    </>
-                  )}
-                </div>
+              {/* Botoes */}
+              <div className="flex items-center gap-2">
+                <Button onClick={executarPesquisa} size="sm" disabled={loading}>
+                  <Search className="mr-1.5 h-3.5 w-3.5" />
+                  {loading ? "Buscando..." : "Pesquisar"}
+                </Button>
+                {pesquisaRealizada && (
+                  <>
+                    <Button onClick={exportarParaPDF} size="sm" variant="outline">
+                      <FileDown className="mr-1.5 h-3.5 w-3.5" />
+                      PDF
+                    </Button>
+                    <Button onClick={exportarParaExcel} size="sm" variant="outline">
+                      <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+                      Excel
+                    </Button>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
 
           {pesquisaRealizada && (
             <>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium">Total Pago</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pb-4">
-                    <div className="text-2xl font-bold text-primary">
-                      {formatarMoeda(
-                        contasFiltradas.filter((c) => isContaPaga(c)).reduce((sum, conta) => sum + conta.valor, 0),
-                      )}
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Card className="border-border/50">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                        <TrendingUp className="h-4 w-4 text-emerald-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Total Pago</p>
+                        <p className="text-lg font-bold text-emerald-500 truncate">{formatarMoeda(totalPago)}</p>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {contasFiltradas.filter((c) => isContaPaga(c)).length} contas pagas
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">{qtdPagas} {qtdPagas === 1 ? "conta paga" : "contas pagas"}</p>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium">Total Pendente</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pb-4">
-                    <div className="text-2xl font-bold text-red-600">
-                      {formatarMoeda(
-                        contasFiltradas.filter((c) => !isContaPaga(c)).reduce((sum, conta) => sum + conta.valor, 0),
-                      )}
+                <Card className="border-border/50">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
+                        <TrendingDown className="h-4 w-4 text-red-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Total Pendente</p>
+                        <p className="text-lg font-bold text-red-500 truncate">{formatarMoeda(totalPendente)}</p>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {contasFiltradas.filter((c) => !isContaPaga(c)).length} contas pendentes
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">{qtdPendentes} {qtdPendentes === 1 ? "conta pendente" : "contas pendentes"}</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/50">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                        <DollarSign className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Total Geral</p>
+                        <p className="text-lg font-bold text-foreground truncate">{formatarMoeda(totalPago + totalPendente)}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">{contasFiltradas.length} contas</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/50">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                        <Clock className="h-4 w-4 text-amber-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Progresso</p>
+                        <p className="text-lg font-bold text-foreground">
+                          {contasFiltradas.length > 0 ? Math.round((qtdPagas / contasFiltradas.length) * 100) : 0}%
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-emerald-500 transition-all"
+                        style={{ width: `${contasFiltradas.length > 0 ? (qtdPagas / contasFiltradas.length) * 100 : 0}%` }}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    Contas de{" "}
-                    {filtroPeriodo === "periodo" && mesAno
-                      ? `${meses[mesSelecionado - 1]} ${anoSelecionado}`
-                      : filtroPeriodo === "dia" && diaEspecifico
-                        ? new Date(diaEspecifico + "T00:00:00").toLocaleDateString("pt-BR")
-                        : "Todos os Períodos"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border overflow-x-auto">
+              {/* Tabela */}
+              <Card className="border-border/50">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground">
+                      {filtroPeriodo === "periodo" && mesAno
+                        ? `${meses[mesSelecionado - 1]} ${anoSelecionado}`
+                        : filtroPeriodo === "dia" && diaEspecifico
+                          ? new Date(diaEspecifico + "T00:00:00").toLocaleDateString("pt-BR")
+                          : "Todos os Periodos"}
+                    </span>
+                    <Badge variant="outline" className="ml-auto text-xs">
+                      {contasFiltradas.length} {contasFiltradas.length === 1 ? "resultado" : "resultados"}
+                    </Badge>
+                  </div>
+
+                  <div className="rounded-lg border border-border/50 overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Conta</TableHead>
-                          <TableHead>Tipo</TableHead>
-                          <TableHead>Parcela</TableHead>
-                          <TableHead>Vencimento</TableHead>
-                          <TableHead>Valor</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Data Pagamento</TableHead>
-                          <TableHead className="text-right">Ações</TableHead>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="text-xs font-semibold">Conta</TableHead>
+                          <TableHead className="text-xs font-semibold">Tipo</TableHead>
+                          <TableHead className="text-xs font-semibold">Parcela</TableHead>
+                          <TableHead className="text-xs font-semibold">Vencimento</TableHead>
+                          <TableHead className="text-xs font-semibold">Valor</TableHead>
+                          <TableHead className="text-xs font-semibold">Status</TableHead>
+                          <TableHead className="text-xs font-semibold">Pagamento</TableHead>
+                          <TableHead className="text-xs font-semibold text-right">Acoes</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {contasFiltradas.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                              Nenhuma conta encontrada
+                            <TableCell colSpan={8} className="text-center text-muted-foreground py-12">
+                              <div className="flex flex-col items-center gap-2">
+                                <Search className="h-8 w-8 text-muted-foreground/50" />
+                                <p className="text-sm">Nenhuma conta encontrada</p>
+                                <p className="text-xs text-muted-foreground/70">Ajuste os filtros e tente novamente</p>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ) : (
-                          contasFiltradas.map((conta) => (
-                            <TableRow key={`${conta.id}-${conta.parcelaAtual || "unico"}`}>
-                              <TableCell className="font-medium">{conta.nome}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">
-                                  {conta.tipo === "fixa"
-                                    ? "Fixa"
-                                    : conta.tipo === "diaria"
-                                      ? "Diária"
-                                      : conta.tipo === "caixinha"
-                                        ? "Caixinha"
-                                        : "Parcelada"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {conta.tipo === "parcelada" ? `${conta.parcelaAtual}/${conta.parcelas}` : "-"}
-                              </TableCell>
-                              <TableCell>
-                                {conta.tipo === "parcelada"
-                                  ? conta.dataVencimentoCompleta
-                                  : conta.tipo === "fixa"
-                                    ? format(
-                                        new Date(
-                                          Number.parseInt(filtros.ano || "0"),
-                                          Number.parseInt(filtros.mes || "0") - 1,
-                                          conta.vencimento,
-                                        ),
-                                        "dd/MM/yyyy",
-                                      )
-                                    : conta.dataGasto
-                                      ? format(new Date(conta.dataGasto + "T00:00:00"), "dd/MM/yyyy")
+                          contasFiltradas.map((conta) => {
+                            const pago = isContaPaga(conta)
+                            return (
+                              <TableRow key={`${conta.id}-${conta.parcelaAtual || "unico"}`} className="group">
+                                <TableCell className="font-medium text-sm">{conta.nome}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="text-xs font-normal">
+                                    {conta.tipo === "fixa" ? "Fixa" : conta.tipo === "diaria" ? "Diaria" : conta.tipo === "caixinha" ? "Caixinha" : "Parcelada"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {conta.tipo === "parcelada" ? `${conta.parcelaAtual}/${conta.parcelas}` : "-"}
+                                </TableCell>
+                                <TableCell className="text-sm">
+                                  {conta.tipo === "parcelada"
+                                    ? conta.dataVencimentoCompleta
+                                    : conta.tipo === "fixa"
+                                      ? format(
+                                          new Date(
+                                            Number.parseInt(filtros.ano || "0"),
+                                            Number.parseInt(filtros.mes || "0") - 1,
+                                            conta.vencimento,
+                                          ),
+                                          "dd/MM/yyyy",
+                                        )
+                                      : conta.dataGasto
+                                        ? format(new Date(conta.dataGasto + "T00:00:00"), "dd/MM/yyyy")
+                                        : "-"}
+                                </TableCell>
+                                <TableCell className="text-sm font-medium">{formatarMoeda(conta.valor)}</TableCell>
+                                <TableCell>
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    pago
+                                      ? "bg-emerald-500/10 text-emerald-500"
+                                      : "bg-red-500/10 text-red-500"
+                                  }`}>
+                                    <span className={`h-1.5 w-1.5 rounded-full ${pago ? "bg-emerald-500" : "bg-red-500"}`} />
+                                    {pago ? "Pago" : "Pendente"}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {conta.tipo === "parcelada"
+                                    ? conta.dataPagamento
+                                      ? format(new Date(conta.dataPagamento + "T00:00:00"), "dd/MM/yyyy")
+                                      : "-"
+                                    : conta.pagamentos && conta.pagamentos.length > 0
+                                      ? format(new Date(conta.pagamentos[0].dataPagamento + "T00:00:00"), "dd/MM/yyyy")
                                       : "-"}
-                              </TableCell>
-                              <TableCell>R$ {conta.valor.toFixed(2)}</TableCell>
-                              <TableCell>
-                                <Badge variant={isContaPaga(conta) ? "default" : "secondary"}>
-                                  {isContaPaga(conta) ? "Pago" : "Pendente"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {conta.tipo === "parcelada"
-                                  ? conta.dataPagamento
-                                    ? format(new Date(conta.dataPagamento + "T00:00:00"), "dd/MM/yyyy")
-                                    : "-"
-                                  : conta.pagamentos && conta.pagamentos.length > 0
-                                    ? format(new Date(conta.pagamentos[0].dataPagamento + "T00:00:00"), "dd/MM/yyyy")
-                                    : "-"}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <TooltipProvider>
-                                  <div className="flex items-center justify-end gap-1">
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className={
-                                            isContaPaga(conta)
-                                              ? "h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
-                                              : "h-8 w-8 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
-                                          }
-                                          onClick={() => togglePago(conta)}
-                                        >
-                                          {isContaPaga(conta) ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        {isContaPaga(conta) ? "Desfazer pagamento" : "Marcar como pago"}
-                                      </TooltipContent>
-                                    </Tooltip>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
-                                          onClick={() => {
-                                            setContaEditando(conta)
-                                            setEditDialogOpen(true)
-                                          }}
-                                        >
-                                          <Pencil className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Editar conta</TooltipContent>
-                                    </Tooltip>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span>
-                                          <WhatsAppButton
-                                            conta={conta}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <TooltipProvider>
+                                    <div className="flex items-center justify-end gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10"
-                                          />
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Enviar por WhatsApp</TooltipContent>
-                                    </Tooltip>
-                                  </div>
-                                </TooltipProvider>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                                            className={`h-7 w-7 ${
+                                              pago
+                                                ? "text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
+                                                : "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
+                                            }`}
+                                            onClick={() => togglePago(conta)}
+                                          >
+                                            {pago ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom">
+                                          {pago ? "Desfazer" : "Pagar"}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                                            onClick={() => {
+                                              setContaEditando(conta)
+                                              setEditDialogOpen(true)
+                                            }}
+                                          >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom">Editar</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span>
+                                            <WhatsAppButton
+                                              conta={conta}
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-7 w-7 text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                                            />
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom">WhatsApp</TooltipContent>
+                                      </Tooltip>
+                                    </div>
+                                  </TooltipProvider>
+                                </TableCell>
+                              </TableRow>
+                            )
+                          })
                         )}
                       </TableBody>
                     </Table>
