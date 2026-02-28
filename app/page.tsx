@@ -22,6 +22,7 @@ import {
   ArrowDownRight,
   CircleDollarSign,
   Clock,
+  HandCoins,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -36,6 +37,7 @@ import { formatarMoeda } from "@/utils/formatar-moeda"
 import { OnlineStatus } from "@/components/online-status"
 import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
+import { EmprestimoDialog } from "@/components/emprestimo-dialog"
 
 export default function Home() {
   const { user, logout } = useAuth()
@@ -51,6 +53,8 @@ export default function Home() {
   const [totalPagoCarro, setTotalPagoCarro] = useState(0)
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
+  const [emprestimoDialogOpen, setEmprestimoDialogOpen] = useState(false)
+  const [totalEmprestado, setTotalEmprestado] = useState(0)
   const router = useRouter()
   const isOnline = useOnlineStatus()
 
@@ -69,6 +73,7 @@ export default function Home() {
     fetchTransacoes()
     fetchPoupancaEViagem()
     fetchTotalCarro()
+    fetchEmprestimos()
   }, [])
 
   const fetchSaldo = async () => {
@@ -175,6 +180,20 @@ export default function Home() {
       }
     } catch (error) {
       console.error("[v0] Erro ao buscar poupanca e viagem:", error)
+    }
+  }
+
+  const fetchEmprestimos = async () => {
+    try {
+      const res = await fetch("/api/emprestimos")
+      if (res.ok) {
+        const data = await res.json()
+        const pendentes = data.filter((e: any) => !e.devolvido)
+        const total = pendentes.reduce((sum: number, e: any) => sum + Number(e.valor), 0)
+        setTotalEmprestado(total)
+      }
+    } catch (error) {
+      console.error("[v0] Erro ao buscar emprestimos:", error)
     }
   }
 
@@ -772,7 +791,7 @@ export default function Home() {
         </section>
 
         {/* Mini Cards Grid */}
-        <section className="grid grid-cols-3 gap-3">
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Poupanca */}
           <button
             type="button"
@@ -838,6 +857,22 @@ export default function Home() {
             <p className="text-xs text-muted-foreground">Carro</p>
             <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalPagoCarro)}</p>
           </button>
+
+          {/* Emprestado */}
+          <button
+            type="button"
+            className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-violet-500/30 hover:shadow-sm group"
+            onClick={() => setEmprestimoDialogOpen(true)}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-lg bg-violet-500/10 p-2">
+                <HandCoins className="h-4 w-4 text-violet-500" />
+              </div>
+              <Plus className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <p className="text-xs text-muted-foreground">Emprestado</p>
+            <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalEmprestado)}</p>
+          </button>
         </section>
 
         {/* Transactions List */}
@@ -864,6 +899,7 @@ export default function Home() {
       {/* Dialogs */}
       <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
       <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
-    </main>
+      <EmprestimoDialog open={emprestimoDialogOpen} onOpenChange={setEmprestimoDialogOpen} onUpdate={fetchEmprestimos} />
+      </main>
   )
 }
