@@ -9,17 +9,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Search, ArrowLeft, FileDown, FileSpreadsheet } from "lucide-react"
+import { Search, ArrowLeft, FileDown, FileSpreadsheet, Check, X, Pencil } from "lucide-react"
 import Link from "next/link"
 import type { Conta } from "@/types/conta"
 import { WhatsAppButton } from "@/components/whatsapp-button"
 import { formatarMoeda } from "@/lib/utils"
 import { getDataAtualBrasil } from "@/lib/date-utils"
 import { format } from "date-fns"
+import { useToast } from "@/hooks/use-toast"
 
 type Filtro = "todos" | "pagos" | "pendentes" | "atrasados" | "proximos"
 
+// Helper: verifica se uma conta esta paga (suporta parceladas expandidas)
+const isContaPaga = (conta: Conta): boolean => {
+  if (conta.tipo === "parcelada" && conta.pago !== undefined) {
+    return conta.pago
+  }
+  return (conta.pagamentos && conta.pagamentos.length > 0) || false
+}
+
 export default function ConsultaPage() {
+  const { toast } = useToast()
   const [todasContas, setTodasContas] = useState<Conta[]>([])
   const [contasFiltradas, setContasFiltradas] = useState<Conta[]>([])
   const [filtro, setFiltro] = useState<Filtro>("todos")
@@ -42,6 +52,47 @@ export default function ConsultaPage() {
     ano: "",
     dia: "",
   })
+
+  const togglePago = async (conta: Conta) => {
+    try {
+      const pago = isContaPaga(conta)
+      // Para parceladas, usa mesVencimento/anoVencimento
+      const mes = conta.mesVencimento || (conta.pagamentos?.[0]?.mes ? conta.pagamentos[0].mes + 1 : new Date().getMonth() + 1)
+      const ano = conta.anoVencimento || conta.pagamentos?.[0]?.ano || new Date().getFullYear()
+
+      if (pago) {
+        // Despagar
+        const response = await fetch(
+          `/api/pagamentos?contaId=${conta.id}&mes=${mes}&ano=${ano}`,
+          { method: "DELETE" }
+        )
+        if (!response.ok) throw new Error("Erro ao remover pagamento")
+        toast({ title: "Pagamento removido" })
+      } else {
+        // Pagar
+        const hoje = getDataAtualBrasil()
+        const dataPagamento = format(hoje, "yyyy-MM-dd")
+        const response = await fetch("/api/pagamentos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contaId: conta.id,
+            mes: mes,
+            ano: ano,
+            dataPagamento,
+            contaNome: conta.nome,
+          }),
+        })
+        if (!response.ok) throw new Error("Erro ao adicionar pagamento")
+        toast({ title: "Pagamento registrado" })
+      }
+      // Recarregar dados
+      executarPesquisa()
+    } catch (error) {
+      console.error("Erro ao alterar pagamento:", error)
+      toast({ title: "Erro ao alterar pagamento", variant: "destructive" })
+    }
+  }
 
   const fetchContas = async () => {
     try {
@@ -121,9 +172,9 @@ export default function ConsultaPage() {
       let contasFiltradas = data
 
       if (filtro === "atrasados") {
-        contasFiltradas = data.filter((c: Conta) => c.estaAtrasado && !c.isPago)
+        contasFiltradas = data.filter((c: Conta) => c.estaAtrasado && !isContaPaga(c))
       } else if (filtro === "proximos") {
-        contasFiltradas = data.filter((c: Conta) => c.estaProximo && !c.isPago)
+        contasFiltradas = data.filter((c: Conta) => c.estaProximo && !isContaPaga(c))
       }
 
       setContasFiltradas(contasFiltradas)
@@ -369,11 +420,11 @@ export default function ConsultaPage() {
                   <CardContent className="pb-4">
                     <div className="text-2xl font-bold text-primary">
                       {formatarMoeda(
-                        contasFiltradas.filter((c) => c.isPago).reduce((sum, conta) => sum + conta.valor, 0),
+                        contasFiltradas.filter((c) => isContaPaga(c)).reduce((sum, conta) => sum + conta.valor, 0),
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {contasFiltradas.filter((c) => c.isPago).length} contas pagas
+                      {contasFiltradas.filter((c) => isContaPaga(c)).length} contas pagas
                     </p>
                   </CardContent>
                 </Card>
@@ -385,11 +436,11 @@ export default function ConsultaPage() {
                   <CardContent className="pb-4">
                     <div className="text-2xl font-bold text-red-600">
                       {formatarMoeda(
-                        contasFiltradas.filter((c) => !c.isPago).reduce((sum, conta) => sum + conta.valor, 0),
+                        contasFiltradas.filter((c) => !isContaPaga(c)).reduce((sum, conta) => sum + conta.valor, 0),
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {contasFiltradas.filter((c) => !c.isPago).length} contas pendentes
+                      {contasFiltradas.filter((c) => !isContaPaga(c)).length} contas pendentes
                     </p>
                   </CardContent>
                 </Card>
@@ -464,24 +515,8 @@ export default function ConsultaPage() {
                               </TableCell>
                               <TableCell>R$ {conta.valor.toFixed(2)}</TableCell>
                               <TableCell>
-                                <Badge
-                                  variant={
-                                    conta.tipo === "parcelada"
-                                      ? conta.pago
-                                        ? "default"
-                                        : "secondary"
-                                      : conta.pagamentos && conta.pagamentos.length > 0
-                                        ? "default"
-                                        : "secondary"
-                                  }
-                                >
-                                  {conta.tipo === "parcelada"
-                                    ? conta.pago
-                                      ? "Pago"
-                                      : "Pendente"
-                                    : conta.pagamentos && conta.pagamentos.length > 0
-                                      ? "Pago"
-                                      : "Pendente"}
+                                <Badge variant={isContaPaga(conta) ? "default" : "secondary"}>
+                                  {isContaPaga(conta) ? "Pago" : "Pendente"}
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -494,7 +529,27 @@ export default function ConsultaPage() {
                                     : "-"}
                               </TableCell>
                               <TableCell className="text-right">
-                                <WhatsAppButton conta={conta} />
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    variant={isContaPaga(conta) ? "outline" : "default"}
+                                    size="sm"
+                                    onClick={() => togglePago(conta)}
+                                    title={isContaPaga(conta) ? "Desfazer pagamento" : "Marcar como pago"}
+                                  >
+                                    {isContaPaga(conta) ? (
+                                      <>
+                                        <X className="mr-1 h-3 w-3" />
+                                        Desfazer
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Check className="mr-1 h-3 w-3" />
+                                        Pagar
+                                      </>
+                                    )}
+                                  </Button>
+                                  <WhatsAppButton conta={conta} />
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))
