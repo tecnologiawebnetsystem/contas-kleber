@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Check } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -585,15 +585,21 @@ export function ListaTransacoes({
           </Button>
         </div>
         {onToggleMostrarHoje && (
-          <Button
-            variant={mostrarApenasHoje ? "default" : "ghost"}
-            size="sm"
-            onClick={() => onToggleMostrarHoje(!mostrarApenasHoje)}
-            className={`text-xs ${mostrarApenasHoje ? "" : "text-muted-foreground"}`}
-          >
-            <Calendar className="mr-1.5 h-3.5 w-3.5" />
-            {mostrarApenasHoje ? "Ver mes" : "Hoje"}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={mostrarApenasHoje ? "default" : "ghost"}
+                  size="icon"
+                  onClick={() => onToggleMostrarHoje(!mostrarApenasHoje)}
+                  className={`h-8 w-8 ${mostrarApenasHoje ? "" : "text-muted-foreground"}`}
+                >
+                  <Calendar className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{mostrarApenasHoje ? "Ver mes completo" : "Ver somente hoje"}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
 
@@ -726,11 +732,12 @@ export function ListaTransacoes({
         key={item.id}
         className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border/40 bg-card hover:bg-accent/30 transition-all border-l-[3px] ${getBorderColor()}`}
       >
-        {/* Checkbox */}
+        {/* Status toggle */}
         {!isSomenteLeitura && (
-          <Checkbox
-            checked={pago || conta.tipo === "diaria"}
-            onCheckedChange={() => {
+          <button
+            type="button"
+            onClick={() => {
+              if (conta.tipo === "diaria") return
               if (pago) {
                 onTogglePago(conta.id, mesSelecionado, anoSelecionado)
               } else {
@@ -738,8 +745,15 @@ export function ListaTransacoes({
               }
             }}
             disabled={conta.tipo === "diaria"}
-            className="h-4 w-4 shrink-0"
-          />
+            className={`shrink-0 h-4 w-4 rounded-full border flex items-center justify-center transition-all ${
+              pago || conta.tipo === "diaria"
+                ? "bg-emerald-500 border-emerald-500 text-white"
+                : "border-muted-foreground/40 hover:border-muted-foreground"
+            } disabled:cursor-not-allowed disabled:opacity-50`}
+            aria-label={pago ? "Marcar como pendente" : "Marcar como pago"}
+          >
+            {(pago || conta.tipo === "diaria") && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+          </button>
         )}
 
         {/* Name + badges */}
