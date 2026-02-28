@@ -137,19 +137,13 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
               key={emp.id}
               className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border/40 bg-card hover:bg-accent/30 transition-colors group"
             >
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => handleToggleDevolvido(emp)}
-                      className="shrink-0 h-4 w-4 rounded-full border border-muted-foreground/40 hover:border-emerald-500 flex items-center justify-center transition-all"
-                      aria-label="Marcar como devolvido"
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>Marcar como devolvido</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <button
+                type="button"
+                onClick={() => handleToggleDevolvido(emp)}
+                className="shrink-0 h-3.5 w-3.5 rounded-full border border-violet-500/50 hover:border-violet-500 hover:bg-violet-500/20 flex items-center justify-center transition-all"
+                aria-label="Marcar como devolvido"
+                title="Marcar como devolvido"
+              />
               <span className="text-sm font-medium text-foreground truncate flex-1">{emp.nome_pessoa}</span>
               <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                 {new Date(emp.data_devolucao + "T00:00:00").toLocaleDateString("pt-BR")}
@@ -184,10 +178,11 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
                   <button
                     type="button"
                     onClick={() => handleToggleDevolvido(emp)}
-                    className="shrink-0 h-4 w-4 rounded-full bg-emerald-500 border-emerald-500 flex items-center justify-center transition-all"
+                    className="shrink-0 h-3.5 w-3.5 rounded-full bg-emerald-500 border border-emerald-500 flex items-center justify-center transition-all hover:bg-emerald-600"
                     aria-label="Desmarcar devolvido"
+                    title="Desmarcar devolvido"
                   >
-                    <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                    <Check className="h-2 w-2 text-white" strokeWidth={3} />
                   </button>
                   <span className="text-sm text-muted-foreground line-through truncate flex-1">{emp.nome_pessoa}</span>
                   <span className="text-sm font-bold text-muted-foreground whitespace-nowrap">{formatarMoeda(Number(emp.valor))}</span>
