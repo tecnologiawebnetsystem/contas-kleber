@@ -9,7 +9,6 @@ import { LogOut } from "lucide-react"
 import {
   Plus,
   Calendar,
-  TrendingUp,
   Search,
   AlertCircle,
   Wallet,
@@ -24,7 +23,6 @@ import {
   CircleDollarSign,
   Clock,
 } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import type { Conta } from "@/types/conta"
 import { ListaTransacoes } from "@/components/lista-transacoes"
@@ -580,11 +578,11 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-background">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Logo variant="full" size="sm" />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <OnlineStatus userName={user?.nome} />
               <ThemeToggle />
               <Button
@@ -594,7 +592,7 @@ export default function Home() {
                   logout()
                   router.push("/login")
                 }}
-                className="text-muted-foreground hover:text-foreground"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
                 aria-label="Sair"
               >
                 <LogOut className="h-4 w-4" />
@@ -604,15 +602,15 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Welcome Section + Quick Actions */}
-        <section className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="container mx-auto px-4 py-6 space-y-5">
+        {/* Welcome + Actions */}
+        <section className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground">
+            <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground text-balance">
               Ola, <span className="text-gradient">{user?.nome?.split(" ")[0] || "Usuario"}</span>
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {meses[mesSelecionado - 1]} de {anoSelecionado} - {contasMesAtual.length} contas no mes
+              {meses[mesSelecionado - 1]} de {anoSelecionado}
             </p>
           </div>
 
@@ -621,9 +619,9 @@ export default function Home() {
               <Button
                 onClick={() => setDialogOpen(true)}
                 size="sm"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
               >
-                <PlusCircle className="mr-2 h-4 w-4" />
+                <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
                 Nova Conta
               </Button>
             )}
@@ -631,28 +629,28 @@ export default function Home() {
               <Button
                 onClick={() => setCreditoDialogOpen(true)}
                 size="sm"
-                className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                variant="outline"
               >
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Credito
+                <CircleDollarSign className="mr-1.5 h-3.5 w-3.5" />
+                Credito
               </Button>
             )}
             {podeEditar && (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => router.push("/relatorios")}
               >
-                <BarChart3 className="mr-2 h-4 w-4" />
+                <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
                 Relatorios
               </Button>
             )}
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => router.push("/consulta")}
             >
-              <Search className="mr-2 h-4 w-4" />
+              <Search className="mr-1.5 h-3.5 w-3.5" />
               Consultar
             </Button>
           </div>
@@ -660,229 +658,176 @@ export default function Home() {
 
         {/* Alerts */}
         {contasAtrasadas.length > 0 && (
-          <Alert variant="destructive" className="border-destructive/50 bg-destructive/5">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle className="font-heading">Alerta: Contas Atrasadas</AlertTitle>
-            <AlertDescription>
-              Voce tem {contasAtrasadas.length} conta(s) atrasada(s):{" "}
-              {contasAtrasadas.map((c) => c.nome).join(", ")}
-            </AlertDescription>
-          </Alert>
+          <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 flex items-start gap-3">
+            <div className="rounded-full bg-red-500/10 p-1.5 mt-0.5">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-red-500">
+                {contasAtrasadas.length} conta(s) atrasada(s)
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {contasAtrasadas.map((c) => c.nome).join(", ")}
+              </p>
+            </div>
+          </div>
         )}
 
         {contasProximasVencimento.length > 0 && (
-          <Alert className="border-accent/50 bg-accent/5">
-            <Clock className="h-4 w-4 text-accent" />
-            <AlertTitle className="font-heading text-accent">Proximas do vencimento</AlertTitle>
-            <AlertDescription className="text-muted-foreground">
-              {contasProximasVencimento.length} conta(s) vencendo nos proximos 3 dias:{" "}
-              {contasProximasVencimento.map((c) => c.nome).join(", ")}
-            </AlertDescription>
-          </Alert>
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-start gap-3">
+            <div className="rounded-full bg-amber-500/10 p-1.5 mt-0.5">
+              <Clock className="h-4 w-4 text-amber-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-amber-500">
+                {contasProximasVencimento.length} conta(s) vencendo em breve
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {contasProximasVencimento.map((c) => c.nome).join(", ")}
+              </p>
+            </div>
+          </div>
         )}
 
-        {/* Stats Grid */}
-        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {/* Credito Disponivel - Primary card */}
-          <Card className="border-primary/20 bg-card relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">Credito Disponivel</CardTitle>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-primary"
-                  onClick={() => {
-                    abrirModalWhatsApp(
-                      "Credito Disponivel",
-                      `Saldo Atual\n\nValor Disponivel: ${formatarMoeda(saldo)}\nStatus: ${saldo > 0 ? "Positivo" : saldo < 0 ? "Negativo" : "Zerado"}`
-                    )
-                  }}
-                >
-                  <Share2 className="h-3 w-3" />
-                </Button>
-                <Wallet className="h-3.5 w-3.5 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent className="pb-3">
-              <div className={`text-xl font-bold font-heading ${saldo >= 0 ? "text-foreground" : "text-destructive"}`}>
-                {formatarMoeda(saldo)}
-              </div>
-              <div className="flex items-center gap-1 mt-1">
-                {saldo >= 0 ? (
-                  <ArrowUpRight className="h-3 w-3 text-primary" />
-                ) : (
-                  <ArrowDownRight className="h-3 w-3 text-destructive" />
-                )}
-                <span className="text-xs text-muted-foreground">
-                  {saldo >= 0 ? "Positivo" : "Negativo"}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Total Pago */}
-          <Card className="border-border/50 bg-card relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-[#1e3a5f]" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">Total Pago</CardTitle>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-[#1e3a5f]"
-                  onClick={() => {
-                    abrirModalWhatsApp(
-                      "Total Pago",
-                      `Resumo de Pagamentos - ${meses[mesSelecionado - 1]}/${anoSelecionado}\n\nTotal Pago: ${formatarMoeda(totalPago)}\nContas Pagas: ${pagas} de ${contasMesAtual.length}\nPercentual: ${percentualPago}%`
-                    )
-                  }}
-                >
-                  <Share2 className="h-3 w-3" />
-                </Button>
-                <Calendar className="h-3.5 w-3.5 text-[#1e3a5f] dark:text-[#3b82f6]" />
-              </div>
-            </CardHeader>
-            <CardContent className="pb-3">
-              <div className="text-xl font-bold font-heading text-foreground">
-                {formatarMoeda(totalPago)}
-              </div>
-              <p className="text-xs mt-1 text-muted-foreground">
-                {pagas} de {contasMesAtual.length} pagas
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Total Pendente */}
-          <Card className="border-border/50 bg-card relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-accent" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">Total Pendente</CardTitle>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-accent"
-                  onClick={() =>
-                    abrirModalWhatsApp(
-                      "Total Pendente",
-                      `Contas Pendentes - ${meses[mesSelecionado - 1]}/${anoSelecionado}\n\nTotal Pendente: ${formatarMoeda(totalMes - totalPago)}\nContas Pendentes: ${contasMesAtual.length - pagas} de ${contasMesAtual.length}`
-                    )
-                  }
-                >
-                  <Share2 className="h-3 w-3" />
-                </Button>
-                <TrendingUp className="h-3.5 w-3.5 text-accent" />
-              </div>
-            </CardHeader>
-            <CardContent className="pb-3">
-              <div className="text-xl font-bold font-heading text-foreground">
-                {formatarMoeda(totalMes - totalPago)}
-              </div>
-              <p className="text-xs mt-1 text-muted-foreground">
-                {contasMesAtual.length - pagas} pendentes
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Poupanca */}
-          <Card className="border-border/50 bg-card relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-[#f59e0b]" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">Poupanca</CardTitle>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-[#f59e0b]"
-                  onClick={() =>
-                    abrirModalWhatsApp(
-                      "Poupanca",
-                      `Saldo em Poupanca\n\nTotal Poupado: ${formatarMoeda(totalPoupanca)}`
-                    )
-                  }
-                >
-                  <Share2 className="h-3 w-3" />
-                </Button>
-                <PiggyBank className="h-3.5 w-3.5 text-[#f59e0b]" />
-              </div>
-            </CardHeader>
-            <CardContent className="pb-3">
-              <div className="text-xl font-bold font-heading text-foreground">
-                {formatarMoeda(totalPoupanca)}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Viagem */}
-          <Card className="border-border/50 bg-card relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-[#0ea5e9]" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">Viagem</CardTitle>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-[#0ea5e9]"
-                  onClick={() =>
-                    abrirModalWhatsApp(
-                      "Viagem",
-                      `Fundo para Viagens\n\nTotal Economizado: ${formatarMoeda(totalViagem)}`
-                    )
-                  }
-                >
-                  <Share2 className="h-3 w-3" />
-                </Button>
-                <Plane className="h-3.5 w-3.5 text-[#0ea5e9]" />
-              </div>
-            </CardHeader>
-            <CardContent className="pb-3">
-              <div className="text-xl font-bold font-heading text-foreground">
-                {formatarMoeda(totalViagem)}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Carro */}
-          <Card
-            className="border-border/50 bg-card relative overflow-hidden cursor-pointer hover:border-primary/30 transition-colors"
-            onClick={() => router.push("/carro")}
-          >
-            <div className="absolute top-0 left-0 w-full h-1 bg-muted-foreground" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">Carro</CardTitle>
-              <Car className="h-3.5 w-3.5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="pb-3">
-              <div className="text-xl font-bold font-heading text-foreground">
-                {formatarMoeda(totalPagoCarro)}
-              </div>
-              <p className="text-xs mt-1 text-muted-foreground">Total pago</p>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Progress Bar */}
+        {/* Hero Card - Credito Disponivel */}
         <section>
-          <Card className="border-border/50 bg-card">
-            <CardContent className="py-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-foreground font-heading">Progresso do Mes</span>
-                <span className="text-sm font-bold text-primary">{percentualPago}%</span>
+          <div className="rounded-xl border border-border/40 bg-card p-5 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
+            <div className="relative flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Credito Disponivel</p>
+                <p className={`text-3xl md:text-4xl font-bold font-heading mt-1 ${saldo >= 0 ? "text-foreground" : "text-red-500"}`}>
+                  {formatarMoeda(saldo)}
+                </p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  {saldo >= 0 ? (
+                    <div className="flex items-center gap-1 text-emerald-500">
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                      <span className="text-xs font-medium">Positivo</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-red-500">
+                      <ArrowDownRight className="h-3.5 w-3.5" />
+                      <span className="text-xs font-medium">Negativo</span>
+                    </div>
+                  )}
+                  <span className="text-muted-foreground text-xs">|</span>
+                  <span className="text-xs text-muted-foreground">{pagas}/{contasMesAtual.length} pagas</span>
+                </div>
               </div>
-              <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+              <div className="hidden md:flex items-center gap-3">
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Progresso</p>
+                  <p className="text-lg font-bold text-primary font-heading">{percentualPago}%</p>
+                </div>
+                <div className="relative h-14 w-14">
+                  <svg className="h-14 w-14 -rotate-90" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="4" className="text-muted/50" />
+                    <circle
+                      cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="4"
+                      className="text-primary"
+                      strokeLinecap="round"
+                      strokeDasharray={`${percentualPago * 1.508} ${150.8 - percentualPago * 1.508}`}
+                    />
+                  </svg>
+                  <Wallet className="h-5 w-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                </div>
+              </div>
+            </div>
+            {/* Progress Bar - mobile */}
+            <div className="mt-4 md:hidden">
+              <div className="w-full bg-muted/50 rounded-full h-2 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-700 ease-out"
                   style={{ width: `${percentualPago}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                <span>{pagas} pagas</span>
+              <div className="flex items-center justify-between mt-1.5 text-xs text-muted-foreground">
+                <span>{percentualPago}% concluido</span>
                 <span>{contasMesAtual.length - pagas} pendentes</span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Mini Cards Grid */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Poupanca */}
+          <button
+            type="button"
+            className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-amber-500/30 hover:shadow-sm group"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-lg bg-amber-500/10 p-2">
+                <PiggyBank className="h-4 w-4 text-amber-500" />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  abrirModalWhatsApp("Poupanca", `Saldo em Poupanca\n\nTotal Poupado: ${formatarMoeda(totalPoupanca)}`)
+                }}
+              >
+                <Share2 className="h-3 w-3" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Poupanca</p>
+            <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalPoupanca)}</p>
+          </button>
+
+          {/* Viagem */}
+          <button
+            type="button"
+            className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-sky-500/30 hover:shadow-sm group"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-lg bg-sky-500/10 p-2">
+                <Plane className="h-4 w-4 text-sky-500" />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-sky-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  abrirModalWhatsApp("Viagem", `Fundo para Viagens\n\nTotal Economizado: ${formatarMoeda(totalViagem)}`)
+                }}
+              >
+                <Share2 className="h-3 w-3" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Viagem</p>
+            <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalViagem)}</p>
+          </button>
+
+          {/* Carro */}
+          <button
+            type="button"
+            className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-muted-foreground/30 hover:shadow-sm group"
+            onClick={() => router.push("/carro")}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-lg bg-muted-foreground/10 p-2">
+                <Car className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <p className="text-xs text-muted-foreground">Carro</p>
+            <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalPagoCarro)}</p>
+          </button>
+
+          {/* Resumo Mes */}
+          <div className="rounded-xl border border-border/40 bg-card p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <Calendar className="h-4 w-4 text-primary" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Total do Mes</p>
+            <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalMes)}</p>
+          </div>
         </section>
 
         {/* Transactions List */}
@@ -906,7 +851,7 @@ export default function Home() {
         </section>
       </div>
 
-      {/* Dialog for adding a new account */}
+      {/* Dialogs */}
       <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
       <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
     </main>

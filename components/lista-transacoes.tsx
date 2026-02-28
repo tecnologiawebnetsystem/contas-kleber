@@ -525,385 +525,345 @@ export function ListaTransacoes({
   const [undoData, setUndoData] = useState<{ action: string; conta: Conta } | null>(null)
   const [showUndo, setShowUndo] = useState(false)
 
+  const handleUndo = () => {
+    setShowUndo(false)
+    setUndoData(null)
+  }
+
   const isSomenteLeitura = userName === "Pamela Gonçalves"
+
+  const renderHeader = () => (
+    <div className="space-y-4">
+      {/* Month Navigation */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={voltarMes}
+            disabled={mostrarApenasHoje}
+            className="h-8 w-8 rounded-full"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="text-lg font-bold font-heading min-w-[180px] text-center">
+            {mostrarApenasHoje ? "Hoje" : `${meses[mesSelecionado - 1]} ${anoSelecionado}`}
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={avancarMes}
+            disabled={mostrarApenasHoje}
+            className="h-8 w-8 rounded-full"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        {onToggleMostrarHoje && (
+          <Button
+            variant={mostrarApenasHoje ? "default" : "ghost"}
+            size="sm"
+            onClick={() => onToggleMostrarHoje(!mostrarApenasHoje)}
+            className={`text-xs ${mostrarApenasHoje ? "" : "text-muted-foreground"}`}
+          >
+            <Calendar className="mr-1.5 h-3.5 w-3.5" />
+            {mostrarApenasHoje ? "Ver mes" : "Hoje"}
+          </Button>
+        )}
+      </div>
+
+      {/* Search + Filters */}
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="pl-9 h-9 bg-muted/50 border-border/40"
+          />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={filtroTipo} onValueChange={(v: any) => setFiltroTipo(v)}>
+            <SelectTrigger className="h-8 w-auto min-w-[120px] text-xs bg-muted/50 border-border/40">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os tipos</SelectItem>
+              <SelectItem value="credito">Creditos</SelectItem>
+              <SelectItem value="fixa">Fixas</SelectItem>
+              <SelectItem value="parcelada">Parceladas</SelectItem>
+              <SelectItem value="diaria">Gastos Diarios</SelectItem>
+              <SelectItem value="caixinha">Caixinha</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filtroStatus} onValueChange={(v: any) => setFiltroStatus(v)}>
+            <SelectTrigger className="h-8 w-auto min-w-[100px] text-xs bg-muted/50 border-border/40">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="pago">Pagos</SelectItem>
+              <SelectItem value="pendente">Pendentes</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={ordenacao} onValueChange={(v: any) => setOrdenacao(v)}>
+            <SelectTrigger className="h-8 w-auto min-w-[90px] text-xs bg-muted/50 border-border/40">
+              <SelectValue placeholder="Ordenar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="data">Data</SelectItem>
+              <SelectItem value="valor">Valor</SelectItem>
+              <SelectItem value="nome">Nome</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <span className="text-xs text-muted-foreground ml-auto">
+            {itensFiltrados.length} {itensFiltrados.length === 1 ? "item" : "itens"}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderCreditoItem = (item: ItemListado) => {
+    const dataFormatada = item.data.toLocaleDateString("pt-BR")
+    const horaFormatada = item.created_at.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+
+    return (
+      <div
+        key={item.id}
+        className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="rounded-full bg-emerald-500/10 p-2">
+            <ArrowUpCircle className="h-4 w-4 text-emerald-500" />
+          </div>
+          <div>
+            <p className="font-medium text-sm text-foreground">{item.nome}</p>
+            <p className="text-xs text-muted-foreground">
+              {dataFormatada} as {horaFormatada}
+            </p>
+          </div>
+        </div>
+        <span className="font-bold text-emerald-500 text-sm">
+          + {formatarMoeda(item.valor)}
+        </span>
+      </div>
+    )
+  }
+
+  const renderContaItem = (item: ItemListado) => {
+    const conta = item.conta!
+    const pago = isPago(conta)
+    const parcelaAtual = getParcelaAtual(conta)
+    const pagamento = conta.pagamentos?.find((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
+    const temAnexo = pagamento?.anexo || conta.anexoDiario
+
+    // Determine left border color
+    const getBorderColor = () => {
+      if (pago || conta.tipo === "diaria") return "border-l-emerald-500"
+      const hoje = getDataAtualBrasil()
+      hoje.setHours(0, 0, 0, 0)
+      let dataVencimento: Date | null = null
+      if (conta.tipo === "fixa") {
+        dataVencimento = new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento)
+      } else if (conta.tipo === "parcelada") {
+        dataVencimento = new Date(
+          conta.anoVencimento || anoSelecionado,
+          (conta.mesVencimento || mesSelecionado) - 1,
+          conta.vencimento
+        )
+      }
+      if (dataVencimento && dataVencimento < hoje) return "border-l-red-500"
+      if (
+        dataVencimento &&
+        dataVencimento.getDate() === hoje.getDate() &&
+        dataVencimento.getMonth() === hoje.getMonth() &&
+        dataVencimento.getFullYear() === hoje.getFullYear()
+      ) return "border-l-amber-500"
+      return "border-l-muted-foreground/30"
+    }
+
+    const getTypeBadge = () => {
+      if (conta.tipo === "fixa") return { label: "Fixa", className: "bg-blue-500/10 text-blue-500 border-blue-500/20" }
+      if (conta.tipo === "parcelada") return { label: `${parcelaAtual}/${conta.parcelas}x`, className: "bg-purple-500/10 text-purple-500 border-purple-500/20" }
+      if (conta.tipo === "diaria") return { label: "Diario", className: "bg-orange-500/10 text-orange-500 border-orange-500/20" }
+      if (conta.tipo === "caixinha") return { label: "Caixinha", className: "bg-amber-500/10 text-amber-500 border-amber-500/20" }
+      return null
+    }
+
+    const typeBadge = getTypeBadge()
+
+    return (
+      <div
+        key={item.id}
+        className={`group rounded-xl border border-border/40 bg-card hover:bg-accent/30 transition-all border-l-[3px] ${getBorderColor()}`}
+      >
+        <div className="flex items-start gap-3 p-3">
+          {/* Checkbox */}
+          {!isSomenteLeitura && (
+            <Checkbox
+              checked={pago || conta.tipo === "diaria"}
+              onCheckedChange={() => {
+                if (pago) {
+                  onTogglePago(conta.id, mesSelecionado, anoSelecionado)
+                } else {
+                  handleMarcarPago(conta)
+                }
+              }}
+              disabled={conta.tipo === "diaria"}
+              className="h-5 w-5 mt-0.5 shrink-0"
+            />
+          )}
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                {/* Name row */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h3
+                    className={`font-medium text-sm ${
+                      pago || conta.tipo === "diaria"
+                        ? "line-through text-muted-foreground"
+                        : "text-foreground"
+                    }`}
+                  >
+                    {conta.nome}
+                  </h3>
+                  {typeBadge && (
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${typeBadge.className}`}>
+                      {typeBadge.label}
+                    </span>
+                  )}
+                  {conta.categoria && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
+                      {conta.categoria}
+                    </span>
+                  )}
+                  {temAnexo && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const anexoUrl = pagamento?.anexo || conta.anexoDiario || null
+                        setAnexoVisualizar(anexoUrl)
+                      }}
+                      className="inline-flex items-center text-muted-foreground hover:text-foreground"
+                    >
+                      <Paperclip className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+                {/* Date info */}
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {conta.tipo === "diaria" && conta.data_gasto
+                    ? new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")
+                    : conta.tipo === "caixinha" && conta.data_gasto
+                      ? new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")
+                      : conta.tipo === "fixa"
+                        ? `Venc. ${new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}`
+                        : conta.tipo === "parcelada"
+                          ? `Parcela ${parcelaAtual} - Venc. ${conta.dataVencimentoCompleta || new Date(conta.anoVencimento || anoSelecionado, (conta.mesVencimento || mesSelecionado) - 1, conta.vencimento).toLocaleDateString("pt-BR")}`
+                          : null}
+                </p>
+              </div>
+
+              {/* Value */}
+              <span
+                className={`text-sm font-bold whitespace-nowrap ${
+                  pago || conta.tipo === "diaria"
+                    ? "text-muted-foreground"
+                    : "text-foreground"
+                }`}
+              >
+                {formatarMoeda(conta.valor)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions - visible on hover */}
+        {!isSomenteLeitura && (
+          <div className="flex items-center justify-end gap-0.5 px-3 pb-2 pt-0 opacity-60 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => handleCompartilharWhatsApp(conta)}
+            >
+              <Share2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-blue-500"
+              onClick={() => handleEditarConta(conta)}
+            >
+              <Edit className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-red-500"
+              onClick={() => handleDeleteWithUndo(conta)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-muted-foreground hover:text-foreground px-2"
+              onClick={() => handleCompartilharEmail(conta)}
+            >
+              Email
+            </Button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   if (itensFiltrados.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <Button variant="outline" size="sm" onClick={voltarMes}>
-              ← Anterior
-            </Button>
-            <CardTitle className="text-center">
-              {mostrarApenasHoje ? "Dia de Hoje" : `${meses[mesSelecionado - 1]}/${anoSelecionado}`}
-            </CardTitle>
-            <Button variant="outline" size="sm" onClick={avancarMes}>
-              Próximo →
-            </Button>
-          </div>
-          <div className="flex flex-col gap-3 mt-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome..."
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                className="pl-9"
-              />
+      <div className="rounded-xl border border-border/40 bg-card">
+        <div className="p-5">
+          {renderHeader()}
+        </div>
+        <div className="px-5 pb-8">
+          <div className="text-center py-12">
+            <div className="rounded-full bg-muted/50 p-4 w-fit mx-auto mb-3">
+              <Search className="h-6 w-6 text-muted-foreground" />
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Select value={filtroTipo} onValueChange={(v: any) => setFiltroTipo(v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os tipos</SelectItem>
-                  <SelectItem value="credito">Créditos</SelectItem>
-                  <SelectItem value="fixa">Fixas</SelectItem>
-                  <SelectItem value="parcelada">Parceladas</SelectItem>
-                  <SelectItem value="diaria">Gastos Diários</SelectItem>
-                  <SelectItem value="caixinha">Caixinha</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filtroStatus} onValueChange={(v: any) => setFiltroStatus(v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="pago">Pagos</SelectItem>
-                  <SelectItem value="pendente">Pendentes</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={ordenacao} onValueChange={(v: any) => setOrdenacao(v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Ordenar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="data">Data</SelectItem>
-                  <SelectItem value="valor">Valor</SelectItem>
-                  <SelectItem value="nome">Nome</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <p className="text-sm text-muted-foreground">Nenhum resultado encontrado</p>
+            <p className="text-xs text-muted-foreground mt-1">Tente ajustar os filtros</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-8">
-            Nenhum resultado encontrado para os filtros aplicados.
-          </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="shadow-lg">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" onClick={voltarMes} disabled={mostrarApenasHoje}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <h2 className="text-2xl font-semibold">
-                {mostrarApenasHoje ? "Dia de Hoje" : `${meses[mesSelecionado - 1]}/${anoSelecionado}`}
-              </h2>
-              <Button variant="outline" size="icon" onClick={avancarMes} disabled={mostrarApenasHoje}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            {onToggleMostrarHoje && (
-              <Button
-                variant={mostrarApenasHoje ? "default" : "outline"}
-                size="sm"
-                onClick={() => onToggleMostrarHoje(!mostrarApenasHoje)}
-                className="gap-2"
-              >
-                <Calendar className="h-4 w-4" />
-                {mostrarApenasHoje ? "Ver mês completo" : "Dia de hoje"}
-              </Button>
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border/40 bg-card">
+        <div className="p-5">
+          {renderHeader()}
+        </div>
+        <div className="px-5 pb-5">
+          <div className="space-y-2">
+            {itensFiltrados.map((item) =>
+              item.tipo === "credito" ? renderCreditoItem(item) : renderContaItem(item)
             )}
           </div>
-          <div className="flex flex-col gap-3 mt-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome..."
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Select value={filtroTipo} onValueChange={(v: any) => setFiltroTipo(v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os tipos</SelectItem>
-                  <SelectItem value="credito">Créditos</SelectItem>
-                  <SelectItem value="fixa">Fixas</SelectItem>
-                  <SelectItem value="parcelada">Parceladas</SelectItem>
-                  <SelectItem value="diaria">Gastos Diários</SelectItem>
-                  <SelectItem value="caixinha">Caixinha</SelectItem>
-                </SelectContent>
-              </Select>
+        </div>
+      </div>
 
-              <Select value={filtroStatus} onValueChange={(v: any) => setFiltroStatus(v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="pago">Pagos</SelectItem>
-                  <SelectItem value="pendente">Pendentes</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={ordenacao} onValueChange={(v: any) => setOrdenacao(v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Ordenar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="data">Data</SelectItem>
-                  <SelectItem value="valor">Valor</SelectItem>
-                  <SelectItem value="nome">Nome</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {itensFiltrados.map((item) => {
-              if (item.tipo === "credito") {
-                const dataFormatada = item.data.toLocaleDateString("pt-BR")
-                const horaFormatada = item.created_at.toLocaleTimeString("pt-BR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-
-                return (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-4 rounded-lg border bg-primary/5 hover:bg-primary/10 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <ArrowUpCircle className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium text-sm">{item.nome}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {dataFormatada} às {horaFormatada}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="default" className="bg-primary text-primary-foreground">
-                        Entrada
-                      </Badge>
-                      <span className="font-bold text-primary">
-                        + {formatarMoeda(item.valor)}
-                      </span>
-                    </div>
-                  </div>
-                )
-              } else {
-                const conta = item.conta!
-                const pago = isPago(conta)
-                const parcelaAtual = getParcelaAtual(conta)
-                const pagamento = conta.pagamentos?.find((p) => p.mes === mesSelecionado && p.ano === anoSelecionado)
-                const temAnexo = pagamento?.anexo || conta.anexoDiario
-
-                const corBackground = getCorPorStatus(conta, pago)
-
-                return (
-                  <div
-                    key={item.id}
-                    className={`flex items-start gap-4 p-4 border rounded-lg transition-all ${corBackground} ${
-                      swipedItemId === item.id ? "translate-x-2 shadow-lg" : ""
-                    }`}
-                    {...swipeHandlers}
-                    {...longPressHandlers}
-                    onMouseEnter={() => setSwipedItemId(item.id)}
-                    onMouseLeave={() => setSwipedItemId(null)}
-                  >
-                    {!isSomenteLeitura && (
-                      <Checkbox
-                        checked={pago || conta.tipo === "diaria"}
-                        onCheckedChange={() => {
-                          if (pago) {
-                            onTogglePago(conta.id, mesSelecionado, anoSelecionado)
-                          } else {
-                            handleMarcarPago(conta)
-                          }
-                        }}
-                        disabled={conta.tipo === "diaria"}
-                        className={`h-5 w-5 mt-1 ${conta.categoria === "Gasto Viagem" ? "border-white data-[state=checked]:bg-white data-[state=checked]:text-red-700" : ""}`}
-                      />
-                    )}
-
-                    <div className="flex-1 relative z-10">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3
-                          className={`font-semibold ${
-                            conta.categoria === "Gasto Viagem"
-                              ? "text-white"
-                              : pago || conta.tipo === "diaria"
-                                ? "line-through text-muted-foreground"
-                                : ""
-                          }`}
-                        >
-                          {conta.nome}
-                        </h3>
-                        {temAnexo && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const anexoUrl = pagamento?.anexo || conta.anexoDiario || null
-                              setAnexoVisualizar(anexoUrl)
-                            }}
-                            className={`h-6 px-2 gap-1 text-xs ${conta.categoria === "Gasto Viagem" ? "text-white hover:bg-red-800" : ""}`}
-                          >
-                            <Paperclip className="h-3 w-3" />
-                            Anexo
-                          </Button>
-                        )}
-                        {conta.categoria && (
-                          <Badge
-                            variant="secondary"
-                            className={`text-xs ${
-                              conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white border-white/30" : ""
-                            }`}
-                          >
-                            {conta.categoria}
-                          </Badge>
-                        )}
-                        {conta.tipo === "fixa" && (
-                          <Badge
-                            className={`text-xs ${conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white" : "bg-blue-600"}`}
-                          >
-                            Fixa
-                          </Badge>
-                        )}
-                        {conta.tipo === "parcelada" && (
-                          <Badge
-                            className={`text-xs ${conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white" : "bg-purple-600"}`}
-                          >
-                            {parcelaAtual}/{conta.parcelas}x
-                          </Badge>
-                        )}
-                        {conta.tipo === "diaria" && (
-                          <Badge
-                            className={`text-xs ${conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white" : "bg-purple-600"}`}
-                          >
-                            Gasto Diário
-                          </Badge>
-                        )}
-                        {conta.tipo === "caixinha" && (
-                          <Badge
-                            className={`text-xs ${conta.categoria === "Gasto Viagem" ? "bg-white/20 text-white" : "bg-amber-600"}`}
-                          >
-                            Caixinha
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 mb-2">
-                        <span
-                          className={`text-lg font-bold ${
-                            conta.categoria === "Gasto Viagem"
-                              ? "text-white"
-                              : pago || conta.tipo === "diaria"
-                                ? "text-muted-foreground"
-                                : "text-red-600 dark:text-red-400"
-                          }`}
-                        >
-                          {formatarMoeda(conta.valor)}
-                        </span>
-                      </div>
-
-                      <div
-                        className={`text-sm ${conta.categoria === "Gasto Viagem" ? "text-white/90" : "text-muted-foreground"}`}
-                      >
-                        {conta.tipo === "diaria" && conta.data_gasto ? (
-                          <span>
-                            Data do Pagamento: {new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")}
-                          </span>
-                        ) : conta.tipo === "caixinha" && conta.data_gasto ? (
-                          <span>
-                            Data do Pagamento: {new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")}
-                          </span>
-                        ) : conta.tipo === "fixa" ? (
-                          <span>
-                            Vencimento:{" "}
-                            {new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}
-                          </span>
-                        ) : conta.tipo === "parcelada" ? (
-                          <>
-                            <span>
-                              Parcela {parcelaAtual} - Vencimento:{" "}
-                              {conta.dataVencimentoCompleta ||
-                                new Date(
-                                  conta.anoVencimento || anoSelecionado,
-                                  (conta.mesVencimento || mesSelecionado) - 1,
-                                  conta.vencimento,
-                                ).toLocaleDateString("pt-BR")}
-                            </span>
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    {!isSomenteLeitura && (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleCompartilharWhatsApp(conta)}
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleEditarConta(conta)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                          onClick={() => handleDeleteWithUndo(conta)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleCompartilharEmail(conta)}
-                        >
-                          Email
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )
-              }
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {showUndo && undoData && <UndoToast message={`${undoData.conta.nome} será deletada`} onUndo={handleUndo} />}
+      {showUndo && undoData && <UndoToast message={`${undoData.conta.nome} sera deletada`} onUndo={handleUndo} />}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
@@ -929,7 +889,7 @@ export function ListaTransacoes({
           </DialogHeader>
           {anexoVisualizar && (
             <div className="space-y-4">
-              <img src={anexoVisualizar || "/placeholder.svg"} alt="Comprovante" className="w-full rounded-lg" />
+              <img src={anexoVisualizar || "/placeholder.svg"} alt="Comprovante" className="w-full rounded-lg" crossOrigin="anonymous" />
               <Button asChild className="w-full">
                 <a href={anexoVisualizar} download target="_blank" rel="noopener noreferrer">
                   <Download className="mr-2 h-4 w-4" />
