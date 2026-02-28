@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter, Space_Grotesk, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
+
 import { AuthProvider } from "@/components/auth-provider"
 import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
@@ -97,7 +97,6 @@ export default function RootLayout({
       <body className={`font-sans antialiased bg-background text-foreground`}>
         <AuthProvider>{children}</AuthProvider>
         <Toaster />
-        <Analytics />
         <script
           dangerouslySetInnerHTML={{
             __html: `

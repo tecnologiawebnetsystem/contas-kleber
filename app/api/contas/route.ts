@@ -55,12 +55,14 @@ export async function GET(request: Request) {
         const totalParcelas = conta.parcelas
 
         for (let i = 0; i < totalParcelas; i++) {
-          const dataVencimento = new Date(dataInicio)
-          dataVencimento.setMonth(dataInicio.getMonth() + i)
-
-          const mesVencimento = dataVencimento.getMonth() // 0-11
-          const anoVencimento = dataVencimento.getFullYear()
-          const diaVencimento = conta.vencimento || dataInicio.getDate()
+          // Calcular mes/ano corretamente sem overflow de dias
+          const mesOriginal = dataInicio.getMonth() // 0-11
+          const anoOriginal = dataInicio.getFullYear()
+          const totalMeses = mesOriginal + i
+          const mesVencimento = totalMeses % 12 // 0-11
+          const anoVencimento = anoOriginal + Math.floor(totalMeses / 12)
+          // Para parceladas, priorizar o dia da data_inicio como dia de vencimento
+          const diaVencimento = dataInicio.getDate() || conta.vencimento
 
           // Verificar se esta parcela foi paga
           const pagamento = pagamentos.find(
