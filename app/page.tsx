@@ -711,8 +711,7 @@ export default function Home() {
                       <span className="text-xs font-medium">Negativo</span>
                     </div>
                   )}
-                  <span className="text-muted-foreground text-xs">|</span>
-                  <span className="text-xs text-muted-foreground">{pagas}/{contasMesAtual.length} pagas</span>
+
                 </div>
               </div>
               <div className="hidden md:flex items-center gap-3">
@@ -751,7 +750,7 @@ export default function Home() {
         </section>
 
         {/* Mini Cards Grid */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <section className="grid grid-cols-3 gap-3">
           {/* Poupanca */}
           <button
             type="button"
@@ -817,17 +816,6 @@ export default function Home() {
             <p className="text-xs text-muted-foreground">Carro</p>
             <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalPagoCarro)}</p>
           </button>
-
-          {/* Resumo Mes */}
-          <div className="rounded-xl border border-border/40 bg-card p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Calendar className="h-4 w-4 text-primary" />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">Total do Mes</p>
-            <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalMes)}</p>
-          </div>
         </section>
 
         {/* Transactions List */}
