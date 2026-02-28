@@ -17,6 +17,8 @@ import { formatarMoeda } from "@/lib/utils"
 import { getDataAtualBrasil } from "@/lib/date-utils"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
+import { EditContaDialog } from "@/components/edit-conta-dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 type Filtro = "todos" | "pagos" | "pendentes" | "atrasados" | "proximos"
 
@@ -34,6 +36,8 @@ export default function ConsultaPage() {
   const [contasFiltradas, setContasFiltradas] = useState<Conta[]>([])
   const [filtro, setFiltro] = useState<Filtro>("todos")
   const [contaSelecionada, setContaSelecionada] = useState<string>("todas")
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [contaEditando, setContaEditando] = useState<Conta | null>(null)
   const [tipoSelecionado, setTipoSelecionado] = useState<string>("todos")
   const [categoriaSelecionada, setCategoriaSelecionada] = useState<string>("todas")
   const [mesAno, setMesAno] = useState("")
@@ -91,6 +95,22 @@ export default function ConsultaPage() {
     } catch (error) {
       console.error("Erro ao alterar pagamento:", error)
       toast({ title: "Erro ao alterar pagamento", variant: "destructive" })
+    }
+  }
+
+  const handleEditConta = async (id: string, contaAtualizada: Partial<Conta>) => {
+    try {
+      const response = await fetch(`/api/contas/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contaAtualizada),
+      })
+      if (!response.ok) throw new Error("Erro ao editar conta")
+      toast({ title: "Conta atualizada" })
+      executarPesquisa()
+    } catch (error) {
+      console.error("Erro ao editar conta:", error)
+      toast({ title: "Erro ao editar conta", variant: "destructive" })
     }
   }
 
@@ -529,27 +549,46 @@ export default function ConsultaPage() {
                                     : "-"}
                               </TableCell>
                               <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  <Button
-                                    variant={isContaPaga(conta) ? "outline" : "default"}
-                                    size="sm"
-                                    onClick={() => togglePago(conta)}
-                                    title={isContaPaga(conta) ? "Desfazer pagamento" : "Marcar como pago"}
-                                  >
-                                    {isContaPaga(conta) ? (
-                                      <>
-                                        <X className="mr-1 h-3 w-3" />
-                                        Desfazer
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Check className="mr-1 h-3 w-3" />
-                                        Pagar
-                                      </>
-                                    )}
-                                  </Button>
-                                  <WhatsAppButton conta={conta} />
-                                </div>
+                                <TooltipProvider>
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className={
+                                            isContaPaga(conta)
+                                              ? "h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
+                                              : "h-8 w-8 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
+                                          }
+                                          onClick={() => togglePago(conta)}
+                                        >
+                                          {isContaPaga(conta) ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {isContaPaga(conta) ? "Desfazer pagamento" : "Marcar como pago"}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                                          onClick={() => {
+                                            setContaEditando(conta)
+                                            setEditDialogOpen(true)
+                                          }}
+                                        >
+                                          <Pencil className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Editar conta</TooltipContent>
+                                    </Tooltip>
+                                    <WhatsAppButton conta={conta} />
+                                  </div>
+                                </TooltipProvider>
                               </TableCell>
                             </TableRow>
                           ))
@@ -563,6 +602,13 @@ export default function ConsultaPage() {
           )}
         </div>
       </div>
+
+      <EditContaDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onEdit={handleEditConta}
+        conta={contaEditando}
+      />
     </div>
   )
 }
