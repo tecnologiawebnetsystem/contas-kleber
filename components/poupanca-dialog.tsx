@@ -65,7 +65,11 @@ export function PoupancaDialog({ open, onOpenChange, onUpdate }: PoupancaDialogP
           dataGasto: hoje,
         }),
       })
-      if (!res.ok) throw new Error("Erro ao adicionar")
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        console.log("[v0] Poupanca erro response:", res.status, errorData)
+        throw new Error(errorData.error || "Erro ao adicionar")
+      }
       setDescricao("")
       setValor("")
       setMostrarForm(false)

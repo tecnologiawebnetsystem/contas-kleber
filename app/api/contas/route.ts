@@ -244,7 +244,7 @@ export async function POST(request: Request) {
     if (contaError) throw contaError
 
     if (body.tipo === "diaria" || body.tipo === "poupanca" || body.tipo === "viagem") {
-      const dataGasto = new Date(body.dataGasto)
+      const dataGasto = new Date(body.dataGasto + "T00:00:00")
       const mes = dataGasto.getMonth()
       const ano = dataGasto.getFullYear()
 
@@ -261,40 +261,35 @@ export async function POST(request: Request) {
 
       const { error: pagamentoError } = await supabase.from("pagamentos").insert(pagamentoData)
 
-      if (pagamentoError) throw pagamentoError
+      if (pagamentoError) {
+        console.error("[v0] Erro ao inserir pagamento:", pagamentoError)
+        throw pagamentoError
+      }
 
       // Buscar saldo atual
-      const { data: saldoData, error: saldoError } = await supabase.from("saldo").select("*").single()
+      const { data: saldoData } = await supabase.from("saldo").select("*").limit(1).single()
 
-      if (saldoError) throw saldoError
+      if (saldoData) {
+        const novoSaldo = Number(saldoData.valor) - Number(body.valor)
 
-      const novoSaldo =
-        body.tipo === "poupanca" || body.tipo === "viagem"
-          ? Number(saldoData.valor) - Number(body.valor) // Deduz do crédito disponível
-          : Number(saldoData.valor) - Number(body.valor) // Gasto diário
+        await supabase
+          .from("saldo")
+          .update({ valor: novoSaldo, updated_at: new Date().toISOString() })
+          .eq("id", saldoData.id)
+      }
 
-      // Atualizar saldo
-      const { error: updateSaldoError } = await supabase
-        .from("saldo")
-        .update({ valor: novoSaldo, updated_at: new Date().toISOString() })
-        .eq("id", saldoData.id)
-
-      if (updateSaldoError) throw updateSaldoError
-
-      const { error: transacaoError } = await supabase.from("transacoes").insert({
-        tipo: "debito", // Todas deduzem do crédito disponível
+      await supabase.from("transacoes").insert({
+        tipo: "debito",
         valor: body.valor,
         descricao:
           body.tipo === "poupanca"
-            ? `Depósito na poupança: ${body.nome}`
+            ? `Deposito na poupanca: ${body.nome}`
             : body.tipo === "viagem"
-              ? `Depósito para viagem: ${body.nome}`
-              : `Gasto diário: ${body.nome}`,
+              ? `Deposito para viagem: ${body.nome}`
+              : `Gasto diario: ${body.nome}`,
         referencia_id: conta.id,
         data_transacao: body.dataGasto,
       })
-
-      if (transacaoError) throw transacaoError
     }
 
     return NextResponse.json(conta)
