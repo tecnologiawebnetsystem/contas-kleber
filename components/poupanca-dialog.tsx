@@ -38,11 +38,10 @@ export function PoupancaDialog({ open, onOpenChange, onUpdate }: PoupancaDialogP
 
   const fetchDepositos = async () => {
     try {
-      const res = await fetch("/api/contas")
+      const res = await fetch("/api/poupanca")
       if (res.ok) {
         const data = await res.json()
-        const poupanca = data.filter((c: any) => c.tipo === "poupanca")
-        setDepositos(poupanca)
+        setDepositos(data)
       }
     } catch (error) {
       console.error("Erro ao buscar poupanca:", error)
@@ -53,21 +52,17 @@ export function PoupancaDialog({ open, onOpenChange, onUpdate }: PoupancaDialogP
     if (!descricao.trim() || !valor) return
     setLoading(true)
     try {
-      const hoje = new Date().toISOString().split("T")[0]
-      const res = await fetch("/api/contas", {
+      const res = await fetch("/api/poupanca", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nome: descricao.trim(),
           valor: parseFloat(valor),
-          tipo: "poupanca",
-          vencimento: new Date().getDate(),
-          dataGasto: hoje,
         }),
       })
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
-        console.log("[v0] Poupanca erro response:", res.status, errorData)
+        console.log("[v0] Poupanca erro response:", res.status, JSON.stringify(errorData))
         throw new Error(errorData.error || "Erro ao adicionar")
       }
       setDescricao("")
@@ -76,8 +71,8 @@ export function PoupancaDialog({ open, onOpenChange, onUpdate }: PoupancaDialogP
       fetchDepositos()
       onUpdate()
       toast({ title: "Adicionado com sucesso" })
-    } catch (error) {
-      toast({ title: "Erro ao adicionar", variant: "destructive" })
+    } catch (error: any) {
+      toast({ title: error?.message || "Erro ao adicionar", variant: "destructive" })
     } finally {
       setLoading(false)
     }

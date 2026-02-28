@@ -38,11 +38,10 @@ export function ViagemDialog({ open, onOpenChange, onUpdate }: ViagemDialogProps
 
   const fetchDepositos = async () => {
     try {
-      const res = await fetch("/api/contas")
+      const res = await fetch("/api/viagem")
       if (res.ok) {
         const data = await res.json()
-        const viagem = data.filter((c: any) => c.tipo === "viagem")
-        setDepositos(viagem)
+        setDepositos(data)
       }
     } catch (error) {
       console.error("Erro ao buscar viagem:", error)
@@ -53,27 +52,26 @@ export function ViagemDialog({ open, onOpenChange, onUpdate }: ViagemDialogProps
     if (!descricao.trim() || !valor) return
     setLoading(true)
     try {
-      const hoje = new Date().toISOString().split("T")[0]
-      const res = await fetch("/api/contas", {
+      const res = await fetch("/api/viagem", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nome: descricao.trim(),
           valor: parseFloat(valor),
-          tipo: "viagem",
-          vencimento: new Date().getDate(),
-          dataGasto: hoje,
         }),
       })
-      if (!res.ok) throw new Error("Erro ao adicionar")
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || "Erro ao adicionar")
+      }
       setDescricao("")
       setValor("")
       setMostrarForm(false)
       fetchDepositos()
       onUpdate()
       toast({ title: "Adicionado com sucesso" })
-    } catch (error) {
-      toast({ title: "Erro ao adicionar", variant: "destructive" })
+    } catch (error: any) {
+      toast({ title: error?.message || "Erro ao adicionar", variant: "destructive" })
     } finally {
       setLoading(false)
     }
