@@ -89,6 +89,10 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     const { id } = params
 
+    // Deletar registros dependentes primeiro
+    await supabase.from("pagamentos").delete().eq("conta_id", id)
+    await supabase.from("transacoes").delete().eq("referencia_id", id)
+
     const { error } = await supabase.from("contas").delete().eq("id", id)
 
     if (error) {
