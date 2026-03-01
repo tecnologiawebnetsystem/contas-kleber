@@ -68,7 +68,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
     e.preventDefault()
 
     const diaVencimento =
-      tipo === "diaria" || tipo === "poupanca" || tipo === "viagem" ? 1 : new Date(dataVencimento).getDate()
+      tipo === "diaria" ? 1 : new Date(dataVencimento).getDate()
 
     const novaConta: Omit<Conta, "id"> = {
       nome,
@@ -85,7 +85,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
       novaConta.parcelaAtual = 1
     }
 
-    if (tipo === "diaria" || tipo === "poupanca" || tipo === "viagem") {
+    if (tipo === "diaria") {
       novaConta.dataGasto = dataGasto
       if (anexo) {
         novaConta.anexoDiario = anexo
@@ -175,8 +175,6 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
                 <SelectItem value="fixa">Fixa Mensal</SelectItem>
                 <SelectItem value="parcelada">Parcelada</SelectItem>
                 <SelectItem value="diaria">Gasto Diário</SelectItem>
-                <SelectItem value="poupanca">Poupança</SelectItem>
-                <SelectItem value="viagem">Viagem</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -194,7 +192,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
             />
           </div>
 
-          {tipo !== "diaria" && tipo !== "poupanca" && tipo !== "viagem" && (
+          {tipo !== "diaria" && (
             <div className="space-y-2">
               <Label htmlFor="dataVencimento">Data Vencimento</Label>
               <Input
@@ -207,15 +205,9 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
             </div>
           )}
 
-          {(tipo === "diaria" || tipo === "poupanca" || tipo === "viagem") && (
+          {tipo === "diaria" && (
             <div className="space-y-2">
-              <Label htmlFor="dataGasto">
-                {tipo === "poupanca"
-                  ? "Data do Depósito"
-                  : tipo === "viagem"
-                    ? "Data do Depósito"
-                    : "Data do Pagamento"}
-              </Label>
+              <Label htmlFor="dataGasto">Data do Pagamento</Label>
               <Input
                 id="dataGasto"
                 type="date"
@@ -226,7 +218,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProp
             </div>
           )}
 
-          {(tipo === "diaria" || tipo === "poupanca" || tipo === "viagem") && (
+          {tipo === "diaria" && (
             <div className="space-y-2">
               <Label htmlFor="anexoDiario">Comprovante (Opcional)</Label>
               <div className="flex items-center gap-2">

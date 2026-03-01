@@ -38,6 +38,8 @@ import { OnlineStatus } from "@/components/online-status"
 import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
 import { EmprestimoDialog } from "@/components/emprestimo-dialog"
+import { PoupancaDialog } from "@/components/poupanca-dialog"
+import { ViagemDialog } from "@/components/viagem-dialog"
 
 export default function Home() {
   const { user, logout } = useAuth()
@@ -54,6 +56,8 @@ export default function Home() {
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
   const [emprestimoDialogOpen, setEmprestimoDialogOpen] = useState(false)
+  const [poupancaDialogOpen, setPoupancaDialogOpen] = useState(false)
+  const [viagemDialogOpen, setViagemDialogOpen] = useState(false)
   const [totalEmprestado, setTotalEmprestado] = useState(0)
   const router = useRouter()
   const isOnline = useOnlineStatus()
@@ -796,24 +800,15 @@ export default function Home() {
           <button
             type="button"
             className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-amber-500/30 hover:shadow-sm group"
+            onClick={() => setPoupancaDialogOpen(true)}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="rounded-lg bg-amber-500/10 p-2">
                 <PiggyBank className="h-4 w-4 text-amber-500" />
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  abrirModalWhatsApp("Poupanca", `Saldo em Poupanca\n\nTotal Poupado: ${formatarMoeda(totalPoupanca)}`)
-                }}
-              >
-                <Share2 className="h-3 w-3" />
-              </Button>
+              <Plus className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <p className="text-xs text-muted-foreground">Poupanca</p>
+            <p className="text-xs text-muted-foreground">{'Poupan\u00e7a'}</p>
             <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalPoupanca)}</p>
           </button>
 
@@ -821,22 +816,13 @@ export default function Home() {
           <button
             type="button"
             className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-sky-500/30 hover:shadow-sm group"
+            onClick={() => setViagemDialogOpen(true)}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="rounded-lg bg-sky-500/10 p-2">
                 <Plane className="h-4 w-4 text-sky-500" />
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground hover:text-sky-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  abrirModalWhatsApp("Viagem", `Fundo para Viagens\n\nTotal Economizado: ${formatarMoeda(totalViagem)}`)
-                }}
-              >
-                <Share2 className="h-3 w-3" />
-              </Button>
+              <Plus className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <p className="text-xs text-muted-foreground">Viagem</p>
             <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalViagem)}</p>
@@ -900,6 +886,8 @@ export default function Home() {
       <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
       <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
       <EmprestimoDialog open={emprestimoDialogOpen} onOpenChange={setEmprestimoDialogOpen} onUpdate={fetchEmprestimos} />
+      <PoupancaDialog open={poupancaDialogOpen} onOpenChange={setPoupancaDialogOpen} onUpdate={fetchPoupancaEViagem} />
+      <ViagemDialog open={viagemDialogOpen} onOpenChange={setViagemDialogOpen} onUpdate={fetchPoupancaEViagem} />
       </main>
   )
 }
