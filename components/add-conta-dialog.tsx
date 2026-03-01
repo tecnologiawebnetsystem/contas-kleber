@@ -14,7 +14,6 @@ interface AddContaDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAdd: (conta: Omit<Conta, "id">) => void
-  tipoInicial?: TipoConta | null
 }
 
 const categorias: Categoria[] = [
@@ -30,18 +29,10 @@ const categorias: Categoria[] = [
   "Outros",
 ]
 
-export function AddContaDialog({ open, onOpenChange, onAdd, tipoInicial }: AddContaDialogProps) {
+export function AddContaDialog({ open, onOpenChange, onAdd }: AddContaDialogProps) {
   const [nome, setNome] = useState("")
   const [valor, setValor] = useState("")
-  const [tipo, setTipo] = useState<TipoConta>(tipoInicial || "fixa")
-
-  useEffect(() => {
-    if (open && tipoInicial) {
-      setTipo(tipoInicial)
-    } else if (open && !tipoInicial) {
-      setTipo("fixa")
-    }
-  }, [open, tipoInicial])
+  const [tipo, setTipo] = useState<TipoConta>("fixa")
   const [dataVencimento, setDataVencimento] = useState(new Date().toISOString().split("T")[0])
   const [parcelas, setParcelas] = useState("")
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().split("T")[0])
@@ -77,7 +68,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd, tipoInicial }: AddCo
     e.preventDefault()
 
     const diaVencimento =
-      tipo === "diaria" || tipo === "poupanca" || tipo === "viagem" ? 1 : new Date(dataVencimento).getDate()
+      tipo === "diaria" ? 1 : new Date(dataVencimento).getDate()
 
     const novaConta: Omit<Conta, "id"> = {
       nome,
@@ -94,7 +85,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd, tipoInicial }: AddCo
       novaConta.parcelaAtual = 1
     }
 
-    if (tipo === "diaria" || tipo === "poupanca" || tipo === "viagem") {
+    if (tipo === "diaria") {
       novaConta.dataGasto = dataGasto
       if (anexo) {
         novaConta.anexoDiario = anexo
@@ -201,7 +192,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd, tipoInicial }: AddCo
             />
           </div>
 
-          {tipo !== "diaria" && tipo !== "poupanca" && tipo !== "viagem" && (
+          {tipo !== "diaria" && (
             <div className="space-y-2">
               <Label htmlFor="dataVencimento">Data Vencimento</Label>
               <Input
@@ -214,15 +205,9 @@ export function AddContaDialog({ open, onOpenChange, onAdd, tipoInicial }: AddCo
             </div>
           )}
 
-          {(tipo === "diaria" || tipo === "poupanca" || tipo === "viagem") && (
+          {tipo === "diaria" && (
             <div className="space-y-2">
-              <Label htmlFor="dataGasto">
-                {tipo === "poupanca"
-                  ? "Data do Depósito"
-                  : tipo === "viagem"
-                    ? "Data do Depósito"
-                    : "Data do Pagamento"}
-              </Label>
+              <Label htmlFor="dataGasto">Data do Pagamento</Label>
               <Input
                 id="dataGasto"
                 type="date"
@@ -233,7 +218,7 @@ export function AddContaDialog({ open, onOpenChange, onAdd, tipoInicial }: AddCo
             </div>
           )}
 
-          {(tipo === "diaria" || tipo === "poupanca" || tipo === "viagem") && (
+          {tipo === "diaria" && (
             <div className="space-y-2">
               <Label htmlFor="anexoDiario">Comprovante (Opcional)</Label>
               <div className="flex items-center gap-2">

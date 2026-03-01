@@ -55,7 +55,6 @@ export default function Home() {
   const [totalPagoCarro, setTotalPagoCarro] = useState(0)
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false)
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
-  const [tipoInicialConta, setTipoInicialConta] = useState<string | null>(null)
   const [emprestimoDialogOpen, setEmprestimoDialogOpen] = useState(false)
   const [poupancaDialogOpen, setPoupancaDialogOpen] = useState(false)
   const [viagemDialogOpen, setViagemDialogOpen] = useState(false)
@@ -645,7 +644,7 @@ export default function Home() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      onClick={() => { setTipoInicialConta(null); setDialogOpen(true) }}
+                      onClick={() => setDialogOpen(true)}
                       size="icon"
                       className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
                     >
@@ -884,7 +883,7 @@ export default function Home() {
       </div>
 
       {/* Dialogs */}
-      <AddContaDialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setTipoInicialConta(null) }} onAdd={addConta} user={user} tipoInicial={tipoInicialConta as any} />
+      <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
       <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
       <EmprestimoDialog open={emprestimoDialogOpen} onOpenChange={setEmprestimoDialogOpen} onUpdate={fetchEmprestimos} />
       <PoupancaDialog open={poupancaDialogOpen} onOpenChange={setPoupancaDialogOpen} onUpdate={fetchPoupancaEViagem} />
