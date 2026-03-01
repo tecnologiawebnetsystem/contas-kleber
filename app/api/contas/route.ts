@@ -239,12 +239,10 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log("[v0] Inserindo conta com dados:", JSON.stringify(contaData))
     const { data: conta, error: contaError } = await supabase.from("contas").insert(contaData).select().single()
 
     if (contaError) {
-      console.error("[v0] Erro ao inserir conta:", JSON.stringify(contaError))
-      return NextResponse.json({ error: contaError.message, details: contaError }, { status: 500 })
+      return NextResponse.json({ error: contaError.message }, { status: 500 })
     }
 
     if (body.tipo === "diaria" || body.tipo === "poupanca" || body.tipo === "viagem") {
@@ -298,8 +296,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(conta)
   } catch (error: any) {
-    console.error("[v0] Erro ao criar conta:", JSON.stringify(error), error?.message)
-    return NextResponse.json({ error: error?.message || "Erro ao criar conta", details: error }, { status: 500 })
+    return NextResponse.json({ error: error?.message || "Erro ao criar conta" }, { status: 500 })
   }
 }
 
