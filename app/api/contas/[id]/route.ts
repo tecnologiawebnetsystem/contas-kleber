@@ -6,11 +6,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-
+    const { id } = await params
     const body = await request.json()
-    const { id } = params
 
     // Converter camelCase para snake_case para o banco
     const dadosAtualizados: any = {
@@ -64,9 +63,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
+    const { id } = await params
 
     // Deletar registros dependentes primeiro
     await supabase.from("pagamentos").delete().eq("conta_id", id)
