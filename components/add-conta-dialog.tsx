@@ -184,8 +184,6 @@ export function AddContaDialog({ open, onOpenChange, onAdd, tipoInicial }: AddCo
                 <SelectItem value="fixa">Fixa Mensal</SelectItem>
                 <SelectItem value="parcelada">Parcelada</SelectItem>
                 <SelectItem value="diaria">Gasto Diário</SelectItem>
-                <SelectItem value="poupanca">Poupança</SelectItem>
-                <SelectItem value="viagem">Viagem</SelectItem>
               </SelectContent>
             </Select>
           </div>
