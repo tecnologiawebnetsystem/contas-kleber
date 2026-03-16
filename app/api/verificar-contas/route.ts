@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/mysql/server"
 import { EmailNotificacao } from "@/components/email-notificacao"
 
 const getResendClient = () => {

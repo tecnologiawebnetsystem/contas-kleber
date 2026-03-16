@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
+import { createClient } from "@/lib/mysql/server"
 
 // GET - Listar depositos de viagem
 export async function GET() {
   try {
-    const supabase = supabaseAdmin
+    const supabase = await createClient()
     const { data, error } = await supabase
       .from("contas")
       .select("id, nome, valor, data_gasto, created_at")
@@ -31,7 +26,7 @@ export async function GET() {
 // POST - Adicionar deposito de viagem
 export async function POST(request: Request) {
   try {
-    const supabase = supabaseAdmin
+    const supabase = await createClient()
     const body = await request.json()
 
     const hoje = new Date().toISOString().split("T")[0]
@@ -92,12 +87,13 @@ export async function POST(request: Request) {
 // DELETE - Excluir deposito de viagem
 export async function DELETE(request: Request) {
   try {
+    const supabase = await createClient()
     const { id } = await request.json()
 
-    await supabaseAdmin.from("pagamentos").delete().eq("conta_id", id)
-    await supabaseAdmin.from("transacoes").delete().eq("referencia_id", id)
+    await supabase.from("pagamentos").delete().eq("conta_id", id)
+    await supabase.from("transacoes").delete().eq("referencia_id", id)
 
-    const { error } = await supabaseAdmin.from("contas").delete().eq("id", id)
+    const { error } = await supabase.from("contas").delete().eq("id", id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

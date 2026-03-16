@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/mysql/server"
 
 // PUT - Atualizar emprestimo (marcar devolvido, editar dados)
 export async function PUT(
