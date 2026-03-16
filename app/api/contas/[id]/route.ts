@@ -1,13 +1,9 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@/lib/mysql/server"
 import { NextResponse } from "next/server"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabase = await createClient()
     const { id } = await params
     const body = await request.json()
 
@@ -65,6 +61,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabase = await createClient()
     const { id } = await params
 
     // Deletar registros dependentes primeiro

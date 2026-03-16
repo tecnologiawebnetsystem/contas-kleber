@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase"
+import { createClient } from "@/lib/mysql/server"
 import { NextResponse } from "next/server"
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data, error } = await supabase
       .from("caixinha_depositos")
@@ -32,7 +32,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 async function recalcularDepositos(depositoId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // Buscar configuração e todos os depósitos
   const { data: config } = await supabase.from("caixinha_config").select("*").single()

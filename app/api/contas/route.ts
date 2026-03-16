@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/mysql/server"
 
 // GET - Buscar todas as contas com filtros
 export async function GET(request: Request) {
