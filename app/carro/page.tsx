@@ -53,7 +53,8 @@ export default function CarroPage() {
   const [descricao, setDescricao] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
-  const isKleber = user?.pin === "080754"
+  // Perfil 1 = acesso total (Kleber), Perfil 2 = consulta (Pamela)
+  const temAcessoTotal = user?.perfil === 1
 
   useEffect(() => {
     fetchPagamentos()
@@ -245,8 +246,8 @@ export default function CarroPage() {
     return data.toLocaleDateString("pt-BR")
   }
 
-  // Pamela pode visualizar, mas apenas Kleber pode adicionar/deletar
-  const podeEditar = isKleber
+  // Perfil 2 (Pamela) pode visualizar, perfil 1 (Kleber) pode adicionar/deletar
+  const podeEditar = temAcessoTotal
 
   if (loading) {
     return (
