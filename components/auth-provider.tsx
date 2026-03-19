@@ -5,9 +5,11 @@ import { useEffect, useState, createContext, useContext } from "react"
 import { useRouter, usePathname } from "next/navigation"
 
 type User = {
+  id?: number
   nome: string
-  pin: string
-  tema: "verde" | "rosa"
+  pin?: string
+  perfil: number  // 1 = acesso total, 2 = consulta
+  tema: "verde" | "rosa" | string
 }
 
 type AuthContextType = {

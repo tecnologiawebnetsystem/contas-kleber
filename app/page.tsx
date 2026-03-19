@@ -67,9 +67,9 @@ export default function Home() {
   const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear())
   const [mostrarApenasHoje, setMostrarApenasHoje] = useState(false)
 
-  const isPamela = user?.nome === "Pamela Goncalves"
-  const podeEditar = !isPamela
-  const isKleber = user?.pin === "080754"
+  // Perfil 1 = acesso total (Kleber), Perfil 2 = consulta (Pamela)
+  const temAcessoTotal = user?.perfil === 1
+  const podeEditar = temAcessoTotal
 
   useEffect(() => {
     fetchContas()

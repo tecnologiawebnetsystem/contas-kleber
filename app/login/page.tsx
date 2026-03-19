@@ -8,10 +8,12 @@ import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Logo } from "@/components/logo"
 
-const USUARIOS = [
-  { pin: "191018", nome: "Pamela Goncalves", tema: "rosa" as const },
-  { pin: "080754", nome: "Kleber Goncalves", tema: "verde" as const },
-]
+interface Usuario {
+  id: number
+  nome: string
+  perfil: number
+  tema: string
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -28,32 +30,52 @@ export default function LoginPage() {
 
   const handleAutoLogin = async () => {
     setLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 300))
 
-    const usuario = USUARIOS.find((u) => u.pin === pin)
-
-    if (usuario) {
-      localStorage.setItem("auth", "true")
-      localStorage.setItem("userData", JSON.stringify(usuario))
-
-      if (usuario.tema === "rosa") {
-        document.documentElement.classList.add("theme-rosa")
-      } else {
-        document.documentElement.classList.remove("theme-rosa")
-      }
-
-      toast({
-        title: `Seja bem-vind${usuario.tema === "rosa" ? "a" : "o"}!`,
-        description: usuario.nome,
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
       })
-      router.push("/")
-    } else {
+
+      const data = await response.json()
+
+      if (data.success && data.usuario) {
+        const usuario: Usuario = data.usuario
+
+        localStorage.setItem("auth", "true")
+        localStorage.setItem("userData", JSON.stringify(usuario))
+
+        if (usuario.tema === "rosa") {
+          document.documentElement.classList.add("theme-rosa")
+        } else {
+          document.documentElement.classList.remove("theme-rosa")
+        }
+
+        toast({
+          title: `Seja bem-vind${usuario.tema === "rosa" ? "a" : "o"}!`,
+          description: usuario.nome,
+        })
+        router.push("/")
+      } else {
+        setShake(true)
+        setTimeout(() => setShake(false), 500)
+
+        toast({
+          title: "PIN incorreto",
+          description: "Tente novamente.",
+          variant: "destructive",
+        })
+        setPin("")
+      }
+    } catch (error) {
+      console.error("Erro ao autenticar:", error)
       setShake(true)
       setTimeout(() => setShake(false), 500)
 
       toast({
-        title: "PIN incorreto",
-        description: "Tente novamente.",
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor.",
         variant: "destructive",
       })
       setPin("")
