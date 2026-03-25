@@ -1,72 +1,74 @@
-// Service Worker para cachear arquivos e funcionar offline
+// Service Worker — TalentMoney PWA
+const CACHE_NAME = "talentmoney-v4"
 
-const CACHE_NAME = "talent-money-v3"
-const OFFLINE_URL = "/offline"
+// Assets estáticos para pré-cachear na instalação
+const STATIC_CACHE = [
+  "/",
+  "/manifest.json",
+  "/icon-192.jpg",
+  "/icon-512.jpg",
+  "/apple-icon.jpg",
+]
 
-// Arquivos para cachear durante a instalação
-const STATIC_CACHE = ["/", "/offline", "/manifest.json", "/icon-192.jpg", "/icon-512.jpg"]
-
-// Instalação do Service Worker
+// Instalação: pré-cacheia assets estáticos
 self.addEventListener("install", (event) => {
-  console.log("[SW] Instalando Service Worker...")
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log("[SW] Cache aberto")
-      return cache.addAll(STATIC_CACHE)
-    }),
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_CACHE))
   )
   self.skipWaiting()
 })
 
-// Ativação do Service Worker
+// Ativação: remove caches de versões antigas
 self.addEventListener("activate", (event) => {
-  console.log("[SW] Ativando Service Worker...")
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log("[SW] Removendo cache antigo:", cacheName)
-            return caches.delete(cacheName)
-          }
-        }),
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
       )
-    }),
+    )
   )
   self.clients.claim()
 })
 
-// Interceptar requisições
+// Fetch: Network First para API (dados sempre frescos com fallback offline),
+//        Cache First para assets estáticos (imagens, fontes, JS, CSS)
 self.addEventListener("fetch", (event) => {
-  // Ignorar requisições de API (elas são tratadas pelo IndexedDB)
-  if (event.request.url.includes("/api/")) {
+  const { request } = event
+  const url = new URL(request.url)
+
+  // Ignorar requests não-GET e extensões do browser
+  if (request.method !== "GET") return
+  if (url.protocol === "chrome-extension:") return
+
+  // API — Network First com fallback para cache
+  if (url.pathname.startsWith("/api/")) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+          }
+          return response
+        })
+        .catch(() => caches.match(request))
+    )
     return
   }
 
+  // Assets e páginas — Cache First com fallback para rede
   event.respondWith(
-    // Network-first: tenta a rede primeiro, usa cache como fallback
-    fetch(event.request)
-      .then((response) => {
-        // Cache apenas GET requests bem sucedidas
-        if (event.request.method === "GET" && response.status === 200) {
-          const responseToCache = response.clone()
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache)
-          })
+    caches.match(request).then((cached) => {
+      if (cached) return cached
+      return fetch(request).then((response) => {
+        if (response.ok && response.type !== "opaque") {
+          const clone = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
         }
         return response
       })
-      .catch(() => {
-        // Se a rede falhar, tentar retornar do cache
-        return caches.match(event.request).then((response) => {
-          if (response) {
-            return response
-          }
-          // Se nao tiver no cache e for navegacao, retornar pagina offline
-          if (event.request.mode === "navigate") {
-            return caches.match(OFFLINE_URL)
-          }
-        })
-      }),
+    })
   )
 })
