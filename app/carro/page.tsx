@@ -21,6 +21,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Car, Plus, ArrowLeft, Trash2, Wallet } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
@@ -32,11 +39,19 @@ import { offlineStorage } from "@/lib/offline/storage"
 import { OnlineStatus } from "@/components/online-status"
 import { WifiOff } from "lucide-react"
 
+const CARROS = [
+  { value: "palio_sporting", label: "Palio Sporting" },
+  { value: "volvo_xc60", label: "Volvo XC60" },
+] as const
+
+type CarroValue = (typeof CARROS)[number]["value"]
+
 type PagamentoCarro = {
   id: string
   valor: number
   data_pagamento: string
   descricao: string
+  carro: CarroValue
   created_at: string
 }
 
@@ -51,6 +66,7 @@ export default function CarroPage() {
   const [valor, setValor] = useState("")
   const [dataPagamento, setDataPagamento] = useState("")
   const [descricao, setDescricao] = useState("")
+  const [carroSelecionado, setCarroSelecionado] = useState<CarroValue | "">("")
   const [submitting, setSubmitting] = useState(false)
 
   // Perfil 1 = acesso total (Kleber), Perfil 2 = consulta (Pamela)
@@ -124,10 +140,10 @@ export default function CarroPage() {
   }
 
   const handleSubmit = async () => {
-    if (!valor || !dataPagamento) {
+    if (!valor || !dataPagamento || !carroSelecionado) {
       toast({
         title: "Atenção",
-        description: "Preencha o valor e a data do pagamento.",
+        description: "Preencha o valor, a data e selecione o carro.",
         variant: "destructive",
       })
       return
@@ -139,6 +155,7 @@ export default function CarroPage() {
       valor: parseFloat(valor.replace(/\D/g, "")) / 100,
       data_pagamento: dataPagamento,
       descricao: descricao || "Pagamento do carro",
+      carro: carroSelecionado as CarroValue,
       created_at: new Date().toISOString(),
     }
 
@@ -151,6 +168,7 @@ export default function CarroPage() {
             valor: novoPagamento.valor,
             data_pagamento: novoPagamento.data_pagamento,
             descricao: novoPagamento.descricao,
+            carro: novoPagamento.carro,
           }),
         })
 
@@ -177,6 +195,7 @@ export default function CarroPage() {
       setValor("")
       setDataPagamento("")
       setDescricao("")
+      setCarroSelecionado("")
       setDialogOpen(false)
       fetchPagamentos()
     } catch (error) {
@@ -362,6 +381,7 @@ export default function CarroPage() {
                       <TableHeader>
                         <TableRow className="bg-slate-50 dark:bg-slate-900">
                           <TableHead className="font-semibold">Data</TableHead>
+                          <TableHead className="font-semibold">Carro</TableHead>
                           <TableHead className="font-semibold">Descrição</TableHead>
                           <TableHead className="font-semibold text-right">Valor</TableHead>
                           {podeEditar && <TableHead className="w-[50px]"></TableHead>}
@@ -375,6 +395,11 @@ export default function CarroPage() {
                           >
                             <TableCell className="font-medium">
                               {formatarData(pagamento.data_pagamento)}
+                            </TableCell>
+                            <TableCell>
+                              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                {CARROS.find((c) => c.value === pagamento.carro)?.label ?? pagamento.carro ?? "—"}
+                              </span>
                             </TableCell>
                             <TableCell className="text-muted-foreground">
                               {pagamento.descricao}
@@ -420,6 +445,25 @@ export default function CarroPage() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="carro">Carro</Label>
+              <Select
+                value={carroSelecionado}
+                onValueChange={(v) => setCarroSelecionado(v as CarroValue)}
+              >
+                <SelectTrigger id="carro" className="w-full">
+                  <SelectValue placeholder="Selecione o carro" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CARROS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="valor">Valor (R$)</Label>
               <Input

@@ -27,11 +27,11 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
 
-    const { valor, data_pagamento, descricao } = body
+    const { valor, data_pagamento, descricao, carro } = body
 
-    if (!valor || !data_pagamento) {
+    if (!valor || !data_pagamento || !carro) {
       return NextResponse.json(
-        { error: "Valor e data de pagamento são obrigatórios" },
+        { error: "Valor, data de pagamento e carro são obrigatórios" },
         { status: 400 }
       )
     }
@@ -42,6 +42,7 @@ export async function POST(request: Request) {
         valor: Number(valor),
         data_pagamento,
         descricao: descricao || "Pagamento do carro",
+        carro,
       })
 
     if (error) {
