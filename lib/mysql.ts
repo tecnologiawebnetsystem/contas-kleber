@@ -236,8 +236,10 @@ class QueryBuilder {
       const insertedRecords: any[] = []
 
       for (const record of records) {
-        const id = record.id || crypto.randomUUID()
-        const dataWithId = { id, ...record }
+        // Remove campos gerados automaticamente pelo banco
+        const { created_at, updated_at, ...cleanRecord } = record
+        const id = cleanRecord.id || crypto.randomUUID()
+        const dataWithId = { id, ...cleanRecord }
         const columns = Object.keys(dataWithId)
         const values = Object.values(dataWithId)
         const placeholders = columns.map(() => '?').join(', ')
@@ -251,7 +253,8 @@ class QueryBuilder {
         data: Array.isArray(this.insertData) ? insertedRecords : insertedRecords[0],
         error: null,
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.log('[v0] executeInsert ERROR table:', this.table, 'msg:', error?.message)
       return { data: null, error }
     }
   }
@@ -263,7 +266,9 @@ class QueryBuilder {
       if (whereParams.length === 0) {
         return { data: null, error: new Error('Update requires at least one condition') }
       }
-      const data = this.updateData!
+      const rawData = this.updateData!
+      // Remove updated_at do objeto — é adicionado automaticamente pelo SQL
+      const { updated_at, ...data } = rawData
       const columns = Object.keys(data)
       const values = Object.values(data)
       const setClause = columns.map((col) => `${col} = ?`).join(', ')
@@ -271,7 +276,8 @@ class QueryBuilder {
       await pool.execute(sql, [...values, ...whereParams])
       const [rows] = await pool.execute(`SELECT * FROM ${this.table}${whereSQL}`, whereParams)
       return { data: (rows as any[])[0] ?? null, error: null }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[v0] executeUpdate ERROR table:', this.table, 'msg:', error?.message)
       return { data: null, error }
     }
   }
