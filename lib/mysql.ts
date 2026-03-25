@@ -111,6 +111,8 @@ export function createMySQLClient() {
   }
 }
 
+type Operation = 'select' | 'insert' | 'update' | 'delete'
+
 class QueryBuilder {
   private table: string
   private selectColumns: string = '*'
@@ -118,12 +120,16 @@ class QueryBuilder {
   private orderByColumns: { column: string; ascending: boolean }[] = []
   private limitValue: number | null = null
   private offsetValue: number | null = null
+  private operation: Operation = 'select'
+  private updateData: Record<string, any> | null = null
+  private insertData: Record<string, any> | Record<string, any>[] | null = null
 
   constructor(table: string) {
     this.table = table
   }
 
   select(columns: string = '*') {
+    this.operation = 'select'
     this.selectColumns = columns
     return this
   }
@@ -206,13 +212,12 @@ class QueryBuilder {
     return clause
   }
 
-  async execute(): Promise<{ data: any[] | null; error: any }> {
+  private async executeSelect(): Promise<{ data: any[] | null; error: any }> {
     try {
       const pool = getPool()
       const { sql: whereSQL, params } = this.buildWhereClause()
       const orderSQL = this.buildOrderClause()
       const limitSQL = this.buildLimitClause()
-
       const sql = `SELECT ${this.selectColumns} FROM ${this.table}${whereSQL}${orderSQL}${limitSQL}`
       const [rows] = await pool.execute(sql, params)
       return { data: rows as any[], error: null }
@@ -221,47 +226,26 @@ class QueryBuilder {
     }
   }
 
-  // Alias para execute - compatibilidade com Supabase
-  async then(resolve: (value: { data: any[] | null; error: any }) => void) {
-    const result = await this.execute()
-    resolve(result)
-  }
-
-  async single(): Promise<{ data: any | null; error: any }> {
-    this.limitValue = 1
-    const result = await this.execute()
-    return {
-      data: result.data?.[0] || null,
-      error: result.error,
-    }
-  }
-
-  async insert(data: Record<string, any> | Record<string, any>[]): Promise<{ data: any; error: any }> {
+  private async executeInsert(): Promise<{ data: any; error: any }> {
     try {
       const pool = getPool()
-      const records = Array.isArray(data) ? data : [data]
+      const records = Array.isArray(this.insertData) ? this.insertData : [this.insertData!]
       const insertedRecords: any[] = []
 
       for (const record of records) {
         const id = record.id || crypto.randomUUID()
         const dataWithId = { id, ...record }
-
         const columns = Object.keys(dataWithId)
         const values = Object.values(dataWithId)
         const placeholders = columns.map(() => '?').join(', ')
-
         const sql = `INSERT INTO ${this.table} (${columns.join(', ')}) VALUES (${placeholders})`
         await pool.execute(sql, values)
-
-        const [rows] = await pool.execute(
-          `SELECT * FROM ${this.table} WHERE id = ?`,
-          [id]
-        )
+        const [rows] = await pool.execute(`SELECT * FROM ${this.table} WHERE id = ?`, [id])
         insertedRecords.push((rows as any[])[0])
       }
 
       return {
-        data: Array.isArray(data) ? insertedRecords : insertedRecords[0],
+        data: Array.isArray(this.insertData) ? insertedRecords : insertedRecords[0],
         error: null,
       }
     } catch (error) {
@@ -269,51 +253,82 @@ class QueryBuilder {
     }
   }
 
-  async update(data: Record<string, any>): Promise<{ data: any; error: any }> {
+  private async executeUpdate(): Promise<{ data: any; error: any }> {
     try {
       const pool = getPool()
       const { sql: whereSQL, params: whereParams } = this.buildWhereClause()
-
       if (whereParams.length === 0) {
         return { data: null, error: new Error('Update requires at least one condition') }
       }
-
+      const data = this.updateData!
       const columns = Object.keys(data)
       const values = Object.values(data)
       const setClause = columns.map((col) => `${col} = ?`).join(', ')
-
       const sql = `UPDATE ${this.table} SET ${setClause}, updated_at = NOW()${whereSQL}`
       await pool.execute(sql, [...values, ...whereParams])
-
-      // Buscar registros atualizados
-      const [rows] = await pool.execute(
-        `SELECT * FROM ${this.table}${whereSQL}`,
-        whereParams
-      )
-      return { data: rows as any[], error: null }
+      const [rows] = await pool.execute(`SELECT * FROM ${this.table}${whereSQL}`, whereParams)
+      return { data: (rows as any[])[0] ?? null, error: null }
     } catch (error) {
       return { data: null, error }
     }
   }
 
-  async delete(): Promise<{ data: any; error: any }> {
+  private async executeDelete(): Promise<{ data: any; error: any }> {
     try {
       const pool = getPool()
       const { sql: whereSQL, params } = this.buildWhereClause()
-
-      // Buscar registros antes de deletar
-      const [rows] = await pool.execute(
-        `SELECT * FROM ${this.table}${whereSQL}`,
-        params
-      )
-
-      const sql = `DELETE FROM ${this.table}${whereSQL}`
-      await pool.execute(sql, params)
-
+      const [rows] = await pool.execute(`SELECT * FROM ${this.table}${whereSQL}`, params)
+      await pool.execute(`DELETE FROM ${this.table}${whereSQL}`, params)
       return { data: rows, error: null }
     } catch (error) {
       return { data: null, error }
     }
+  }
+
+  private async executeOperation(): Promise<{ data: any; error: any }> {
+    switch (this.operation) {
+      case 'insert': return this.executeInsert()
+      case 'update': return this.executeUpdate()
+      case 'delete': return this.executeDelete()
+      default: return this.executeSelect()
+    }
+  }
+
+  // Compatibilidade com Supabase: permite await diretamente no QueryBuilder
+  then(
+    resolve: (value: { data: any; error: any }) => void,
+    reject?: (reason?: any) => void
+  ) {
+    return this.executeOperation().then(resolve, reject)
+  }
+
+  async single(): Promise<{ data: any | null; error: any }> {
+    this.limitValue = 1
+    const result = await this.executeSelect()
+    return {
+      data: result.data?.[0] ?? null,
+      error: result.error,
+    }
+  }
+
+  // insert() é síncrono — agenda a operação e retorna this para encadeamento
+  insert(data: Record<string, any> | Record<string, any>[]) {
+    this.operation = 'insert'
+    this.insertData = data
+    return this
+  }
+
+  // update() é síncrono — agenda a operação e retorna this para encadeamento
+  update(data: Record<string, any>) {
+    this.operation = 'update'
+    this.updateData = data
+    return this
+  }
+
+  // delete() é síncrono — agenda a operação e retorna this para encadeamento
+  delete() {
+    this.operation = 'delete'
+    return this
   }
 }
 

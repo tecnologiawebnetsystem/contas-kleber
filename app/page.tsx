@@ -23,6 +23,7 @@ import {
   CircleDollarSign,
   Clock,
   HandCoins,
+  Briefcase,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -59,6 +60,7 @@ export default function Home() {
   const [poupancaDialogOpen, setPoupancaDialogOpen] = useState(false)
   const [viagemDialogOpen, setViagemDialogOpen] = useState(false)
   const [totalEmprestado, setTotalEmprestado] = useState(0)
+  const [totalConsultorias, setTotalConsultorias] = useState(0)
   const router = useRouter()
   const isOnline = useOnlineStatus()
 
@@ -78,6 +80,7 @@ export default function Home() {
     fetchPoupancaEViagem()
     fetchTotalCarro()
     fetchEmprestimos()
+    fetchConsultorias()
   }, [])
 
   const fetchSaldo = async () => {
@@ -184,6 +187,18 @@ export default function Home() {
       }
     } catch (error) {
       console.error("[v0] Erro ao buscar poupanca e viagem:", error)
+    }
+  }
+
+  const fetchConsultorias = async () => {
+    try {
+      const res = await fetch("/api/consultorias")
+      if (res.ok) {
+        const data = await res.json()
+        setTotalConsultorias(Array.isArray(data) ? data.length : 0)
+      }
+    } catch (error) {
+      console.error("[v0] Erro ao buscar consultorias:", error)
     }
   }
 
@@ -464,9 +479,10 @@ export default function Home() {
     let dataVencimento: Date
 
     if (conta.tipo === "parcelada") {
-      const inicio = conta.dataInicio
-        ? new Date(conta.dataInicio + "T00:00:00")
-        : new Date(conta.createdAt + "T00:00:00" || new Date())
+      const rawInicio = conta.dataInicio || conta.createdAt || new Date().toISOString()
+      const inicio = typeof rawInicio === "string"
+        ? (rawInicio.includes("T") ? new Date(rawInicio) : new Date(rawInicio + "T00:00:00"))
+        : new Date()
       const mesInicio = inicio.getMonth()
       const anoInicio = inicio.getFullYear()
 
@@ -795,69 +811,87 @@ export default function Home() {
         </section>
 
         {/* Mini Cards Grid */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <section className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-2">
           {/* Poupanca */}
           <button
             type="button"
-            className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-amber-500/30 hover:shadow-sm group"
+            className="rounded-lg border border-border/40 bg-card p-2.5 text-left transition-all hover:border-amber-500/30 hover:shadow-sm group"
             onClick={() => setPoupancaDialogOpen(true)}
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="rounded-lg bg-amber-500/10 p-2">
-                <PiggyBank className="h-4 w-4 text-amber-500" />
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="rounded-md bg-amber-500/10 p-1.5">
+                <PiggyBank className="h-3 w-3 text-amber-500" />
               </div>
-              <Plus className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Plus className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <p className="text-xs text-muted-foreground">{'Poupan\u00e7a'}</p>
-            <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalPoupanca)}</p>
+            <p className="text-[10px] text-muted-foreground leading-none">{'Poupan\u00e7a'}</p>
+            <p className="text-sm font-bold font-heading text-foreground mt-0.5 truncate">{formatarMoeda(totalPoupanca)}</p>
           </button>
 
           {/* Viagem */}
           <button
             type="button"
-            className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-sky-500/30 hover:shadow-sm group"
+            className="rounded-lg border border-border/40 bg-card p-2.5 text-left transition-all hover:border-sky-500/30 hover:shadow-sm group"
             onClick={() => setViagemDialogOpen(true)}
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="rounded-lg bg-sky-500/10 p-2">
-                <Plane className="h-4 w-4 text-sky-500" />
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="rounded-md bg-sky-500/10 p-1.5">
+                <Plane className="h-3 w-3 text-sky-500" />
               </div>
-              <Plus className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Plus className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <p className="text-xs text-muted-foreground">Viagem</p>
-            <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalViagem)}</p>
+            <p className="text-[10px] text-muted-foreground leading-none">Viagem</p>
+            <p className="text-sm font-bold font-heading text-foreground mt-0.5 truncate">{formatarMoeda(totalViagem)}</p>
           </button>
 
           {/* Carro */}
           <button
             type="button"
-            className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-muted-foreground/30 hover:shadow-sm group"
+            className="rounded-lg border border-border/40 bg-card p-2.5 text-left transition-all hover:border-muted-foreground/30 hover:shadow-sm group"
             onClick={() => router.push("/carro")}
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="rounded-lg bg-muted-foreground/10 p-2">
-                <Car className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="rounded-md bg-muted-foreground/10 p-1.5">
+                <Car className="h-3 w-3 text-muted-foreground" />
               </div>
-              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <p className="text-xs text-muted-foreground">Carro</p>
-            <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalPagoCarro)}</p>
+            <p className="text-[10px] text-muted-foreground leading-none">Carro</p>
+            <p className="text-sm font-bold font-heading text-foreground mt-0.5 truncate">{formatarMoeda(totalPagoCarro)}</p>
           </button>
 
           {/* Emprestado */}
           <button
             type="button"
-            className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-violet-500/30 hover:shadow-sm group"
+            className="rounded-lg border border-border/40 bg-card p-2.5 text-left transition-all hover:border-violet-500/30 hover:shadow-sm group"
             onClick={() => setEmprestimoDialogOpen(true)}
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="rounded-lg bg-violet-500/10 p-2">
-                <HandCoins className="h-4 w-4 text-violet-500" />
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="rounded-md bg-violet-500/10 p-1.5">
+                <HandCoins className="h-3 w-3 text-violet-500" />
               </div>
-              <Plus className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Plus className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <p className="text-xs text-muted-foreground">Emprestado</p>
-            <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalEmprestado)}</p>
+            <p className="text-[10px] text-muted-foreground leading-none">Emprestado</p>
+            <p className="text-sm font-bold font-heading text-foreground mt-0.5 truncate">{formatarMoeda(totalEmprestado)}</p>
+          </button>
+
+          {/* Consultorias */}
+          <button
+            type="button"
+            className="rounded-lg border border-border/40 bg-card p-2.5 text-left transition-all hover:border-primary/30 hover:shadow-sm group"
+            onClick={() => router.push("/consultorias")}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="rounded-md bg-primary/10 p-1.5">
+                <Briefcase className="h-3 w-3 text-primary" />
+              </div>
+              <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <p className="text-[10px] text-muted-foreground leading-none">Consultorias</p>
+            <p className="text-sm font-bold font-heading text-foreground mt-0.5">
+              {totalConsultorias} {totalConsultorias === 1 ? "ativa" : "ativas"}
+            </p>
           </button>
         </section>
 

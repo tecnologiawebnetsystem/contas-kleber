@@ -161,7 +161,8 @@ export function ListaTransacoes({
         if (conta.tipo === "fixa") return true
         if (conta.tipo === "diaria") {
           if (!conta.dataGasto && !conta.data_gasto) return false
-          const dataGasto = new Date(conta.dataGasto || conta.data_gasto!)
+          const rawGasto = conta.dataGasto || conta.data_gasto!
+          const dataGasto = rawGasto.includes("T") ? new Date(rawGasto) : new Date(rawGasto + "T00:00:00")
           return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
         }
         if (conta.tipo === "parcelada") {
@@ -170,14 +171,16 @@ export function ListaTransacoes({
             return conta.mesVencimento === mesSelecionado && conta.anoVencimento === anoSelecionado
           }
           // Fallback para cálculo se não vier expandida
-          const inicio = new Date(conta.dataInicio!)
+          const rawInicio = conta.dataInicio!
+          const inicio = rawInicio.includes("T") ? new Date(rawInicio) : new Date(rawInicio + "T00:00:00")
           const parcelaAtual =
             (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - (inicio.getMonth() + 1)) + 1
           return parcelaAtual > 0 && parcelaAtual <= conta.parcelas!
         }
         if (conta.tipo === "caixinha") {
           if (!conta.dataGasto && !conta.data_gasto) return false
-          const dataGasto = new Date(conta.dataGasto || conta.data_gasto!)
+          const rawGasto = conta.dataGasto || conta.data_gasto!
+          const dataGasto = rawGasto.includes("T") ? new Date(rawGasto) : new Date(rawGasto + "T00:00:00")
           return dataGasto.getMonth() + 1 === mesSelecionado && dataGasto.getFullYear() === anoSelecionado
         }
         return false
@@ -187,8 +190,12 @@ export function ListaTransacoes({
         tipo: "conta" as const,
         nome: conta.nome,
         valor: conta.valor,
-        data: conta.tipo === "diaria" && conta.data_gasto ? new Date(conta.data_gasto) : new Date(),
-        created_at: new Date(conta.created_at),
+        data: conta.tipo === "diaria" && conta.data_gasto
+          ? (conta.data_gasto.includes("T") ? new Date(conta.data_gasto) : new Date(conta.data_gasto + "T00:00:00"))
+          : new Date(),
+        created_at: conta.created_at
+          ? (conta.created_at.includes("T") ? new Date(conta.created_at) : new Date(conta.created_at + "T00:00:00"))
+          : new Date(),
         conta: conta, // Preserva o parcelaAtual que vem da API
       }))
 
@@ -294,7 +301,7 @@ export function ListaTransacoes({
     let linhaAnexo = ""
 
     if (conta.tipo === "diaria" && conta.data_gasto) {
-      const dataGasto = new Date(conta.data_gasto).toLocaleDateString("pt-BR")
+      const dataGasto = (conta.data_gasto.includes("T") ? new Date(conta.data_gasto) : new Date(conta.data_gasto + "T00:00:00")).toLocaleDateString("pt-BR")
       linhaVencimento = `📅 Data: ${dataGasto}\n`
     } else {
       linhaVencimento = `📌 Vencimento: dia ${conta.vencimento}\n`
@@ -316,7 +323,7 @@ export function ListaTransacoes({
         `✅ *Pagamento Realizado*\n\n` +
         `📄 Conta: ${conta.nome}\n` +
         `💰 Valor: ${formatarMoeda(conta.valor)}\n` +
-        `📅 Data do Pagamento: ${new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}\n` +
+        `📅 Data do Pagamento: ${(pagamento.dataPagamento!.includes("T") ? new Date(pagamento.dataPagamento!) : new Date(pagamento.dataPagamento! + "T00:00:00")).toLocaleDateString("pt-BR")}\n` +
         linhaVencimento +
         linhaParcela +
         `📊 Mês: ${meses[mesSelecionado]}/${anoSelecionado}` +
@@ -353,7 +360,7 @@ export function ListaTransacoes({
 
     // Definir vencimento
     if (conta.tipo === "diaria" && conta.data_gasto) {
-      const dataGasto = new Date(conta.data_gasto).toLocaleDateString("pt-BR")
+      const dataGasto = (conta.data_gasto.includes("T") ? new Date(conta.data_gasto) : new Date(conta.data_gasto + "T00:00:00")).toLocaleDateString("pt-BR")
       linhaVencimento = `Data: ${dataGasto}\n`
     } else {
       linhaVencimento = `Vencimento: dia ${conta.vencimento}\n`
@@ -377,7 +384,7 @@ export function ListaTransacoes({
         `PAGAMENTO REALIZADO\n\n` +
         `Conta: ${conta.nome}\n` +
         `Valor: ${formatarMoeda(conta.valor)}\n` +
-        `Data do Pagamento: ${new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}\n` +
+        `Data do Pagamento: ${(pagamento.dataPagamento!.includes("T") ? new Date(pagamento.dataPagamento!) : new Date(pagamento.dataPagamento! + "T00:00:00")).toLocaleDateString("pt-BR")}\n` +
         linhaVencimento +
         linhaParcela +
         linhaCategoria +
@@ -444,7 +451,8 @@ export function ListaTransacoes({
       return conta.parcelaAtual
     }
     // Fallback to calculation if not expanded
-    const inicio = new Date(conta.dataInicio!)
+    const rawInicio = conta.dataInicio!
+    const inicio = rawInicio.includes("T") ? new Date(rawInicio) : new Date(rawInicio + "T00:00:00")
     const parcelaAtual = (anoSelecionado - inicio.getFullYear()) * 12 + (mesSelecionado - (inicio.getMonth() + 1)) + 1
     return parcelaAtual
   }
@@ -794,9 +802,9 @@ export function ListaTransacoes({
         {/* Date info */}
         <span className="hidden lg:inline text-xs text-muted-foreground whitespace-nowrap shrink-0">
           {conta.tipo === "diaria" && conta.data_gasto
-            ? new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")
+            ? (conta.data_gasto.includes("T") ? new Date(conta.data_gasto) : new Date(conta.data_gasto + "T00:00:00")).toLocaleDateString("pt-BR")
             : conta.tipo === "caixinha" && conta.data_gasto
-              ? new Date(conta.data_gasto + "T00:00:00").toLocaleDateString("pt-BR")
+              ? (conta.data_gasto.includes("T") ? new Date(conta.data_gasto) : new Date(conta.data_gasto + "T00:00:00")).toLocaleDateString("pt-BR")
               : conta.tipo === "fixa"
                 ? `Venc. ${new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}`
                 : conta.tipo === "parcelada"
