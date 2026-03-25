@@ -108,7 +108,7 @@ export function ViagemDialog({ open, onOpenChange, onUpdate }: ViagemDialogProps
         {/* Lista de depositos */}
         <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
           {depositos.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhum deposito ainda</p>
+            <p className="text-sm text-muted-foreground text-center py-4">Nenhum depósito ainda</p>
           )}
           {depositos.map((dep) => (
             <div key={dep.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/30 group">

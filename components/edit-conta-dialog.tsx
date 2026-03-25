@@ -137,7 +137,7 @@ export function EditContaDialog({ open, onOpenChange, onEdit, conta }: EditConta
           <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2.5 flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground">
-              Alteracoes aqui afetam <strong>todas as parcelas</strong> desta conta. Para alterar apenas uma parcela especifica, use "Editar Parcela".
+              Alterações aqui afetam <strong>todas as parcelas</strong> desta conta. Para alterar apenas uma parcela específica, use "Editar Parcela".
             </p>
           </div>
         )}

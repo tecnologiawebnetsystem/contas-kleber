@@ -208,7 +208,7 @@ export default function ConsultaPage() {
   const categoriasUnicas = Array.from(new Set(todasContas.map((c) => c.categoria).filter(Boolean)))
 
   const meses = [
-    "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
   ]
 
@@ -370,7 +370,7 @@ export default function ConsultaPage() {
                       <SelectItem value="pagos">Pagos</SelectItem>
                       <SelectItem value="pendentes">Pendentes</SelectItem>
                       <SelectItem value="atrasados">Atrasados</SelectItem>
-                      <SelectItem value="proximos">Proximos</SelectItem>
+                      <SelectItem value="proximos">Próximos</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

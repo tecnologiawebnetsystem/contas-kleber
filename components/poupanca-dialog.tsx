@@ -97,7 +97,7 @@ export function PoupancaDialog({ open, onOpenChange, onUpdate }: PoupancaDialogP
             <PiggyBank className="h-5 w-5 text-amber-500" />
             {"Poupan\u00e7a"}
           </DialogTitle>
-          <DialogDescription>Gerencie seus depositos de poupanca</DialogDescription>
+          <DialogDescription>Gerencie seus depósitos de poupança</DialogDescription>
         </DialogHeader>
 
         {/* Total */}
@@ -109,7 +109,7 @@ export function PoupancaDialog({ open, onOpenChange, onUpdate }: PoupancaDialogP
         {/* Lista de depositos */}
         <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
           {depositos.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhum deposito ainda</p>
+            <p className="text-sm text-muted-foreground text-center py-4">Nenhum depósito ainda</p>
           )}
           {depositos.map((dep) => (
             <div key={dep.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/30 group">
@@ -138,7 +138,7 @@ export function PoupancaDialog({ open, onOpenChange, onUpdate }: PoupancaDialogP
             <div>
               <Label className="text-xs">{"Descri\u00e7\u00e3o"}</Label>
               <Input
-                placeholder="Ex: Salario de marco"
+                placeholder="Ex: Salário de março"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 className="mt-1"

@@ -135,7 +135,7 @@ export default function Home() {
       } else {
         toast({
           title: "Erro",
-          description: "Nao foi possivel carregar as contas.",
+          description: "Não foi possível carregar as contas.",
           variant: "destructive",
         })
       }
@@ -280,7 +280,7 @@ export default function Home() {
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Nao foi possivel adicionar a conta.",
+          description: "Não foi possível adicionar a conta.",
         variant: "destructive",
       })
     }
@@ -310,7 +310,7 @@ export default function Home() {
       console.error("[v0] Erro ao adicionar credito:", error)
       toast({
         title: "Erro",
-        description: "Nao foi possivel adicionar credito.",
+          description: "Não foi possível adicionar crédito.",
         variant: "destructive",
       })
     }
@@ -346,7 +346,7 @@ export default function Home() {
       console.error("[v0] Erro ao atualizar pagamento:", error)
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Nao foi possivel atualizar o pagamento.",
+          description: error instanceof Error ? error.message : "Não foi possível atualizar o pagamento.",
         variant: "destructive",
       })
     }
@@ -390,7 +390,7 @@ export default function Home() {
       console.error("[v0] Erro ao adicionar pagamento:", error)
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Nao foi possivel registrar o pagamento.",
+          description: error instanceof Error ? error.message : "Não foi possível registrar o pagamento.",
         variant: "destructive",
       })
     }
@@ -415,7 +415,7 @@ export default function Home() {
       console.error("[v0] Erro ao deletar conta:", error)
       toast({
         title: "Erro",
-        description: "Nao foi possivel remover a conta.",
+          description: "Não foi possível remover a conta.",
         variant: "destructive",
       })
     }
@@ -442,7 +442,7 @@ export default function Home() {
       console.error("[v0] Erro ao editar conta:", error)
       toast({
         title: "Erro",
-        description: "Nao foi possivel atualizar a conta.",
+          description: "Não foi possível atualizar a conta.",
         variant: "destructive",
       })
     }
@@ -587,7 +587,7 @@ export default function Home() {
   const meses = [
     "Janeiro",
     "Fevereiro",
-    "Marco",
+    "Março",
     "Abril",
     "Maio",
     "Junho",
@@ -647,7 +647,7 @@ export default function Home() {
         <section className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground text-balance">
-              {'Olá, '}<span className="text-gradient">{user?.nome?.split(" ")[0] || "Usuario"}</span>
+              {'Olá, '}              <span className="text-gradient">{user?.nome?.split(" ")[0] || "Usuário"}</span>
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
               {meses[mesSelecionado - 1]} de {anoSelecionado}
@@ -682,7 +682,7 @@ export default function Home() {
                       <CircleDollarSign className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Adicionar Credito</TooltipContent>
+                  <TooltipContent>Adicionar Crédito</TooltipContent>
                 </Tooltip>
               )}
               {podeEditar && (
@@ -697,7 +697,7 @@ export default function Home() {
                       <BarChart3 className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Relatorios</TooltipContent>
+                  <TooltipContent>Relatórios</TooltipContent>
                 </Tooltip>
               )}
               <Tooltip>
@@ -756,7 +756,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
             <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Credito Disponivel</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Crédito Disponível</p>
                 <p className={`text-3xl md:text-4xl font-bold font-heading mt-1 ${saldo >= 0 ? "text-foreground" : "text-red-500"}`}>
                   {formatarMoeda(saldo)}
                 </p>
@@ -803,7 +803,7 @@ export default function Home() {
                 />
               </div>
               <div className="flex items-center justify-between mt-1.5 text-xs text-muted-foreground">
-                <span>{percentualPago}% concluido</span>
+                <span>{percentualPago}% concluído</span>
                 <span>{contasMesAtual.length - pagas} pendentes</span>
               </div>
             </div>
@@ -912,6 +912,7 @@ export default function Home() {
             onToggleMostrarHoje={setMostrarApenasHoje}
             abrirModalWhatsApp={abrirModalWhatsApp}
             userName={user?.nome}
+            podeEditar={podeEditar}
           />
         </section>
       </div>
