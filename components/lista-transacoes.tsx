@@ -61,6 +61,7 @@ interface ListaTransacoesProps {
   onUpdateConta: (id: string, contaAtualizada: Partial<Conta>) => void
   abrirModalWhatsApp: (titulo: string, mensagem: string) => void
   userName?: string
+  podeEditar?: boolean
   mesSelecionado: number
   anoSelecionado: number
   onMesChange: (mes: number) => void
@@ -78,6 +79,7 @@ export function ListaTransacoes({
   onUpdateConta,
   abrirModalWhatsApp,
   userName,
+  podeEditar = true,
   mesSelecionado,
   anoSelecionado,
   onMesChange,
@@ -563,7 +565,7 @@ export function ListaTransacoes({
     setUndoData(null)
   }
 
-  const isSomenteLeitura = userName === "Pamela Gonçalves"
+  const isSomenteLeitura = !podeEditar
 
   const renderHeader = () => (
     <div className="space-y-4">

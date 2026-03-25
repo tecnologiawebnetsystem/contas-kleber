@@ -14,9 +14,10 @@ interface ListaContasProps {
   onTogglePago: (id: string, mes: number, ano: number) => void
   onDelete: (id: string) => void
   onAddPagamento: (id: string, mes: number, ano: number, dataPagamento: string, anexo?: string) => void
+  podeEditar?: boolean
 }
 
-export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: ListaContasProps) {
+export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento, podeEditar = true }: ListaContasProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [contaSelecionada, setContaSelecionada] = useState<Conta | null>(null)
 
@@ -122,18 +123,20 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
                   key={conta.id}
                   className="flex items-start gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                 >
-                  <Checkbox
-                    checked={pago}
-                    onCheckedChange={() => {
-                      if (pago) {
-                        onTogglePago(conta.id, mesAtual, anoAtual)
-                      } else {
-                        handleMarcarPago(conta)
-                      }
-                    }}
-                    disabled={conta.tipo === "diaria"}
-                    className="h-5 w-5 mt-1"
-                  />
+                  {podeEditar && (
+                    <Checkbox
+                      checked={pago}
+                      onCheckedChange={() => {
+                        if (pago) {
+                          onTogglePago(conta.id, mesAtual, anoAtual)
+                        } else {
+                          handleMarcarPago(conta)
+                        }
+                      }}
+                      disabled={conta.tipo === "diaria"}
+                      className="h-5 w-5 mt-1"
+                    />
+                  )}
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -218,14 +221,16 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
                       </Button>
                     )}
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(conta.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {podeEditar && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(conta.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               )

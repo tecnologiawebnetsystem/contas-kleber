@@ -912,6 +912,7 @@ export default function Home() {
             onToggleMostrarHoje={setMostrarApenasHoje}
             abrirModalWhatsApp={abrirModalWhatsApp}
             userName={user?.nome}
+            podeEditar={podeEditar}
           />
         </section>
       </div>
