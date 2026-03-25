@@ -383,7 +383,7 @@ export default function ConsultoriasPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tipo_contratacao">Tipo de Contratacao</Label>
+              <Label htmlFor="tipo_contratacao">Tipo de Contratação</Label>
               <Select
                 value={form.tipo_contratacao}
                 onValueChange={(v) => setForm((f) => ({ ...f, tipo_contratacao: v as TipoContratacao }))}
@@ -400,7 +400,7 @@ export default function ConsultoriasPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="data_inicio">Data de Inicio</Label>
+              <Label htmlFor="data_inicio">Data de Início</Label>
               <Input
                 id="data_inicio"
                 type="date"
@@ -421,13 +421,13 @@ export default function ConsultoriasPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Confirmar Exclusao */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          {/* Dialog Confirmar Exclusão */}
+<Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Confirmar exclusao</DialogTitle>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir esta consultoria? Esta acao nao pode ser desfeita.
+              Tem certeza que deseja excluir esta consultoria? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">

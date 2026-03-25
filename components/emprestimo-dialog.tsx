@@ -200,7 +200,7 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
           )}
 
           {emprestimos.length === 0 && !showForm && (
-            <p className="text-sm text-muted-foreground text-center py-6">Nenhum emprestimo registrado</p>
+            <p className="text-sm text-muted-foreground text-center py-6">Nenhum empréstimo registrado</p>
           )}
         </div>
 
@@ -212,7 +212,7 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
               <Input
                 value={nomePessoa}
                 onChange={(e) => setNomePessoa(e.target.value)}
-                placeholder="Ex: Joao"
+                placeholder="Ex: João"
                 className="h-8 text-sm"
                 required
               />
@@ -231,7 +231,7 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">{'Data Devolucao'}</Label>
+                <Label className="text-xs">Data de Devolução</Label>
                 <Input
                   type="date"
                   value={dataDevolucao}
@@ -258,7 +258,7 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
             onClick={() => setShowForm(true)}
           >
             <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Adicionar Emprestimo
+            Adicionar Empréstimo
           </Button>
         )}
       </DialogContent>

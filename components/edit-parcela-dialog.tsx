@@ -19,7 +19,7 @@ interface EditParcelaDialogProps {
 }
 
 const meses = [
-  "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ]
 
@@ -30,7 +30,7 @@ export function EditParcelaDialog({ open, onOpenChange, conta, mes, ano, onSave 
 
   useEffect(() => {
     if (conta && open) {
-      // Buscar se ja existe ajuste para esta parcela
+      // Buscar se já existe ajuste para esta parcela
       const pagamento = conta.pagamentos?.find((p) => p.mes === mes && p.ano === ano)
       setValor(pagamento?.valorAjustado?.toString() || conta.valor.toString())
       setDiaVencimento(
@@ -59,7 +59,7 @@ export function EditParcelaDialog({ open, onOpenChange, conta, mes, ano, onSave 
       const valorNum = Number.parseFloat(valor)
       const diaNum = Number.parseInt(diaVencimento)
 
-      // Se os valores sao iguais aos originais, salva null (sem ajuste)
+      // Se os valores são iguais aos originais, salva null (sem ajuste)
       const valorAjustado = valorNum !== conta.valor ? valorNum : null
       const vencimentoAjustado = diaNum !== conta.vencimento ? diaNum : null
 
@@ -92,7 +92,7 @@ export function EditParcelaDialog({ open, onOpenChange, conta, mes, ano, onSave 
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
           <p className="text-xs text-muted-foreground">
-            Alteracoes aqui afetam apenas esta parcela/mes. Para alterar a conta inteira, use "Editar Conta".
+            Alterações aqui afetam apenas esta parcela/mês. Para alterar a conta inteira, use "Editar Conta".
           </p>
         </div>
 
