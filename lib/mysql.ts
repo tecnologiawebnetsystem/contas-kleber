@@ -129,8 +129,11 @@ class QueryBuilder {
   }
 
   select(columns: string = '*') {
-    this.operation = 'select'
-    this.selectColumns = columns
+    // Só muda a operação para 'select' se ainda não foi definida outra operação
+    // (ex: .insert({...}).select() não deve sobrescrever a operação de insert)
+    if (this.operation === 'select') {
+      this.selectColumns = columns
+    }
     return this
   }
 
@@ -303,12 +306,14 @@ class QueryBuilder {
   }
 
   async single(): Promise<{ data: any | null; error: any }> {
-    this.limitValue = 1
-    const result = await this.executeSelect()
-    return {
-      data: result.data?.[0] ?? null,
-      error: result.error,
+    // Para operações de insert/update/delete, executa a operação e retorna o primeiro item
+    // Para select, limita a 1 resultado
+    if (this.operation === 'select') {
+      this.limitValue = 1
     }
+    const result = await this.executeOperation()
+    const data = Array.isArray(result.data) ? (result.data[0] ?? null) : (result.data ?? null)
+    return { data, error: result.error }
   }
 
   // insert() é síncrono — agenda a operação e retorna this para encadeamento
