@@ -43,8 +43,6 @@ export async function POST(request: Request) {
         data_pagamento,
         descricao: descricao || "Pagamento do carro",
       })
-      .select()
-      .single()
 
     if (error) {
       console.error("[v0] Erro ao inserir pagamento do carro:", error)
