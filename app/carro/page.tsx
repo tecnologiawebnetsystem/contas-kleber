@@ -260,6 +260,14 @@ export default function CarroPage() {
 
   const totalPago = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0)
 
+  const totalPorCarro = CARROS.map((carro) => ({
+    ...carro,
+    total: pagamentos
+      .filter((p) => p.carro === carro.value)
+      .reduce((sum, p) => sum + Number(p.valor), 0),
+    quantidade: pagamentos.filter((p) => p.carro === carro.value).length,
+  }))
+
   const formatarData = (dataString: string) => {
     if (!dataString) return "—"
     // Se já contém hora (ISO completo), usa direto; senão adiciona T00:00:00 para evitar deslocamento de fuso
@@ -352,6 +360,31 @@ export default function CarroPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Cards de total por carro */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {totalPorCarro.map((carro) => (
+                <Card key={carro.value} className="border bg-card shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-muted-foreground/30" />
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-muted p-3 rounded-xl">
+                        <Car className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">{carro.label}</p>
+                        <p className="text-xl font-bold text-foreground">
+                          {formatarMoeda(carro.total)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {carro.quantidade} pagamento(s)
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
             {/* Botão adicionar - apenas Kleber */}
             {podeEditar && (
