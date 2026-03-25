@@ -129,8 +129,11 @@ class QueryBuilder {
   }
 
   select(columns: string = '*') {
-    this.operation = 'select'
-    this.selectColumns = columns
+    // Só muda a operação para 'select' se ainda não foi definida outra operação
+    // (ex: .insert({...}).select() não deve sobrescrever a operação de insert)
+    if (this.operation === 'select') {
+      this.selectColumns = columns
+    }
     return this
   }
 
@@ -233,8 +236,10 @@ class QueryBuilder {
       const insertedRecords: any[] = []
 
       for (const record of records) {
-        const id = record.id || crypto.randomUUID()
-        const dataWithId = { id, ...record }
+        // Remove campos gerados automaticamente pelo banco
+        const { created_at, updated_at, ...cleanRecord } = record
+        const id = cleanRecord.id || crypto.randomUUID()
+        const dataWithId = { id, ...cleanRecord }
         const columns = Object.keys(dataWithId)
         const values = Object.values(dataWithId)
         const placeholders = columns.map(() => '?').join(', ')
@@ -248,7 +253,8 @@ class QueryBuilder {
         data: Array.isArray(this.insertData) ? insertedRecords : insertedRecords[0],
         error: null,
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.log('[v0] executeInsert ERROR table:', this.table, 'msg:', error?.message)
       return { data: null, error }
     }
   }
@@ -260,7 +266,9 @@ class QueryBuilder {
       if (whereParams.length === 0) {
         return { data: null, error: new Error('Update requires at least one condition') }
       }
-      const data = this.updateData!
+      const rawData = this.updateData!
+      // Remove updated_at do objeto — é adicionado automaticamente pelo SQL
+      const { updated_at, ...data } = rawData
       const columns = Object.keys(data)
       const values = Object.values(data)
       const setClause = columns.map((col) => `${col} = ?`).join(', ')
@@ -268,7 +276,8 @@ class QueryBuilder {
       await pool.execute(sql, [...values, ...whereParams])
       const [rows] = await pool.execute(`SELECT * FROM ${this.table}${whereSQL}`, whereParams)
       return { data: (rows as any[])[0] ?? null, error: null }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[v0] executeUpdate ERROR table:', this.table, 'msg:', error?.message)
       return { data: null, error }
     }
   }
@@ -303,12 +312,14 @@ class QueryBuilder {
   }
 
   async single(): Promise<{ data: any | null; error: any }> {
-    this.limitValue = 1
-    const result = await this.executeSelect()
-    return {
-      data: result.data?.[0] ?? null,
-      error: result.error,
+    // Para operações de insert/update/delete, executa a operação e retorna o primeiro item
+    // Para select, limita a 1 resultado
+    if (this.operation === 'select') {
+      this.limitValue = 1
     }
+    const result = await this.executeOperation()
+    const data = Array.isArray(result.data) ? (result.data[0] ?? null) : (result.data ?? null)
+    return { data, error: result.error }
   }
 
   // insert() é síncrono — agenda a operação e retorna this para encadeamento

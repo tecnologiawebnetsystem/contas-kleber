@@ -49,12 +49,10 @@ export async function POST(request: Request) {
 
     if (contaError) {
       console.error("[v0] Erro insert conta poupanca:", JSON.stringify(contaError))
-      return NextResponse.json({ error: contaError.message }, { status: 500 })
+      return NextResponse.json({ error: contaError.message || JSON.stringify(contaError) }, { status: 500 })
     }
 
-    console.log("[v0] Conta poupanca criada:", conta.id)
-
-    // 2. Inserir pagamento
+    // 2. Inserir pagamento (ignora duplicidade da constraint UNIQUE conta_id/mes/ano)
     const { error: pagError } = await supabase.from("pagamentos").insert({
       conta_id: conta.id,
       mes: new Date().getMonth(),
