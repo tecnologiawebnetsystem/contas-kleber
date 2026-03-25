@@ -2,32 +2,55 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PlusCircle } from "lucide-react"
+
+interface Consultoria {
+  id: string
+  consultoria: string
+  cliente: string
+  tipo_contratacao: string
+}
 
 interface AddCreditoDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAdd: (valor: number, descricao: string, data: string) => void
+  onAdd: (valor: number, descricao: string, data: string, consultoriaId?: string) => void
 }
 
 export function AddCreditoDialog({ open, onOpenChange, onAdd }: AddCreditoDialogProps) {
   const [valor, setValor] = useState("")
   const [descricao, setDescricao] = useState("")
   const [dataTransacao, setDataTransacao] = useState(new Date().toISOString().split("T")[0])
+  const [consultoriaId, setConsultoriaId] = useState<string>("")
+  const [consultorias, setConsultorias] = useState<Consultoria[]>([])
+  const [loadingConsultorias, setLoadingConsultorias] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setLoadingConsultorias(true)
+      fetch("/api/consultorias")
+        .then((r) => r.json())
+        .then((data) => setConsultorias(Array.isArray(data) ? data : []))
+        .catch(() => setConsultorias([]))
+        .finally(() => setLoadingConsultorias(false))
+    }
+  }, [open])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const valorNum = Number.parseFloat(valor)
     if (valorNum > 0) {
-      onAdd(valorNum, descricao || "Adição de crédito", dataTransacao)
+      onAdd(valorNum, descricao || "Adição de crédito", dataTransacao, consultoriaId || undefined)
       setValor("")
       setDescricao("")
+      setConsultoriaId("")
       setDataTransacao(new Date().toISOString().split("T")[0])
       onOpenChange(false)
     }
@@ -46,6 +69,26 @@ export function AddCreditoDialog({ open, onOpenChange, onAdd }: AddCreditoDialog
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+
+          {/* Consultoria de origem */}
+          <div className="space-y-2">
+            <Label htmlFor="consultoria">Consultoria (opcional)</Label>
+            <Select value={consultoriaId} onValueChange={setConsultoriaId} disabled={loadingConsultorias}>
+              <SelectTrigger id="consultoria" className="w-full">
+                <SelectValue placeholder={loadingConsultorias ? "Carregando..." : "Selecione a consultoria"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhuma / Outro</SelectItem>
+                {consultorias.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    <span className="font-medium">{c.consultoria}</span>
+                    <span className="text-muted-foreground ml-1">— {c.cliente}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="valor">Valor (R$) *</Label>
             <Input
@@ -59,6 +102,7 @@ export function AddCreditoDialog({ open, onOpenChange, onAdd }: AddCreditoDialog
               required
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="dataTransacao">Data *</Label>
             <Input
@@ -69,6 +113,7 @@ export function AddCreditoDialog({ open, onOpenChange, onAdd }: AddCreditoDialog
               required
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="descricao">Descrição (opcional)</Label>
             <Textarea
@@ -79,6 +124,7 @@ export function AddCreditoDialog({ open, onOpenChange, onAdd }: AddCreditoDialog
               rows={3}
             />
           </div>
+
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancelar

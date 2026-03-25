@@ -45,7 +45,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { valor, descricao } = await request.json()
+    const { valor, descricao, data_transacao, consultoria_id } = await request.json()
     const supabase = await createClient()
 
     // Buscar saldo atual
@@ -59,17 +59,22 @@ export async function POST(request: Request) {
     // Atualizar saldo
     const { error: updateError } = await supabase
       .from("saldo")
-      .update({ valor: novoValor, updated_at: new Date().toISOString() })
+      .update({ valor: novoValor })
       .eq("id", saldoAtual.id)
 
     if (updateError) throw updateError
 
-    // Registrar transação
-    const { error: transacaoError } = await supabase.from("transacoes").insert({
+    // Montar payload da transação — inclui consultoria se informada
+    const transacaoPayload: Record<string, any> = {
       tipo: "credito",
       valor: Number(valor),
       descricao: descricao || "Adição de crédito",
-    })
+      ...(data_transacao && { data_transacao }),
+      ...(consultoria_id && consultoria_id !== "none" && { referencia_id: consultoria_id }),
+    }
+
+    // Registrar transação
+    const { error: transacaoError } = await supabase.from("transacoes").insert(transacaoPayload)
 
     if (transacaoError) throw transacaoError
 

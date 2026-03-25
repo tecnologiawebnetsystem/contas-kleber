@@ -286,12 +286,12 @@ export default function Home() {
     }
   }
 
-  const addCredito = async (valor: number, descricao: string, dataTransacao: string) => {
+  const addCredito = async (valor: number, descricao: string, dataTransacao: string, consultoriaId?: string) => {
     try {
       const response = await fetch("/api/saldo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ valor, descricao, data_transacao: dataTransacao }),
+        body: JSON.stringify({ valor, descricao, data_transacao: dataTransacao, consultoria_id: consultoriaId }),
       })
 
       if (!response.ok) throw new Error("Erro ao adicionar credito")
