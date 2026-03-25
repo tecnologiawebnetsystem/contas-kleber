@@ -230,39 +230,31 @@ export default function ConsultoriasPage() {
       <div className="container mx-auto px-4 py-6 space-y-5">
 
         {/* Resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="border border-border/40 bg-card shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 p-3 rounded-xl">
-                  <Briefcase className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold text-foreground">{consultorias.length}</p>
-                  <p className="text-xs text-muted-foreground">consultoria(s)</p>
-                </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="rounded-lg border border-border/40 bg-card p-2.5">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="rounded-md bg-primary/10 p-1.5">
+                <Briefcase className="h-3 w-3 text-primary" />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="text-[10px] text-muted-foreground leading-none">Total</p>
+            <p className="text-sm font-bold text-foreground mt-0.5">{consultorias.length}</p>
+            <p className="text-[10px] text-muted-foreground">consultoria(s)</p>
+          </div>
 
           {TIPOS_CONTRATACAO.map((tipo) => {
             const count = consultorias.filter((c) => c.tipo_contratacao === tipo).length
             return (
-              <Card key={tipo} className="border border-border/40 bg-card shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-muted p-3 rounded-xl">
-                      <Users className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">{tipo}</p>
-                      <p className="text-2xl font-bold text-foreground">{count}</p>
-                      <p className="text-xs text-muted-foreground">contrato(s)</p>
-                    </div>
+              <div key={tipo} className="rounded-lg border border-border/40 bg-card p-2.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="rounded-md bg-muted p-1.5">
+                    <Users className="h-3 w-3 text-muted-foreground" />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-none">{tipo}</p>
+                <p className="text-sm font-bold text-foreground mt-0.5">{count}</p>
+                <p className="text-[10px] text-muted-foreground">contrato(s)</p>
+              </div>
             )
           })}
         </div>
