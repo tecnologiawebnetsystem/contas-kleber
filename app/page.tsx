@@ -23,6 +23,7 @@ import {
   CircleDollarSign,
   Clock,
   HandCoins,
+  Briefcase,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -59,6 +60,7 @@ export default function Home() {
   const [poupancaDialogOpen, setPoupancaDialogOpen] = useState(false)
   const [viagemDialogOpen, setViagemDialogOpen] = useState(false)
   const [totalEmprestado, setTotalEmprestado] = useState(0)
+  const [totalConsultorias, setTotalConsultorias] = useState(0)
   const router = useRouter()
   const isOnline = useOnlineStatus()
 
@@ -78,6 +80,7 @@ export default function Home() {
     fetchPoupancaEViagem()
     fetchTotalCarro()
     fetchEmprestimos()
+    fetchConsultorias()
   }, [])
 
   const fetchSaldo = async () => {
@@ -184,6 +187,18 @@ export default function Home() {
       }
     } catch (error) {
       console.error("[v0] Erro ao buscar poupanca e viagem:", error)
+    }
+  }
+
+  const fetchConsultorias = async () => {
+    try {
+      const res = await fetch("/api/consultorias")
+      if (res.ok) {
+        const data = await res.json()
+        setTotalConsultorias(Array.isArray(data) ? data.length : 0)
+      }
+    } catch (error) {
+      console.error("[v0] Erro ao buscar consultorias:", error)
     }
   }
 
@@ -859,6 +874,24 @@ export default function Home() {
             </div>
             <p className="text-xs text-muted-foreground">Emprestado</p>
             <p className="text-lg font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalEmprestado)}</p>
+          </button>
+
+          {/* Consultorias */}
+          <button
+            type="button"
+            className="rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-sm group"
+            onClick={() => router.push("/consultorias")}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <Briefcase className="h-4 w-4 text-primary" />
+              </div>
+              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <p className="text-xs text-muted-foreground">Consultorias</p>
+            <p className="text-lg font-bold font-heading text-foreground mt-0.5">
+              {totalConsultorias} {totalConsultorias === 1 ? "ativa" : "ativas"}
+            </p>
           </button>
         </section>
 
