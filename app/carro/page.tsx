@@ -261,7 +261,12 @@ export default function CarroPage() {
   const totalPago = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0)
 
   const formatarData = (dataString: string) => {
-    const data = new Date(dataString + "T00:00:00")
+    if (!dataString) return "—"
+    // Se já contém hora (ISO completo), usa direto; senão adiciona T00:00:00 para evitar deslocamento de fuso
+    const data = dataString.includes("T")
+      ? new Date(dataString)
+      : new Date(dataString + "T00:00:00")
+    if (isNaN(data.getTime())) return "—"
     return data.toLocaleDateString("pt-BR")
   }
 
