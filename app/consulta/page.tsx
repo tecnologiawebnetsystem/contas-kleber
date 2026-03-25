@@ -570,7 +570,7 @@ export default function ConsultaPage() {
                                           "dd/MM/yyyy",
                                         )
                                       : conta.dataGasto
-                                        ? format(new Date(conta.dataGasto + "T00:00:00"), "dd/MM/yyyy")
+                                        ? format(conta.dataGasto.includes("T") ? new Date(conta.dataGasto) : new Date(conta.dataGasto + "T00:00:00"), "dd/MM/yyyy")
                                         : "-"}
                                 </TableCell>
                                 <TableCell className="text-sm font-medium">{formatarMoeda(conta.valor)}</TableCell>
@@ -587,10 +587,10 @@ export default function ConsultaPage() {
                                 <TableCell className="text-sm text-muted-foreground">
                                   {conta.tipo === "parcelada"
                                     ? conta.dataPagamento
-                                      ? format(new Date(conta.dataPagamento + "T00:00:00"), "dd/MM/yyyy")
+                                      ? format(conta.dataPagamento.includes("T") ? new Date(conta.dataPagamento) : new Date(conta.dataPagamento + "T00:00:00"), "dd/MM/yyyy")
                                       : "-"
                                     : conta.pagamentos && conta.pagamentos.length > 0
-                                      ? format(new Date(conta.pagamentos[0].dataPagamento + "T00:00:00"), "dd/MM/yyyy")
+                                      ? format(conta.pagamentos[0].dataPagamento.includes("T") ? new Date(conta.pagamentos[0].dataPagamento) : new Date(conta.pagamentos[0].dataPagamento + "T00:00:00"), "dd/MM/yyyy")
                                       : "-"}
                                 </TableCell>
                                 <TableCell className="text-right">

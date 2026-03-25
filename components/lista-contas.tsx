@@ -43,7 +43,8 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
     if (conta.tipo === "fixa") return true
     if (conta.tipo === "diaria") return true
     if (conta.tipo === "parcelada") {
-      const inicio = new Date(conta.data_inicio!)
+      const inicioStr = conta.data_inicio!
+      const inicio = inicioStr.includes("T") ? new Date(inicioStr) : new Date(inicioStr + "T00:00:00")
       const parcelaAtual = (anoAtual - inicio.getFullYear()) * 12 + (mesAtual - inicio.getMonth()) + 1
       return parcelaAtual > 0 && parcelaAtual <= conta.parcelas!
     }
@@ -52,7 +53,8 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
 
   const getParcelaAtual = (conta: Conta) => {
     if (conta.tipo !== "parcelada") return null
-    const inicio = new Date(conta.data_inicio!)
+    const inicioStr = conta.data_inicio!
+    const inicio = inicioStr.includes("T") ? new Date(inicioStr) : new Date(inicioStr + "T00:00:00")
     const parcelaAtual = (anoAtual - inicio.getFullYear()) * 12 + (mesAtual - inicio.getMonth()) + 1
     return parcelaAtual
   }
@@ -76,7 +78,7 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
       `✅ *Pagamento Realizado*\n\n` +
       `📄 Conta: ${conta.nome}\n` +
       `💰 Valor: R$ ${conta.valor.toFixed(2)}\n` +
-      `📅 Data do Pagamento: ${new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}\n` +
+      `📅 Data do Pagamento: ${(pagamento.dataPagamento!.includes("T") ? new Date(pagamento.dataPagamento!) : new Date(pagamento.dataPagamento! + "T00:00:00")).toLocaleDateString("pt-BR")}\n` +
       `📌 Vencimento: ${dataVencimento}\n` +
       `📊 Mês: ${meses[mesAtual]}/${anoAtual}`
 
@@ -156,7 +158,11 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
                     </div>
                     {conta.tipo === "diaria" && conta.data_gasto ? (
                       <p className="text-sm text-muted-foreground">
-                        Data do Pagamento: {new Date(conta.data_gasto).toLocaleDateString("pt-BR")}
+                        Data do Pagamento:{" "}
+                        {(conta.data_gasto.includes("T")
+                          ? new Date(conta.data_gasto)
+                          : new Date(conta.data_gasto + "T00:00:00")
+                        ).toLocaleDateString("pt-BR")}
                       </p>
                     ) : (
                       <p className="text-sm text-muted-foreground">
@@ -166,7 +172,11 @@ export function ListaContas({ contas, onTogglePago, onDelete, onAddPagamento }: 
                     {pago && pagamento && (
                       <div className="mt-2 space-y-1">
                         <p className="text-sm text-primary">
-                          Pago em: {new Date(pagamento.dataPagamento!).toLocaleDateString("pt-BR")}
+                          Pago em:{" "}
+                          {(pagamento.dataPagamento!.includes("T")
+                            ? new Date(pagamento.dataPagamento!)
+                            : new Date(pagamento.dataPagamento! + "T00:00:00")
+                          ).toLocaleDateString("pt-BR")}
                         </p>
                         {pagamento.anexo && (
                           <div className="flex items-center gap-2">

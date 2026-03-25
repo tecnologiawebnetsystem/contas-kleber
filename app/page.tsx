@@ -464,9 +464,10 @@ export default function Home() {
     let dataVencimento: Date
 
     if (conta.tipo === "parcelada") {
-      const inicio = conta.dataInicio
-        ? new Date(conta.dataInicio + "T00:00:00")
-        : new Date(conta.createdAt + "T00:00:00" || new Date())
+      const rawInicio = conta.dataInicio || conta.createdAt || new Date().toISOString()
+      const inicio = typeof rawInicio === "string"
+        ? (rawInicio.includes("T") ? new Date(rawInicio) : new Date(rawInicio + "T00:00:00"))
+        : new Date()
       const mesInicio = inicio.getMonth()
       const anoInicio = inicio.getFullYear()
 
