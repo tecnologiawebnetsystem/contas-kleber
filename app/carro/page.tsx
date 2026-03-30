@@ -258,15 +258,18 @@ export default function CarroPage() {
     })
   }
 
-  const totalPago = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0)
+  // Valor extra do Palio Sporting (não salvo no banco de dados)
+  const VALOR_EXTRA_PALIO = 2000
 
   const totalPorCarro = CARROS.map((carro) => ({
     ...carro,
     total: pagamentos
       .filter((p) => p.carro === carro.value)
-      .reduce((sum, p) => sum + Number(p.valor), 0),
+      .reduce((sum, p) => sum + Number(p.valor), 0) + (carro.value === "palio_sporting" ? VALOR_EXTRA_PALIO : 0),
     quantidade: pagamentos.filter((p) => p.carro === carro.value).length,
   }))
+
+  const totalPago = totalPorCarro.reduce((sum, c) => sum + c.total, 0)
 
   const formatarData = (dataString: string) => {
     if (!dataString) return "—"
@@ -363,27 +366,53 @@ export default function CarroPage() {
 
             {/* Cards de total por carro */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {totalPorCarro.map((carro) => (
-                <Card key={carro.value} className="border bg-card shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-muted-foreground/30" />
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-muted p-3 rounded-xl">
-                        <Car className="h-5 w-5 text-muted-foreground" />
+              {totalPorCarro.map((carro) => {
+                const isPalio = carro.value === "palio_sporting"
+                return (
+                  <Card 
+                    key={carro.value} 
+                    className={`border-2 bg-card shadow-sm relative overflow-hidden ${
+                      isPalio 
+                        ? "border-blue-200 dark:border-blue-800" 
+                        : "border-amber-200 dark:border-amber-800"
+                    }`}
+                  >
+                    <div className={`absolute top-0 left-0 w-full h-1 ${
+                      isPalio 
+                        ? "bg-blue-500" 
+                        : "bg-amber-500"
+                    }`} />
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl ${
+                          isPalio 
+                            ? "bg-blue-100 dark:bg-blue-900/30" 
+                            : "bg-amber-100 dark:bg-amber-900/30"
+                        }`}>
+                          <Car className={`h-5 w-5 ${
+                            isPalio 
+                              ? "text-blue-600 dark:text-blue-400" 
+                              : "text-amber-600 dark:text-amber-400"
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground">{carro.label}</p>
+                          <p className={`text-xl font-bold ${
+                            isPalio 
+                              ? "text-blue-700 dark:text-blue-300" 
+                              : "text-amber-700 dark:text-amber-300"
+                          }`}>
+                            {formatarMoeda(carro.total)}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {carro.quantidade} pagamento(s)
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground">{carro.label}</p>
-                        <p className="text-xl font-bold text-foreground">
-                          {formatarMoeda(carro.total)}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {carro.quantidade} pagamento(s)
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
 
             {/* Botão adicionar - apenas Kleber */}
