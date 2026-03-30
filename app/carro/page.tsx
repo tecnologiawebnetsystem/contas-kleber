@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Car, Plus, ArrowLeft, Trash2, Wallet } from "lucide-react"
+import { Car, Plus, ArrowLeft, Trash2, Wallet, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
 import { useToast } from "@/hooks/use-toast"
@@ -68,6 +68,12 @@ export default function CarroPage() {
   const [descricao, setDescricao] = useState("")
   const [carroSelecionado, setCarroSelecionado] = useState<CarroValue | "">("")
   const [submitting, setSubmitting] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [pagamentoEditando, setPagamentoEditando] = useState<PagamentoCarro | null>(null)
+  const [editValor, setEditValor] = useState("")
+  const [editDataPagamento, setEditDataPagamento] = useState("")
+  const [editDescricao, setEditDescricao] = useState("")
+  const [editCarroSelecionado, setEditCarroSelecionado] = useState<CarroValue | "">("")
 
   // Perfil 1 = acesso total (Kleber), Perfil 2 = consulta (Pamela)
   const temAcessoTotal = user?.perfil === 1
@@ -207,6 +213,74 @@ export default function CarroPage() {
       toast({
         title: "Erro",
         description: "Não foi possível adicionar o pagamento.",
+        variant: "destructive",
+      })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleOpenEdit = (pagamento: PagamentoCarro) => {
+    setPagamentoEditando(pagamento)
+    setEditValor(pagamento.valor.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }))
+    setEditDataPagamento(pagamento.data_pagamento.split("T")[0])
+    setEditDescricao(pagamento.descricao)
+    setEditCarroSelecionado(pagamento.carro)
+    setEditDialogOpen(true)
+  }
+
+  const handleEdit = async () => {
+    if (!pagamentoEditando || !editValor || !editDataPagamento || !editCarroSelecionado) {
+      toast({
+        title: "Atenção",
+        description: "Preencha o valor, a data e selecione o carro.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      if (isOnline) {
+        const response = await fetch("/api/carro", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: pagamentoEditando.id,
+            valor: parseFloat(editValor.replace(/\D/g, "")) / 100,
+            data_pagamento: editDataPagamento,
+            descricao: editDescricao || "Pagamento do carro",
+            carro: editCarroSelecionado,
+          }),
+        })
+
+        if (!response.ok) throw new Error("Erro ao atualizar pagamento")
+
+        toast({
+          title: "Sucesso",
+          description: "Pagamento atualizado com sucesso!",
+        })
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não é possível editar pagamentos no modo offline.",
+          variant: "destructive",
+        })
+        setSubmitting(false)
+        return
+      }
+
+      setEditDialogOpen(false)
+      setPagamentoEditando(null)
+      fetchPagamentos()
+    } catch (error) {
+      console.error("[v0] Erro ao atualizar pagamento:", error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o pagamento.",
         variant: "destructive",
       })
     } finally {
@@ -455,7 +529,7 @@ export default function CarroPage() {
                           <TableHead className="font-semibold">Carro</TableHead>
                           <TableHead className="font-semibold">Descrição</TableHead>
                           <TableHead className="font-semibold text-right">Valor</TableHead>
-                          {podeEditar && <TableHead className="w-[50px]"></TableHead>}
+                          {podeEditar && <TableHead className="w-[100px]"></TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -480,14 +554,24 @@ export default function CarroPage() {
                             </TableCell>
                             {podeEditar && (
                               <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDelete(pagamento.id)}
-                                  className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleOpenEdit(pagamento)}
+                                    className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDelete(pagamento.id)}
+                                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             )}
                           </TableRow>
@@ -581,6 +665,90 @@ export default function CarroPage() {
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {submitting ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para editar pagamento */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Editar Pagamento
+            </DialogTitle>
+            <DialogDescription>
+              Edite os dados do pagamento.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-carro">Carro</Label>
+              <Select
+                value={editCarroSelecionado}
+                onValueChange={(v) => setEditCarroSelecionado(v as CarroValue)}
+              >
+                <SelectTrigger id="edit-carro" className="w-full">
+                  <SelectValue placeholder="Selecione o carro" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CARROS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-valor">Valor (R$)</Label>
+              <Input
+                id="edit-valor"
+                placeholder="0,00"
+                value={editValor}
+                onChange={(e) => setEditValor(formatarValorInput(e.target.value))}
+                className="text-lg font-semibold"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-data">Data do Pagamento</Label>
+              <Input
+                id="edit-data"
+                type="date"
+                value={editDataPagamento}
+                onChange={(e) => setEditDataPagamento(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-descricao">Descrição (opcional)</Label>
+              <Input
+                id="edit-descricao"
+                placeholder="Pagamento do carro"
+                value={editDescricao}
+                onChange={(e) => setEditDescricao(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              disabled={submitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleEdit}
+              disabled={submitting}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              {submitting ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -57,6 +57,48 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PUT(request: Request) {
+  try {
+    const supabase = await createClient()
+    const body = await request.json()
+
+    const { id, valor, data_pagamento, descricao, carro } = body
+
+    if (!id) {
+      return NextResponse.json({ error: "ID é obrigatório" }, { status: 400 })
+    }
+
+    if (!valor || !data_pagamento || !carro) {
+      return NextResponse.json(
+        { error: "Valor, data de pagamento e carro são obrigatórios" },
+        { status: 400 }
+      )
+    }
+
+    const { data: pagamentoAtualizado, error } = await supabase
+      .from("pagamentos_carro")
+      .update({
+        valor: Number(valor),
+        data_pagamento,
+        descricao: descricao || "Pagamento do carro",
+        carro,
+      })
+      .eq("id", id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("[v0] Erro ao atualizar pagamento do carro:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json(pagamentoAtualizado)
+  } catch (error) {
+    console.error("[v0] Erro na API de pagamentos do carro:", error)
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const supabase = await createClient()
