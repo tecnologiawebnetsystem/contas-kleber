@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Car, Plus, ArrowLeft, Trash2, Wallet } from "lucide-react"
+import { Car, Plus, ArrowLeft, Trash2, Wallet, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
 import { useToast } from "@/hooks/use-toast"
@@ -68,6 +68,12 @@ export default function CarroPage() {
   const [descricao, setDescricao] = useState("")
   const [carroSelecionado, setCarroSelecionado] = useState<CarroValue | "">("")
   const [submitting, setSubmitting] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [pagamentoEditando, setPagamentoEditando] = useState<PagamentoCarro | null>(null)
+  const [editValor, setEditValor] = useState("")
+  const [editDataPagamento, setEditDataPagamento] = useState("")
+  const [editDescricao, setEditDescricao] = useState("")
+  const [editCarroSelecionado, setEditCarroSelecionado] = useState<CarroValue | "">("")
 
   // Perfil 1 = acesso total (Kleber), Perfil 2 = consulta (Pamela)
   const temAcessoTotal = user?.perfil === 1
@@ -97,9 +103,13 @@ export default function CarroPage() {
         const response = await fetch("/api/carro")
         if (!response.ok) throw new Error("Erro ao buscar pagamentos")
         const data = await response.json()
-        setPagamentos(data)
+        // Ordenar por data decrescente (mais recente primeiro)
+        const dadosOrdenados = data.sort((a: PagamentoCarro, b: PagamentoCarro) => 
+          new Date(b.data_pagamento).getTime() - new Date(a.data_pagamento).getTime()
+        )
+        setPagamentos(dadosOrdenados)
         // Salvar no cache offline
-        await offlineStorage.savePagamentosCarro(data)
+        await offlineStorage.savePagamentosCarro(dadosOrdenados)
       } else {
         // Buscar do cache offline
         const cachedData = await offlineStorage.getPagamentosCarro()
@@ -210,6 +220,74 @@ export default function CarroPage() {
     }
   }
 
+  const handleOpenEdit = (pagamento: PagamentoCarro) => {
+    setPagamentoEditando(pagamento)
+    setEditValor(pagamento.valor.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }))
+    setEditDataPagamento(pagamento.data_pagamento.split("T")[0])
+    setEditDescricao(pagamento.descricao)
+    setEditCarroSelecionado(pagamento.carro)
+    setEditDialogOpen(true)
+  }
+
+  const handleEdit = async () => {
+    if (!pagamentoEditando || !editValor || !editDataPagamento || !editCarroSelecionado) {
+      toast({
+        title: "Atenção",
+        description: "Preencha o valor, a data e selecione o carro.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      if (isOnline) {
+        const response = await fetch("/api/carro", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: pagamentoEditando.id,
+            valor: parseFloat(editValor.replace(/\D/g, "")) / 100,
+            data_pagamento: editDataPagamento,
+            descricao: editDescricao || "Pagamento do carro",
+            carro: editCarroSelecionado,
+          }),
+        })
+
+        if (!response.ok) throw new Error("Erro ao atualizar pagamento")
+
+        toast({
+          title: "Sucesso",
+          description: "Pagamento atualizado com sucesso!",
+        })
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não é possível editar pagamentos no modo offline.",
+          variant: "destructive",
+        })
+        setSubmitting(false)
+        return
+      }
+
+      setEditDialogOpen(false)
+      setPagamentoEditando(null)
+      fetchPagamentos()
+    } catch (error) {
+      console.error("[v0] Erro ao atualizar pagamento:", error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o pagamento.",
+        variant: "destructive",
+      })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const handleDelete = async (id: string) => {
     try {
       if (isOnline) {
@@ -258,15 +336,18 @@ export default function CarroPage() {
     })
   }
 
-  const totalPago = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0)
+  // Valor extra do Palio Sporting (não salvo no banco de dados)
+  const VALOR_EXTRA_PALIO = 2000
 
   const totalPorCarro = CARROS.map((carro) => ({
     ...carro,
     total: pagamentos
       .filter((p) => p.carro === carro.value)
-      .reduce((sum, p) => sum + Number(p.valor), 0),
+      .reduce((sum, p) => sum + Number(p.valor), 0) + (carro.value === "palio_sporting" ? VALOR_EXTRA_PALIO : 0),
     quantidade: pagamentos.filter((p) => p.carro === carro.value).length,
   }))
+
+  const totalPago = totalPorCarro.reduce((sum, c) => sum + c.total, 0)
 
   const formatarData = (dataString: string) => {
     if (!dataString) return "—"
@@ -363,27 +444,53 @@ export default function CarroPage() {
 
             {/* Cards de total por carro */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {totalPorCarro.map((carro) => (
-                <Card key={carro.value} className="border bg-card shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-muted-foreground/30" />
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-muted p-3 rounded-xl">
-                        <Car className="h-5 w-5 text-muted-foreground" />
+              {totalPorCarro.map((carro) => {
+                const isPalio = carro.value === "palio_sporting"
+                return (
+                  <Card 
+                    key={carro.value} 
+                    className={`border-2 bg-card shadow-sm relative overflow-hidden ${
+                      isPalio 
+                        ? "border-blue-200 dark:border-blue-800" 
+                        : "border-amber-200 dark:border-amber-800"
+                    }`}
+                  >
+                    <div className={`absolute top-0 left-0 w-full h-1 ${
+                      isPalio 
+                        ? "bg-blue-500" 
+                        : "bg-amber-500"
+                    }`} />
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl ${
+                          isPalio 
+                            ? "bg-blue-100 dark:bg-blue-900/30" 
+                            : "bg-amber-100 dark:bg-amber-900/30"
+                        }`}>
+                          <Car className={`h-5 w-5 ${
+                            isPalio 
+                              ? "text-blue-600 dark:text-blue-400" 
+                              : "text-amber-600 dark:text-amber-400"
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground">{carro.label}</p>
+                          <p className={`text-xl font-bold ${
+                            isPalio 
+                              ? "text-blue-700 dark:text-blue-300" 
+                              : "text-amber-700 dark:text-amber-300"
+                          }`}>
+                            {formatarMoeda(carro.total)}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {carro.quantidade} pagamento(s)
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground">{carro.label}</p>
-                        <p className="text-xl font-bold text-foreground">
-                          {formatarMoeda(carro.total)}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {carro.quantidade} pagamento(s)
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
 
             {/* Botão adicionar - apenas Kleber */}
@@ -422,7 +529,7 @@ export default function CarroPage() {
                           <TableHead className="font-semibold">Carro</TableHead>
                           <TableHead className="font-semibold">Descrição</TableHead>
                           <TableHead className="font-semibold text-right">Valor</TableHead>
-                          {podeEditar && <TableHead className="w-[50px]"></TableHead>}
+                          {podeEditar && <TableHead className="w-[100px]"></TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -447,14 +554,24 @@ export default function CarroPage() {
                             </TableCell>
                             {podeEditar && (
                               <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDelete(pagamento.id)}
-                                  className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleOpenEdit(pagamento)}
+                                    className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDelete(pagamento.id)}
+                                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             )}
                           </TableRow>
@@ -548,6 +665,90 @@ export default function CarroPage() {
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {submitting ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para editar pagamento */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Editar Pagamento
+            </DialogTitle>
+            <DialogDescription>
+              Edite os dados do pagamento.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-carro">Carro</Label>
+              <Select
+                value={editCarroSelecionado}
+                onValueChange={(v) => setEditCarroSelecionado(v as CarroValue)}
+              >
+                <SelectTrigger id="edit-carro" className="w-full">
+                  <SelectValue placeholder="Selecione o carro" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CARROS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-valor">Valor (R$)</Label>
+              <Input
+                id="edit-valor"
+                placeholder="0,00"
+                value={editValor}
+                onChange={(e) => setEditValor(formatarValorInput(e.target.value))}
+                className="text-lg font-semibold"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-data">Data do Pagamento</Label>
+              <Input
+                id="edit-data"
+                type="date"
+                value={editDataPagamento}
+                onChange={(e) => setEditDataPagamento(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-descricao">Descrição (opcional)</Label>
+              <Input
+                id="edit-descricao"
+                placeholder="Pagamento do carro"
+                value={editDescricao}
+                onChange={(e) => setEditDescricao(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              disabled={submitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleEdit}
+              disabled={submitting}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              {submitting ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </DialogFooter>
         </DialogContent>
