@@ -97,9 +97,13 @@ export default function CarroPage() {
         const response = await fetch("/api/carro")
         if (!response.ok) throw new Error("Erro ao buscar pagamentos")
         const data = await response.json()
-        setPagamentos(data)
+        // Ordenar por data decrescente (mais recente primeiro)
+        const dadosOrdenados = data.sort((a: PagamentoCarro, b: PagamentoCarro) => 
+          new Date(b.data_pagamento).getTime() - new Date(a.data_pagamento).getTime()
+        )
+        setPagamentos(dadosOrdenados)
         // Salvar no cache offline
-        await offlineStorage.savePagamentosCarro(data)
+        await offlineStorage.savePagamentosCarro(dadosOrdenados)
       } else {
         // Buscar do cache offline
         const cachedData = await offlineStorage.getPagamentosCarro()
