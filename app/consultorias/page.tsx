@@ -57,6 +57,7 @@ type Consultoria = {
   cliente: string
   tipo_contratacao: TipoContratacao
   data_inicio: string
+  dia_recebimento: number | null
   created_at: string
 }
 
@@ -78,6 +79,7 @@ const EMPTY_FORM = {
   cliente: "",
   tipo_contratacao: "" as TipoContratacao | "",
   data_inicio: "",
+  dia_recebimento: "" as string,
 }
 
 export default function ConsultoriasPage() {
@@ -135,6 +137,7 @@ export default function ConsultoriasPage() {
       cliente: c.cliente,
       tipo_contratacao: c.tipo_contratacao,
       data_inicio: c.data_inicio.includes("T") ? c.data_inicio.split("T")[0] : c.data_inicio,
+      dia_recebimento: c.dia_recebimento ? String(c.dia_recebimento) : "",
     })
     setDialogOpen(true)
   }
@@ -154,11 +157,16 @@ export default function ConsultoriasPage() {
     setSubmitting(true)
     try {
       const isEditing = !!editando
+      
+      const payload = {
+        ...form,
+        dia_recebimento: form.dia_recebimento ? parseInt(form.dia_recebimento) : null,
+      }
 
       const res = await fetch("/api/consultorias", {
         method: isEditing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(isEditing ? { id: editando!.id, ...form } : form),
+        body: JSON.stringify(isEditing ? { id: editando!.id, ...payload } : payload),
       })
 
       if (!res.ok) {
