@@ -425,7 +425,7 @@ export default function ConsultoriasPage() {
             <div className="space-y-2">
               <Label htmlFor="tipo_contratacao">Tipo de Contratação</Label>
               <Select
-                value={form.tipo_contratacao}
+                value={form.tipo_contratacao || undefined}
                 onValueChange={(v) => setForm((f) => ({ ...f, tipo_contratacao: v as TipoContratacao }))}
               >
                 <SelectTrigger id="tipo_contratacao" className="w-full">

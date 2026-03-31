@@ -370,12 +370,12 @@ export function LancamentosTab({ podeEditar, consultorias }: Props) {
           <Label htmlFor="filtro-consultoria" className="text-xs text-muted-foreground mb-1.5 block">
             Filtrar por Consultoria
           </Label>
-          <Select value={filtroConsultoria} onValueChange={setFiltroConsultoria}>
+          <Select value={filtroConsultoria || "todas"} onValueChange={(val) => setFiltroConsultoria(val === "todas" ? "" : val)}>
             <SelectTrigger id="filtro-consultoria" className="w-full sm:max-w-xs">
               <SelectValue placeholder="Todas as consultorias" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as consultorias</SelectItem>
+              <SelectItem value="todas">Todas as consultorias</SelectItem>
               {consultorias.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.consultoria} - {c.cliente}
@@ -555,7 +555,7 @@ export function LancamentosTab({ podeEditar, consultorias }: Props) {
               <div className="space-y-2">
                 <Label htmlFor="consultoria">Consultoria *</Label>
                 <Select 
-                  value={formConsultoriaId} 
+                  value={formConsultoriaId || undefined} 
                   onValueChange={setFormConsultoriaId}
                   disabled={!!editando}
                 >

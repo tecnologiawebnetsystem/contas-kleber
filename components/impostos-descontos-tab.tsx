@@ -381,7 +381,7 @@ export function ImpostosDescontosTab({ podeEditar }: Props) {
               <div className="space-y-2">
                 <Label htmlFor="tipo_aplicacao">Aplicação *</Label>
                 <Select
-                  value={form.tipo_aplicacao}
+                  value={form.tipo_aplicacao || undefined}
                   onValueChange={(v) => setForm((f) => ({ ...f, tipo_aplicacao: v as "PJ" | "CLT" | "AMBOS" }))}
                 >
                   <SelectTrigger id="tipo_aplicacao">
