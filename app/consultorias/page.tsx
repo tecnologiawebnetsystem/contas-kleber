@@ -336,7 +336,8 @@ export default function ConsultoriasPage() {
                           <TableHead className="font-semibold">Consultoria</TableHead>
                           <TableHead className="font-semibold">Cliente</TableHead>
                           <TableHead className="font-semibold">Tipo</TableHead>
-                          <TableHead className="font-semibold">Data Inicio</TableHead>
+                          <TableHead className="font-semibold">Data Início</TableHead>
+                          <TableHead className="font-semibold">Dia Recebimento</TableHead>
                           {podeEditar && <TableHead className="w-[90px]" />}
                         </TableRow>
                       </TableHeader>
@@ -353,6 +354,9 @@ export default function ConsultoriasPage() {
                               </span>
                             </TableCell>
                             <TableCell className="text-muted-foreground">{formatarData(c.data_inicio)}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {c.dia_recebimento ? `Dia ${c.dia_recebimento}` : "-"}
+                            </TableCell>
                             {podeEditar && (
                               <TableCell>
                                 <div className="flex items-center gap-1">
@@ -455,6 +459,25 @@ export default function ConsultoriasPage() {
                 value={form.data_inicio}
                 onChange={(e) => setForm((f) => ({ ...f, data_inicio: e.target.value }))}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dia_recebimento">Dia do Recebimento</Label>
+              <Select
+                value={form.dia_recebimento || undefined}
+                onValueChange={(v) => setForm((f) => ({ ...f, dia_recebimento: v }))}
+              >
+                <SelectTrigger id="dia_recebimento" className="w-full">
+                  <SelectValue placeholder="Selecione o dia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((dia) => (
+                    <SelectItem key={dia} value={String(dia)}>
+                      Dia {dia}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

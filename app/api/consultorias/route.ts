@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
 
-    const { consultoria, cliente, tipo_contratacao, data_inicio } = body
+    const { consultoria, cliente, tipo_contratacao, data_inicio, dia_recebimento } = body
 
     if (!consultoria || !cliente || !tipo_contratacao || !data_inicio) {
       return NextResponse.json(
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
     const { data: nova, error } = await supabase
       .from("consultorias")
-      .insert({ consultoria, cliente, tipo_contratacao, data_inicio })
+      .insert({ consultoria, cliente, tipo_contratacao, data_inicio, dia_recebimento: dia_recebimento || null })
 
     if (error) {
       console.error("[v0] Erro ao inserir consultoria:", error)
@@ -57,7 +57,7 @@ export async function PUT(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
 
-    const { id, consultoria, cliente, tipo_contratacao, data_inicio } = body
+    const { id, consultoria, cliente, tipo_contratacao, data_inicio, dia_recebimento } = body
 
     if (!id || !consultoria || !cliente || !tipo_contratacao || !data_inicio) {
       return NextResponse.json(
@@ -68,7 +68,7 @@ export async function PUT(request: Request) {
 
     const { data: atualizada, error } = await supabase
       .from("consultorias")
-      .update({ consultoria, cliente, tipo_contratacao, data_inicio })
+      .update({ consultoria, cliente, tipo_contratacao, data_inicio, dia_recebimento: dia_recebimento || null })
       .eq("id", id)
 
     if (error) {
