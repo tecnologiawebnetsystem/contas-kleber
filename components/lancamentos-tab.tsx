@@ -49,6 +49,9 @@ type Consultoria = {
   consultoria: string
   cliente: string
   tipo_contratacao: "CLT" | "PJ" | "Cooperado"
+  valor_mensal: number | null
+  valor_hora: number | null
+  status: "Ativa" | "Encerrada"
 }
 
 type ImpostoDesconto = {
@@ -194,6 +197,16 @@ export function LancamentosTab({ podeEditar, consultorias }: Props) {
       })))
     }
   }, [impostosDisponiveis, dialogOpen, editando])
+
+  // Preencher valor bruto automaticamente ao selecionar consultoria
+  useEffect(() => {
+    if (dialogOpen && !editando && formConsultoriaId) {
+      const consultoria = consultorias.find(c => c.id === formConsultoriaId)
+      if (consultoria?.valor_mensal) {
+        setFormValorBruto(String(consultoria.valor_mensal))
+      }
+    }
+  }, [formConsultoriaId, consultorias, dialogOpen, editando])
 
   // Calcular valor líquido
   const valorLiquidoCalculado = useMemo(() => {
@@ -585,7 +598,22 @@ export function LancamentosTab({ podeEditar, consultorias }: Props) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="valor_bruto">Valor Bruto (R$) *</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="valor_bruto">Valor Bruto (R$) *</Label>
+                {formConsultoriaId && !editando && (
+                  (() => {
+                    const c = consultorias.find(c => c.id === formConsultoriaId)
+                    if (c?.valor_mensal) {
+                      return (
+                        <span className="text-[10px] text-muted-foreground">
+                          Valor mensal: {formatarMoeda(c.valor_mensal)}
+                        </span>
+                      )
+                    }
+                    return null
+                  })()
+                )}
+              </div>
               <Input
                 id="valor_bruto"
                 type="number"
