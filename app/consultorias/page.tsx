@@ -47,9 +47,12 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { OnlineStatus } from "@/components/online-status"
 import { ImpostosDescontosTab } from "@/components/impostos-descontos-tab"
 import { LancamentosTab } from "@/components/lancamentos-tab"
+import { formatarMoeda } from "@/utils/formatar-moeda"
 
 const TIPOS_CONTRATACAO = ["CLT", "PJ", "Cooperado"] as const
 type TipoContratacao = (typeof TIPOS_CONTRATACAO)[number]
+
+type StatusConsultoria = "Ativa" | "Encerrada"
 
 type Consultoria = {
   id: string
@@ -58,6 +61,9 @@ type Consultoria = {
   tipo_contratacao: TipoContratacao
   data_inicio: string
   dia_recebimento: number | null
+  valor_hora: number | null
+  valor_mensal: number | null
+  status: StatusConsultoria
   created_at: string
 }
 
@@ -80,6 +86,9 @@ const EMPTY_FORM = {
   tipo_contratacao: "" as TipoContratacao | "",
   data_inicio: "",
   dia_recebimento: "" as string,
+  valor_hora: "" as string,
+  valor_mensal: "" as string,
+  status: "Ativa" as StatusConsultoria,
 }
 
 export default function ConsultoriasPage() {
@@ -138,6 +147,9 @@ export default function ConsultoriasPage() {
       tipo_contratacao: c.tipo_contratacao,
       data_inicio: c.data_inicio.includes("T") ? c.data_inicio.split("T")[0] : c.data_inicio,
       dia_recebimento: c.dia_recebimento ? String(c.dia_recebimento) : "",
+      valor_hora: c.valor_hora ? String(c.valor_hora) : "",
+      valor_mensal: c.valor_mensal ? String(c.valor_mensal) : "",
+      status: c.status || "Ativa",
     })
     setDialogOpen(true)
   }
@@ -161,6 +173,8 @@ export default function ConsultoriasPage() {
       const payload = {
         ...form,
         dia_recebimento: form.dia_recebimento ? parseInt(form.dia_recebimento) : null,
+        valor_hora: form.valor_hora ? parseFloat(form.valor_hora) : null,
+        valor_mensal: form.valor_mensal ? parseFloat(form.valor_mensal) : null,
       }
 
       const res = await fetch("/api/consultorias", {
@@ -336,8 +350,10 @@ export default function ConsultoriasPage() {
                           <TableHead className="font-semibold">Consultoria</TableHead>
                           <TableHead className="font-semibold">Cliente</TableHead>
                           <TableHead className="font-semibold">Tipo</TableHead>
-                          <TableHead className="font-semibold">Data Início</TableHead>
-                          <TableHead className="font-semibold">Dia Recebimento</TableHead>
+                          <TableHead className="font-semibold">Status</TableHead>
+                          <TableHead className="font-semibold text-right">Valor/Hora</TableHead>
+                          <TableHead className="font-semibold text-right">Valor Mensal</TableHead>
+                          <TableHead className="font-semibold">Dia Receb.</TableHead>
                           {podeEditar && <TableHead className="w-[90px]" />}
                         </TableRow>
                       </TableHeader>
@@ -353,7 +369,23 @@ export default function ConsultoriasPage() {
                                 {c.tipo_contratacao}
                               </span>
                             </TableCell>
-                            <TableCell className="text-muted-foreground">{formatarData(c.data_inicio)}</TableCell>
+                            <TableCell>
+                              <span
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${
+                                  c.status === "Ativa"
+                                    ? "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
+                                    : "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20"
+                                }`}
+                              >
+                                {c.status || "Ativa"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {c.valor_hora ? formatarMoeda(c.valor_hora) : "-"}
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {c.valor_mensal ? formatarMoeda(c.valor_mensal) : "-"}
+                            </TableCell>
                             <TableCell className="text-muted-foreground">
                               {c.dia_recebimento ? `Dia ${c.dia_recebimento}` : "-"}
                             </TableCell>
@@ -476,6 +508,48 @@ export default function ConsultoriasPage() {
                       Dia {dia}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="valor_hora">Valor/Hora (R$)</Label>
+              <Input
+                id="valor_hora"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                value={form.valor_hora}
+                onChange={(e) => setForm((f) => ({ ...f, valor_hora: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="valor_mensal">Valor Mensal (R$)</Label>
+              <Input
+                id="valor_mensal"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                value={form.valor_mensal}
+                onChange={(e) => setForm((f) => ({ ...f, valor_mensal: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={form.status}
+                onValueChange={(v) => setForm((f) => ({ ...f, status: v as StatusConsultoria }))}
+              >
+                <SelectTrigger id="status" className="w-full">
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Ativa">Ativa</SelectItem>
+                  <SelectItem value="Encerrada">Encerrada</SelectItem>
                 </SelectContent>
               </Select>
             </div>

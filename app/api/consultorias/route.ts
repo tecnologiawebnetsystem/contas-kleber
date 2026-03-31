@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
 
-    const { consultoria, cliente, tipo_contratacao, data_inicio, dia_recebimento } = body
+    const { consultoria, cliente, tipo_contratacao, data_inicio, dia_recebimento, valor_hora, valor_mensal, status } = body
 
     if (!consultoria || !cliente || !tipo_contratacao || !data_inicio) {
       return NextResponse.json(
@@ -38,7 +38,16 @@ export async function POST(request: Request) {
 
     const { data: nova, error } = await supabase
       .from("consultorias")
-      .insert({ consultoria, cliente, tipo_contratacao, data_inicio, dia_recebimento: dia_recebimento || null })
+      .insert({ 
+        consultoria, 
+        cliente, 
+        tipo_contratacao, 
+        data_inicio, 
+        dia_recebimento: dia_recebimento || null,
+        valor_hora: valor_hora || null,
+        valor_mensal: valor_mensal || null,
+        status: status || "Ativa"
+      })
 
     if (error) {
       console.error("[v0] Erro ao inserir consultoria:", error)
@@ -57,7 +66,7 @@ export async function PUT(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
 
-    const { id, consultoria, cliente, tipo_contratacao, data_inicio, dia_recebimento } = body
+    const { id, consultoria, cliente, tipo_contratacao, data_inicio, dia_recebimento, valor_hora, valor_mensal, status } = body
 
     if (!id || !consultoria || !cliente || !tipo_contratacao || !data_inicio) {
       return NextResponse.json(
@@ -68,7 +77,16 @@ export async function PUT(request: Request) {
 
     const { data: atualizada, error } = await supabase
       .from("consultorias")
-      .update({ consultoria, cliente, tipo_contratacao, data_inicio, dia_recebimento: dia_recebimento || null })
+      .update({ 
+        consultoria, 
+        cliente, 
+        tipo_contratacao, 
+        data_inicio, 
+        dia_recebimento: dia_recebimento || null,
+        valor_hora: valor_hora || null,
+        valor_mensal: valor_mensal || null,
+        status: status || "Ativa"
+      })
       .eq("id", id)
 
     if (error) {
