@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Briefcase,
   Plus,
@@ -37,15 +37,22 @@ import {
   Pencil,
   Building2,
   Users,
+  Receipt,
+  Calendar,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
 import { useToast } from "@/hooks/use-toast"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { OnlineStatus } from "@/components/online-status"
+import { ImpostosDescontosTab } from "@/components/impostos-descontos-tab"
+import { LancamentosTab } from "@/components/lancamentos-tab"
+import { formatarMoeda } from "@/utils/formatar-moeda"
 
 const TIPOS_CONTRATACAO = ["CLT", "PJ", "Cooperado"] as const
 type TipoContratacao = (typeof TIPOS_CONTRATACAO)[number]
+
+type StatusConsultoria = "Ativa" | "Encerrada"
 
 type Consultoria = {
   id: string
@@ -53,6 +60,10 @@ type Consultoria = {
   cliente: string
   tipo_contratacao: TipoContratacao
   data_inicio: string
+  dia_recebimento: number | null
+  valor_hora: number | null
+  valor_mensal: number | null
+  status: StatusConsultoria
   created_at: string
 }
 
@@ -74,6 +85,10 @@ const EMPTY_FORM = {
   cliente: "",
   tipo_contratacao: "" as TipoContratacao | "",
   data_inicio: "",
+  dia_recebimento: "" as string,
+  valor_hora: "" as string,
+  valor_mensal: "" as string,
+  status: "Ativa" as StatusConsultoria,
 }
 
 export default function ConsultoriasPage() {
@@ -84,6 +99,9 @@ export default function ConsultoriasPage() {
   const [consultorias, setConsultorias] = useState<Consultoria[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+
+  // Aba ativa
+  const [activeTab, setActiveTab] = useState("consultorias")
 
   // Dialog de adicionar/editar
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -128,6 +146,10 @@ export default function ConsultoriasPage() {
       cliente: c.cliente,
       tipo_contratacao: c.tipo_contratacao,
       data_inicio: c.data_inicio.includes("T") ? c.data_inicio.split("T")[0] : c.data_inicio,
+      dia_recebimento: c.dia_recebimento ? String(c.dia_recebimento) : "",
+      valor_hora: c.valor_hora ? String(c.valor_hora) : "",
+      valor_mensal: c.valor_mensal ? String(c.valor_mensal) : "",
+      status: c.status || "Ativa",
     })
     setDialogOpen(true)
   }
@@ -147,11 +169,18 @@ export default function ConsultoriasPage() {
     setSubmitting(true)
     try {
       const isEditing = !!editando
+      
+      const payload = {
+        ...form,
+        dia_recebimento: form.dia_recebimento ? parseInt(form.dia_recebimento) : null,
+        valor_hora: form.valor_hora ? parseFloat(form.valor_hora) : null,
+        valor_mensal: form.valor_mensal ? parseFloat(form.valor_mensal) : null,
+      }
 
       const res = await fetch("/api/consultorias", {
         method: isEditing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(isEditing ? { id: editando!.id, ...form } : form),
+        body: JSON.stringify(isEditing ? { id: editando!.id, ...payload } : payload),
       })
 
       if (!res.ok) {
@@ -259,96 +288,151 @@ export default function ConsultoriasPage() {
           })}
         </div>
 
-        {/* Lista */}
-        <Card className="border border-border/40 bg-card shadow-sm">
-          <CardHeader className="px-5 pt-5 pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                Registro de Consultorias
-              </CardTitle>
-              {podeEditar && (
-                <Button size="sm" onClick={abrirDialogNovo} className="h-8 gap-1.5 text-xs">
-                  <Plus className="h-3.5 w-3.5" />
-                  Adicionar
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="px-0 pb-0">
-            {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              </div>
-            ) : consultorias.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                <div className="rounded-full bg-muted p-4 mb-3">
-                  <Briefcase className="h-8 w-8 text-muted-foreground" />
+        {/* Abas */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger value="consultorias" className="gap-1.5 text-xs sm:text-sm">
+              <Building2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Consultorias</span>
+              <span className="sm:hidden">Consult.</span>
+            </TabsTrigger>
+            <TabsTrigger value="impostos" className="gap-1.5 text-xs sm:text-sm">
+              <Receipt className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Impostos/Descontos</span>
+              <span className="sm:hidden">Impostos</span>
+            </TabsTrigger>
+            <TabsTrigger value="lancamentos" className="gap-1.5 text-xs sm:text-sm">
+              <Calendar className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Lançamentos</span>
+              <span className="sm:hidden">Lanç.</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Aba Consultorias */}
+          <TabsContent value="consultorias">
+            <Card className="border border-border/40 bg-card shadow-sm">
+              <CardHeader className="px-5 pt-5 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    Registro de Consultorias
+                  </CardTitle>
+                  {podeEditar && (
+                    <Button size="sm" onClick={abrirDialogNovo} className="h-8 gap-1.5 text-xs">
+                      <Plus className="h-3.5 w-3.5" />
+                      Adicionar
+                    </Button>
+                  )}
                 </div>
-                <p className="text-sm font-medium text-foreground">Nenhuma consultoria cadastrada</p>
-                {podeEditar && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Clique em "Adicionar" para cadastrar a primeira.
-                  </p>
+              </CardHeader>
+              <CardContent className="px-0 pb-0">
+                {loading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                  </div>
+                ) : consultorias.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                    <div className="rounded-full bg-muted p-4 mb-3">
+                      <Briefcase className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">Nenhuma consultoria cadastrada</p>
+                    {podeEditar && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Clique em &quot;Adicionar&quot; para cadastrar a primeira.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50 dark:bg-slate-900">
+                          <TableHead className="font-semibold">Consultoria</TableHead>
+                          <TableHead className="font-semibold">Cliente</TableHead>
+                          <TableHead className="font-semibold">Tipo</TableHead>
+                          <TableHead className="font-semibold">Status</TableHead>
+                          <TableHead className="font-semibold text-right">Valor/Hora</TableHead>
+                          <TableHead className="font-semibold text-right">Valor Mensal</TableHead>
+                          <TableHead className="font-semibold">Dia Receb.</TableHead>
+                          {podeEditar && <TableHead className="w-[90px]" />}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {consultorias.map((c) => (
+                          <TableRow key={c.id} className="hover:bg-muted/40 transition-colors">
+                            <TableCell className="font-medium">{c.consultoria}</TableCell>
+                            <TableCell className="text-muted-foreground">{c.cliente}</TableCell>
+                            <TableCell>
+                              <span
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${BADGE_COLORS[c.tipo_contratacao]}`}
+                              >
+                                {c.tipo_contratacao}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${
+                                  c.status === "Ativa"
+                                    ? "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
+                                    : "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20"
+                                }`}
+                              >
+                                {c.status || "Ativa"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {c.valor_hora ? formatarMoeda(c.valor_hora) : "-"}
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {c.valor_mensal ? formatarMoeda(c.valor_mensal) : "-"}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {c.dia_recebimento ? `Dia ${c.dia_recebimento}` : "-"}
+                            </TableCell>
+                            {podeEditar && (
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                    onClick={() => abrirDialogEditar(c)}
+                                    aria-label="Editar"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-red-500"
+                                    onClick={() => confirmarExclusao(c.id)}
+                                    aria-label="Excluir"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50 dark:bg-slate-900">
-                      <TableHead className="font-semibold">Consultoria</TableHead>
-                      <TableHead className="font-semibold">Cliente</TableHead>
-                      <TableHead className="font-semibold">Tipo</TableHead>
-                      <TableHead className="font-semibold">Data Inicio</TableHead>
-                      {podeEditar && <TableHead className="w-[90px]" />}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {consultorias.map((c) => (
-                      <TableRow key={c.id} className="hover:bg-muted/40 transition-colors">
-                        <TableCell className="font-medium">{c.consultoria}</TableCell>
-                        <TableCell className="text-muted-foreground">{c.cliente}</TableCell>
-                        <TableCell>
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${BADGE_COLORS[c.tipo_contratacao]}`}
-                          >
-                            {c.tipo_contratacao}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{formatarData(c.data_inicio)}</TableCell>
-                        {podeEditar && (
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                onClick={() => abrirDialogEditar(c)}
-                                aria-label="Editar"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-red-500"
-                                onClick={() => confirmarExclusao(c.id)}
-                                aria-label="Excluir"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Aba Impostos/Descontos */}
+          <TabsContent value="impostos">
+            <ImpostosDescontosTab podeEditar={podeEditar} />
+          </TabsContent>
+
+          {/* Aba Lançamentos */}
+          <TabsContent value="lancamentos">
+            <LancamentosTab podeEditar={podeEditar} consultorias={consultorias} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Dialog Adicionar/Editar */}
@@ -385,7 +469,7 @@ export default function ConsultoriasPage() {
             <div className="space-y-2">
               <Label htmlFor="tipo_contratacao">Tipo de Contratação</Label>
               <Select
-                value={form.tipo_contratacao}
+                value={form.tipo_contratacao || undefined}
                 onValueChange={(v) => setForm((f) => ({ ...f, tipo_contratacao: v as TipoContratacao }))}
               >
                 <SelectTrigger id="tipo_contratacao" className="w-full">
@@ -408,6 +492,67 @@ export default function ConsultoriasPage() {
                 onChange={(e) => setForm((f) => ({ ...f, data_inicio: e.target.value }))}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dia_recebimento">Dia do Recebimento</Label>
+              <Select
+                value={form.dia_recebimento || undefined}
+                onValueChange={(v) => setForm((f) => ({ ...f, dia_recebimento: v }))}
+              >
+                <SelectTrigger id="dia_recebimento" className="w-full">
+                  <SelectValue placeholder="Selecione o dia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((dia) => (
+                    <SelectItem key={dia} value={String(dia)}>
+                      Dia {dia}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="valor_hora">Valor/Hora (R$)</Label>
+              <Input
+                id="valor_hora"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                value={form.valor_hora}
+                onChange={(e) => setForm((f) => ({ ...f, valor_hora: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="valor_mensal">Valor Mensal (R$)</Label>
+              <Input
+                id="valor_mensal"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                value={form.valor_mensal}
+                onChange={(e) => setForm((f) => ({ ...f, valor_mensal: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={form.status}
+                onValueChange={(v) => setForm((f) => ({ ...f, status: v as StatusConsultoria }))}
+              >
+                <SelectTrigger id="status" className="w-full">
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Ativa">Ativa</SelectItem>
+                  <SelectItem value="Encerrada">Encerrada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <DialogFooter className="gap-2">
@@ -421,8 +566,8 @@ export default function ConsultoriasPage() {
         </DialogContent>
       </Dialog>
 
-          {/* Dialog Confirmar Exclusão */}
-<Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Dialog Confirmar Exclusão */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Confirmar exclusão</DialogTitle>
