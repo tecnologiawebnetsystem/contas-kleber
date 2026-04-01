@@ -1,0 +1,32 @@
+=====================================================
+   SCRIPTS SQL PENDENTES DE EXECUÇÃO
+=====================================================
+
+Execute os scripts na ordem numérica:
+
+1. 01_dia_recebimento.sql
+   - Adiciona campo dia_recebimento na tabela consultorias
+
+2. 02_campos_consultoria.sql  
+   - Adiciona campos valor_hora, valor_mensal e status
+
+3. 03_impostos_lancamentos.sql
+   - Cria tabelas de impostos, lançamentos e itens
+   - Insere impostos padrão PJ (IRPJ, CSLL, COFINS, PIS)
+   - Insere descontos padrão CLT (INSS, IRRF, Plano Saúde, VR)
+
+4. 04_melhorias_contas_creditos.sql
+   - Cria tabelas subcategorias, templates e contas bancárias
+   - Adiciona campos fornecedor/subcategoria em contas
+   - Adiciona campos tipo_credito/conta_bancaria em transacoes
+   - Insere subcategorias e conta bancária padrão
+
+=====================================================
+   IMPORTANTE
+=====================================================
+
+- Execute na ORDEM indicada (01, 02, 03, 04)
+- Alguns scripts dependem dos anteriores
+- Após executar todos, você pode deletar esta pasta
+
+=====================================================

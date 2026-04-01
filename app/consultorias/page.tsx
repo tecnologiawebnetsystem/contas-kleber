@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,6 +39,14 @@ import {
   Users,
   Receipt,
   Calendar,
+  Search,
+  Filter,
+  AlertCircle,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  BarChart3,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
@@ -97,8 +105,14 @@ export default function ConsultoriasPage() {
   const { toast } = useToast()
 
   const [consultorias, setConsultorias] = useState<Consultoria[]>([])
+  const [lancamentos, setLancamentos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+
+  // Filtros e busca
+  const [busca, setBusca] = useState("")
+  const [filtroStatus, setFiltroStatus] = useState<"todas" | "Ativa" | "Encerrada">("todas")
+  const [filtroTipo, setFiltroTipo] = useState<"todos" | TipoContratacao>("todos")
 
   // Aba ativa
   const [activeTab, setActiveTab] = useState("consultorias")
@@ -116,6 +130,7 @@ export default function ConsultoriasPage() {
 
   useEffect(() => {
     fetchConsultorias()
+    fetchLancamentos()
   }, [])
 
   const fetchConsultorias = async () => {
@@ -132,6 +147,71 @@ export default function ConsultoriasPage() {
       setLoading(false)
     }
   }
+
+  const fetchLancamentos = async () => {
+    try {
+      const res = await fetch("/api/lancamentos")
+      if (!res.ok) return
+      const data = await res.json()
+      setLancamentos(data)
+    } catch (error) {
+      console.error("[v0] Erro ao buscar lançamentos:", error)
+    }
+  }
+
+  // Consultorias filtradas
+  const consultoriasFiltradas = useMemo(() => {
+    return consultorias.filter((c) => {
+      // Filtro de busca
+      const termoBusca = busca.toLowerCase()
+      const matchBusca = !busca || 
+        c.consultoria.toLowerCase().includes(termoBusca) ||
+        c.cliente.toLowerCase().includes(termoBusca)
+
+      // Filtro de status
+      const matchStatus = filtroStatus === "todas" || c.status === filtroStatus
+
+      // Filtro de tipo
+      const matchTipo = filtroTipo === "todos" || c.tipo_contratacao === filtroTipo
+
+      return matchBusca && matchStatus && matchTipo
+    })
+  }, [consultorias, busca, filtroStatus, filtroTipo])
+
+  // Verificar consultorias com recebimento próximo (próximos 5 dias)
+  const consultoriasRecebimentoProximo = useMemo(() => {
+    const hoje = new Date()
+    const diaHoje = hoje.getDate()
+    
+    return consultorias.filter((c) => {
+      if (!c.dia_recebimento || c.status === "Encerrada") return false
+      const diff = c.dia_recebimento - diaHoje
+      return diff >= 0 && diff <= 5
+    })
+  }, [consultorias])
+
+  // Verificar consultorias sem lançamento no mês atual
+  const mesAtual = useMemo(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+  }, [])
+
+  const consultoriasSemLancamento = useMemo(() => {
+    const consultoriasAtivas = consultorias.filter((c) => c.status === "Ativa")
+    const lancamentosMesAtual = lancamentos.filter((l) => l.mes_referencia?.startsWith(mesAtual))
+    const idsComLancamento = new Set(lancamentosMesAtual.map((l) => l.consultoria_id))
+    
+    return consultoriasAtivas.filter((c) => !idsComLancamento.has(c.id))
+  }, [consultorias, lancamentos, mesAtual])
+
+  // Calcular resumo financeiro do mês atual
+  const resumoMesAtual = useMemo(() => {
+    const lancamentosMes = lancamentos.filter((l) => l.mes_referencia?.startsWith(mesAtual))
+    const totalBruto = lancamentosMes.reduce((sum, l) => sum + Number(l.valor_bruto || 0), 0)
+    const totalLiquido = lancamentosMes.reduce((sum, l) => sum + Number(l.valor_liquido || 0), 0)
+    const totalDescontos = totalBruto - totalLiquido
+    return { totalBruto, totalLiquido, totalDescontos }
+  }, [lancamentos, mesAtual])
 
   const abrirDialogNovo = () => {
     setEditando(null)
@@ -258,35 +338,111 @@ export default function ConsultoriasPage() {
 
       <div className="container mx-auto px-4 py-6 space-y-5">
 
-        {/* Resumo */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <div className="rounded-lg border border-border/40 bg-card p-2.5">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-primary/10 p-1.5">
-                <Briefcase className="h-3 w-3 text-primary" />
+        {/* Dashboard Financeiro do Mês */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="rounded-lg border border-border/40 bg-card p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-md bg-emerald-500/10 p-1.5">
+                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
+              <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
-            <p className="text-[10px] text-muted-foreground leading-none">Total</p>
-            <p className="text-sm font-bold text-foreground mt-0.5">{consultorias.length}</p>
-            <p className="text-[10px] text-muted-foreground">consultoria(s)</p>
+            <p className="text-xs text-muted-foreground">Receita Bruta</p>
+            <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+              {formatarMoeda(resumoMesAtual.totalBruto)}
+            </p>
+            <p className="text-[10px] text-muted-foreground">no mês atual</p>
           </div>
 
-          {TIPOS_CONTRATACAO.map((tipo) => {
-            const count = consultorias.filter((c) => c.tipo_contratacao === tipo).length
-            return (
-              <div key={tipo} className="rounded-lg border border-border/40 bg-card p-2.5">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="rounded-md bg-muted p-1.5">
-                    <Users className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                </div>
-                <p className="text-[10px] text-muted-foreground leading-none">{tipo}</p>
-                <p className="text-sm font-bold text-foreground mt-0.5">{count}</p>
-                <p className="text-[10px] text-muted-foreground">contrato(s)</p>
+          <div className="rounded-lg border border-border/40 bg-card p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-md bg-red-500/10 p-1.5">
+                <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
               </div>
-            )
-          })}
+            </div>
+            <p className="text-xs text-muted-foreground">Impostos/Descontos</p>
+            <p className="text-lg font-bold text-red-600 dark:text-red-400">
+              {formatarMoeda(resumoMesAtual.totalDescontos)}
+            </p>
+            <p className="text-[10px] text-muted-foreground">no mês atual</p>
+          </div>
+
+          <div className="rounded-lg border border-border/40 bg-card p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-md bg-primary/10 p-1.5">
+                <DollarSign className="h-4 w-4 text-primary" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Receita Líquida</p>
+            <p className="text-lg font-bold text-primary">
+              {formatarMoeda(resumoMesAtual.totalLiquido)}
+            </p>
+            <p className="text-[10px] text-muted-foreground">no mês atual</p>
+          </div>
+
+          <div className="rounded-lg border border-border/40 bg-card p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-md bg-muted p-1.5">
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Consultorias Ativas</p>
+            <p className="text-lg font-bold text-foreground">
+              {consultorias.filter((c) => c.status === "Ativa").length}
+            </p>
+            <p className="text-[10px] text-muted-foreground">de {consultorias.length} total</p>
+          </div>
         </div>
+
+        {/* Alertas */}
+        {(consultoriasRecebimentoProximo.length > 0 || consultoriasSemLancamento.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {consultoriasRecebimentoProximo.length > 0 && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                    Recebimentos Próximos
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {consultoriasRecebimentoProximo.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{c.consultoria}</span>
+                      <span className="font-medium text-amber-700 dark:text-amber-300">
+                        Dia {c.dia_recebimento}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {consultoriasSemLancamento.length > 0 && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  <span className="text-sm font-medium text-red-700 dark:text-red-300">
+                    Lançamentos Pendentes ({consultoriasSemLancamento.length})
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {consultoriasSemLancamento.slice(0, 3).map((c) => (
+                    <div key={c.id} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{c.consultoria} - {c.cliente}</span>
+                      <span className="text-xs text-red-600 dark:text-red-400">Sem lançamento</span>
+                    </div>
+                  ))}
+                  {consultoriasSemLancamento.length > 3 && (
+                    <p className="text-xs text-muted-foreground">
+                      e mais {consultoriasSemLancamento.length - 3} consultoria(s)...
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Abas */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -310,12 +466,54 @@ export default function ConsultoriasPage() {
 
           {/* Aba Consultorias */}
           <TabsContent value="consultorias">
+            {/* Filtros e Busca */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por consultoria ou cliente..."
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Select value={filtroStatus} onValueChange={(v) => setFiltroStatus(v as any)}>
+                  <SelectTrigger className="w-[130px]">
+                    <Filter className="h-3.5 w-3.5 mr-1.5" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    <SelectItem value="Ativa">Ativas</SelectItem>
+                    <SelectItem value="Encerrada">Encerradas</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v as any)}>
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {TIPOS_CONTRATACAO.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <Card className="border border-border/40 bg-card shadow-sm">
               <CardHeader className="px-5 pt-5 pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     Registro de Consultorias
+                    {(busca || filtroStatus !== "todas" || filtroTipo !== "todos") && (
+                      <span className="text-xs font-normal text-muted-foreground">
+                        ({consultoriasFiltradas.length} de {consultorias.length})
+                      </span>
+                    )}
                   </CardTitle>
                   {podeEditar && (
                     <Button size="sm" onClick={abrirDialogNovo} className="h-8 gap-1.5 text-xs">
@@ -330,15 +528,22 @@ export default function ConsultoriasPage() {
                   <div className="flex items-center justify-center py-16">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                   </div>
-                ) : consultorias.length === 0 ? (
+                ) : consultoriasFiltradas.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center px-4">
                     <div className="rounded-full bg-muted p-4 mb-3">
                       <Briefcase className="h-8 w-8 text-muted-foreground" />
                     </div>
-                    <p className="text-sm font-medium text-foreground">Nenhuma consultoria cadastrada</p>
-                    {podeEditar && (
+                    <p className="text-sm font-medium text-foreground">
+                      {consultorias.length === 0 ? "Nenhuma consultoria cadastrada" : "Nenhuma consultoria encontrada"}
+                    </p>
+                    {consultorias.length === 0 && podeEditar && (
                       <p className="text-xs text-muted-foreground mt-1">
                         Clique em &quot;Adicionar&quot; para cadastrar a primeira.
+                      </p>
+                    )}
+                    {consultorias.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Tente ajustar os filtros de busca.
                       </p>
                     )}
                   </div>
@@ -358,7 +563,7 @@ export default function ConsultoriasPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {consultorias.map((c) => (
+                        {consultoriasFiltradas.map((c) => (
                           <TableRow key={c.id} className="hover:bg-muted/40 transition-colors">
                             <TableCell className="font-medium">{c.consultoria}</TableCell>
                             <TableCell className="text-muted-foreground">{c.cliente}</TableCell>
