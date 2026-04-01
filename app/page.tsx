@@ -51,6 +51,7 @@ export default function Home() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [creditoDialogOpen, setCreditoDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  // Poupanca e viagem sao derivados diretamente do state de contas — sem fetch extra
   const [dataPoupanca, setDataPoupanca] = useState<any | null>(null)
   const [dataViagem, setDataViagem] = useState<any | null>(null)
   const [totalPagoCarro, setTotalPagoCarro] = useState(0)
@@ -74,13 +75,17 @@ export default function Home() {
   const podeEditar = temAcessoTotal
 
   useEffect(() => {
-    fetchContas()
-    fetchSaldo()
-    fetchTransacoes()
-    fetchPoupancaEViagem()
-    fetchTotalCarro()
-    fetchEmprestimos()
-    fetchConsultorias()
+    // Carregar dados criticos primeiro (saldo + contas), depois secundarios em sequencia
+    // para evitar ER_TOO_MANY_USER_CONNECTIONS no MySQL compartilhado do HostGator
+    const carregarDados = async () => {
+      await fetchSaldo()
+      await fetchContas()
+      fetchTransacoes()
+      fetchEmprestimos()
+      fetchConsultorias()
+      fetchTotalCarro()
+    }
+    carregarDados()
   }, [])
 
   const fetchSaldo = async () => {
@@ -119,9 +124,18 @@ export default function Home() {
         const data = await response.json()
         setContas(data)
         await offlineStorage.saveContas(data)
+        // Calcular poupanca e viagem a partir dos dados ja carregados (sem fetch extra)
+        const totalPoupanca = data.filter((c: Conta) => c.tipo === "poupanca").reduce((s: number, c: Conta) => s + c.valor, 0)
+        const totalViagem = data.filter((c: Conta) => c.tipo === "viagem").reduce((s: number, c: Conta) => s + c.valor, 0)
+        setDataPoupanca({ totalDepositado: totalPoupanca })
+        setDataViagem({ totalDepositado: totalViagem })
       } else {
         const cachedContas = await offlineStorage.getContas()
         setContas(cachedContas)
+        const totalPoupanca = cachedContas.filter((c: Conta) => c.tipo === "poupanca").reduce((s: number, c: Conta) => s + c.valor, 0)
+        const totalViagem = cachedContas.filter((c: Conta) => c.tipo === "viagem").reduce((s: number, c: Conta) => s + c.valor, 0)
+        setDataPoupanca({ totalDepositado: totalPoupanca })
+        setDataViagem({ totalDepositado: totalViagem })
       }
     } catch (error) {
       console.error("[v0] Erro ao buscar contas:", error)
@@ -167,28 +181,7 @@ export default function Home() {
     }
   }
 
-  const fetchPoupancaEViagem = async () => {
-    try {
-      if (isOnline) {
-        const response = await fetch("/api/contas")
-        if (!response.ok) {
-          throw new Error("Erro ao buscar contas")
-        }
-        const data = await response.json()
 
-        const poupanca = data.filter((c: Conta) => c.tipo === "poupanca")
-        const viagem = data.filter((c: Conta) => c.tipo === "viagem")
-
-        const totalPoupanca = poupanca.reduce((sum: number, c: Conta) => sum + c.valor, 0)
-        const totalViagem = viagem.reduce((sum: number, c: Conta) => sum + c.valor, 0)
-
-        setDataPoupanca({ totalDepositado: totalPoupanca })
-        setDataViagem({ totalDepositado: totalViagem })
-      }
-    } catch (error) {
-      console.error("[v0] Erro ao buscar poupanca e viagem:", error)
-    }
-  }
 
   const fetchConsultorias = async () => {
     try {
@@ -272,10 +265,9 @@ export default function Home() {
         })
       }
 
-      fetchContas()
+      fetchContas() // fetchContas ja calcula poupanca e viagem internamente
       fetchSaldo()
       fetchTransacoes()
-      fetchPoupancaEViagem()
       setDialogOpen(false)
     } catch (error) {
       toast({
@@ -935,8 +927,8 @@ export default function Home() {
       <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
       <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
       <EmprestimoDialog open={emprestimoDialogOpen} onOpenChange={setEmprestimoDialogOpen} onUpdate={fetchEmprestimos} />
-      <PoupancaDialog open={poupancaDialogOpen} onOpenChange={setPoupancaDialogOpen} onUpdate={fetchPoupancaEViagem} />
-      <ViagemDialog open={viagemDialogOpen} onOpenChange={setViagemDialogOpen} onUpdate={fetchPoupancaEViagem} />
+      <PoupancaDialog open={poupancaDialogOpen} onOpenChange={setPoupancaDialogOpen} onUpdate={fetchContas} />
+      <ViagemDialog open={viagemDialogOpen} onOpenChange={setViagemDialogOpen} onUpdate={fetchContas} />
     </main>
   )
 }

@@ -1,24 +1,29 @@
 import mysql from 'mysql2/promise'
 
-// Pool de conexões MySQL
-let pool: mysql.Pool | null = null
+// Pool de conexões MySQL — singleton global para sobreviver ao hot-reload do Next.js
+// O HostGator limita conexões por usuário (geralmente 3-5 em planos compartilhados)
+declare global {
+  // eslint-disable-next-line no-var
+  var _mysqlPool: mysql.Pool | undefined
+}
 
 export function getPool(): mysql.Pool {
-  if (!pool) {
-    pool = mysql.createPool({
+  if (!global._mysqlPool) {
+    global._mysqlPool = mysql.createPool({
       host: process.env.MYSQL_HOST || 'localhost',
       port: parseInt(process.env.MYSQL_PORT || '3306'),
       user: process.env.MYSQL_USER || 'root',
       password: process.env.MYSQL_PASSWORD || '',
       database: process.env.MYSQL_DATABASE || 'contas_kleber',
       waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
+      connectionLimit: 3,       // Conservador para planos compartilhados HostGator
+      queueLimit: 20,           // Fila de até 20 requisições esperando conexão livre
       enableKeepAlive: true,
-      keepAliveInitialDelay: 0,
+      keepAliveInitialDelay: 10000,
+      connectTimeout: 10000,
     })
   }
-  return pool
+  return global._mysqlPool
 }
 
 // Helper para executar queries
