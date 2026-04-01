@@ -3,7 +3,7 @@ import { createClient } from "@/lib/mysql/server"
 
 export async function GET() {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data, error } = await supabase
       .from("contas_bancarias")
       .select("*")
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data, error } = await supabase
       .from("contas_bancarias")
       .insert({ 
@@ -66,7 +66,7 @@ export async function PUT(request: Request) {
       )
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data, error } = await supabase
       .from("contas_bancarias")
       .update({ 
@@ -100,7 +100,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "ID obrigatório" }, { status: 400 })
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
     // Soft delete - apenas desativa
     const { error } = await supabase
       .from("contas_bancarias")

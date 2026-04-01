@@ -3,7 +3,7 @@ import { createClient } from "@/lib/mysql/server"
 
 export async function GET() {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data, error } = await supabase
       .from("subcategorias")
       .select("*")
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data, error } = await supabase
       .from("subcategorias")
       .insert({ categoria, nome })
