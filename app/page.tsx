@@ -607,8 +607,11 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+        <div className="text-center space-y-4">
+          <div className="relative mx-auto w-16 h-16">
+            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary animate-spin" />
+          </div>
           <p className="text-muted-foreground">Carregando contas...</p>
         </div>
       </div>
@@ -618,11 +621,11 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-background">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-xl shadow-sm">
+        <div className="container mx-auto px-4 h-14">
+          <div className="flex items-center justify-between h-full">
             <Logo variant="full" size="sm" />
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <OnlineStatus userName={user?.nome} />
               <ThemeToggle />
               <Button
@@ -632,7 +635,7 @@ export default function Home() {
                   logout()
                   router.push("/login")
                 }}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 aria-label="Sair"
               >
                 <LogOut className="h-4 w-4" />
@@ -642,29 +645,32 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6 space-y-5">
-        {/* Welcome + Actions */}
-        <section className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="container mx-auto px-4 py-5 space-y-4 max-w-2xl">
+
+        {/* Welcome + Action Buttons */}
+        <section className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground text-balance">
-              {'Olá, '}              <span className="text-gradient">{user?.nome?.split(" ")[0] || "Usuário"}</span>
+            <h1 className="text-xl font-heading font-bold text-foreground leading-tight">
+              {'Ola, '}
+              <span className="text-gradient">{user?.nome?.split(" ")[0] || "Usuario"}</span>
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {meses[mesSelecionado - 1]} de {anoSelecionado}
             </p>
           </div>
 
           <TooltipProvider>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {podeEditar && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       onClick={() => setDialogOpen(true)}
-                      size="icon"
-                      className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                      size="sm"
+                      className="h-9 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm rounded-full px-3 text-xs font-medium"
                     >
-                      <PlusCircle className="h-4 w-4" />
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      Nova Conta
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Nova Conta</TooltipContent>
@@ -677,12 +683,12 @@ export default function Home() {
                       onClick={() => setCreditoDialogOpen(true)}
                       size="icon"
                       variant="outline"
-                      className="h-8 w-8"
+                      className="h-9 w-9 rounded-full border-border/60 hover:bg-muted/60"
                     >
                       <CircleDollarSign className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Adicionar Crédito</TooltipContent>
+                  <TooltipContent>Adicionar Credito</TooltipContent>
                 </Tooltip>
               )}
               {podeEditar && (
@@ -691,13 +697,13 @@ export default function Home() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60"
                       onClick={() => router.push("/relatorios")}
                     >
                       <BarChart3 className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Relatórios</TooltipContent>
+                  <TooltipContent>Relatorios</TooltipContent>
                 </Tooltip>
               )}
               <Tooltip>
@@ -705,7 +711,7 @@ export default function Home() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     onClick={() => router.push("/consulta")}
                   >
                     <Search className="h-4 w-4" />
@@ -719,15 +725,15 @@ export default function Home() {
 
         {/* Alerts */}
         {contasAtrasadas.length > 0 && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 flex items-start gap-3">
-            <div className="rounded-full bg-red-500/10 p-1.5 mt-0.5">
-              <AlertCircle className="h-4 w-4 text-red-500" />
+          <div className="rounded-xl border-l-4 border-l-red-500 border border-red-500/20 bg-red-500/5 px-4 py-3 flex items-start gap-3 fade-up">
+            <div className="rounded-full bg-red-500/15 p-1.5 mt-0.5 shrink-0">
+              <AlertCircle className="h-3.5 w-3.5 text-red-500" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-red-500">
-                {contasAtrasadas.length} conta(s) atrasada(s)
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-red-500">
+                {contasAtrasadas.length} conta{contasAtrasadas.length > 1 ? "s" : ""} atrasada{contasAtrasadas.length > 1 ? "s" : ""}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">
                 {contasAtrasadas.map((c) => c.nome).join(", ")}
               </p>
             </div>
@@ -735,15 +741,15 @@ export default function Home() {
         )}
 
         {contasProximasVencimento.length > 0 && (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-start gap-3">
-            <div className="rounded-full bg-amber-500/10 p-1.5 mt-0.5">
-              <Clock className="h-4 w-4 text-amber-500" />
+          <div className="rounded-xl border-l-4 border-l-amber-500 border border-amber-500/20 bg-amber-500/5 px-4 py-3 flex items-start gap-3 fade-up">
+            <div className="rounded-full bg-amber-500/15 p-1.5 mt-0.5 shrink-0">
+              <Clock className="h-3.5 w-3.5 text-amber-500" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-amber-500">
-                {contasProximasVencimento.length} conta(s) vencendo em breve
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-amber-500">
+                {contasProximasVencimento.length} conta{contasProximasVencimento.length > 1 ? "s" : ""} vencendo em breve
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">
                 {contasProximasVencimento.map((c) => c.nome).join(", ")}
               </p>
             </div>
@@ -751,152 +757,160 @@ export default function Home() {
         )}
 
         {/* Hero Card - Credito Disponivel */}
-        <section>
-          <div className="rounded-xl border border-border/40 bg-card p-5 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
-            <div className="relative flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Crédito Disponível</p>
-                <p className={`text-3xl md:text-4xl font-bold font-heading mt-1 ${saldo >= 0 ? "text-foreground" : "text-red-500"}`}>
-                  {formatarMoeda(saldo)}
-                </p>
-                <div className="flex items-center gap-1.5 mt-2">
-                  {saldo >= 0 ? (
-                    <div className="flex items-center gap-1 text-emerald-500">
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                      <span className="text-xs font-medium">Positivo</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1 text-red-500">
-                      <ArrowDownRight className="h-3.5 w-3.5" />
-                      <span className="text-xs font-medium">Negativo</span>
-                    </div>
-                  )}
+        <section className="fade-up">
+          <div className="rounded-2xl bg-card border border-border/50 p-5 relative overflow-hidden shadow-sm card-hover">
+            {/* Decorative background */}
+            <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-primary/5 -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-secondary/5 translate-y-1/2 -translate-x-1/2 blur-2xl pointer-events-none" />
 
+            <div className="relative">
+              {/* Top row */}
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest mb-1">
+                    Credito Disponivel
+                  </p>
+                  <p className={`text-3xl md:text-4xl font-bold font-heading tracking-tight ${saldo >= 0 ? "text-foreground" : "text-red-500"}`}>
+                    {formatarMoeda(saldo)}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-2">
+                    {saldo >= 0 ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                        <ArrowUpRight className="h-3 w-3" />
+                        Positivo
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full">
+                        <ArrowDownRight className="h-3 w-3" />
+                        Negativo
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Circular progress - always visible */}
+                <div className="flex flex-col items-center gap-1">
+                  <div className="relative h-16 w-16">
+                    <svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64">
+                      <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" strokeWidth="5" className="text-muted/40" />
+                      <circle
+                        cx="32" cy="32" r="26" fill="none" stroke="currentColor" strokeWidth="5"
+                        className="text-primary"
+                        strokeLinecap="round"
+                        strokeDasharray={`${percentualPago * 1.634} ${163.4 - percentualPago * 1.634}`}
+                        style={{ transition: "stroke-dasharray 0.7s ease-out" }}
+                      />
+                    </svg>
+                    <Wallet className="h-5 w-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                  <p className="text-xs font-bold text-primary font-heading">{percentualPago}%</p>
                 </div>
               </div>
-              <div className="hidden md:flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Progresso</p>
-                  <p className="text-lg font-bold text-primary font-heading">{percentualPago}%</p>
+
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-3 pt-4 border-t border-border/40">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total do mes</p>
+                  <p className="text-sm font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalMes)}</p>
                 </div>
-                <div className="relative h-14 w-14">
-                  <svg className="h-14 w-14 -rotate-90" viewBox="0 0 56 56">
-                    <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="4" className="text-muted/50" />
-                    <circle
-                      cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="4"
-                      className="text-primary"
-                      strokeLinecap="round"
-                      strokeDasharray={`${percentualPago * 1.508} ${150.8 - percentualPago * 1.508}`}
-                    />
-                  </svg>
-                  <Wallet className="h-5 w-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pago</p>
+                  <p className="text-sm font-bold font-heading text-emerald-500 mt-0.5">{formatarMoeda(totalPago)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pendente</p>
+                  <p className="text-sm font-bold font-heading text-amber-500 mt-0.5">{formatarMoeda(totalMes - totalPago)}</p>
                 </div>
               </div>
-            </div>
-            {/* Progress Bar - mobile */}
-            <div className="mt-4 md:hidden">
-              <div className="w-full bg-muted/50 rounded-full h-2 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-700 ease-out"
-                  style={{ width: `${percentualPago}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between mt-1.5 text-xs text-muted-foreground">
-                <span>{percentualPago}% concluído</span>
-                <span>{contasMesAtual.length - pagas} pendentes</span>
+
+              {/* Progress bar */}
+              <div className="mt-3">
+                <div className="w-full bg-muted/50 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+                    style={{ width: `${percentualPago}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {pagas} de {contasMesAtual.length} contas pagas
+                </p>
               </div>
             </div>
           </div>
         </section>
 
         {/* Mini Cards Grid */}
-        <section className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-2">
+        <section className="grid grid-cols-5 gap-2 fade-up">
           {/* Poupanca */}
           <button
             type="button"
-            className="rounded-lg border border-border/40 bg-card p-2.5 text-left transition-all hover:border-amber-500/30 hover:shadow-sm group"
+            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-amber-500/40 hover:shadow-md active:scale-95 group card-hover"
             onClick={() => setPoupancaDialogOpen(true)}
           >
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-amber-500/10 p-1.5">
-                <PiggyBank className="h-3 w-3 text-amber-500" />
-              </div>
-              <Plus className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="rounded-lg bg-amber-500/10 p-2 w-fit mb-2">
+              <PiggyBank className="h-4 w-4 text-amber-500" />
             </div>
-            <p className="text-[10px] text-muted-foreground leading-none">{'Poupan\u00e7a'}</p>
-            <p className="text-sm font-bold font-heading text-foreground mt-0.5 truncate">{formatarMoeda(totalPoupanca)}</p>
+            <p className="text-[10px] font-medium text-muted-foreground leading-none truncate">{'Poupan\u00e7a'}</p>
+            <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalPoupanca)}</p>
           </button>
 
           {/* Viagem */}
           <button
             type="button"
-            className="rounded-lg border border-border/40 bg-card p-2.5 text-left transition-all hover:border-sky-500/30 hover:shadow-sm group"
+            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-sky-500/40 hover:shadow-md active:scale-95 group card-hover"
             onClick={() => setViagemDialogOpen(true)}
           >
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-sky-500/10 p-1.5">
-                <Plane className="h-3 w-3 text-sky-500" />
-              </div>
-              <Plus className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="rounded-lg bg-sky-500/10 p-2 w-fit mb-2">
+              <Plane className="h-4 w-4 text-sky-500" />
             </div>
-            <p className="text-[10px] text-muted-foreground leading-none">Viagem</p>
-            <p className="text-sm font-bold font-heading text-foreground mt-0.5 truncate">{formatarMoeda(totalViagem)}</p>
+            <p className="text-[10px] font-medium text-muted-foreground leading-none">Viagem</p>
+            <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalViagem)}</p>
           </button>
 
           {/* Carro */}
           <button
             type="button"
-            className="rounded-lg border border-border/40 bg-card p-2.5 text-left transition-all hover:border-muted-foreground/30 hover:shadow-sm group"
+            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-zinc-500/40 hover:shadow-md active:scale-95 group card-hover"
             onClick={() => router.push("/carro")}
           >
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-muted-foreground/10 p-1.5">
-                <Car className="h-3 w-3 text-muted-foreground" />
-              </div>
-              <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="rounded-lg bg-zinc-500/10 p-2 w-fit mb-2">
+              <Car className="h-4 w-4 text-zinc-500" />
             </div>
-            <p className="text-[10px] text-muted-foreground leading-none">Carro</p>
-            <p className="text-sm font-bold font-heading text-foreground mt-0.5 truncate">{formatarMoeda(totalPagoCarro)}</p>
+            <p className="text-[10px] font-medium text-muted-foreground leading-none">Carro</p>
+            <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalPagoCarro)}</p>
           </button>
 
           {/* Emprestado */}
           <button
             type="button"
-            className="rounded-lg border border-border/40 bg-card p-2.5 text-left transition-all hover:border-violet-500/30 hover:shadow-sm group"
+            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-indigo-500/40 hover:shadow-md active:scale-95 group card-hover"
             onClick={() => setEmprestimoDialogOpen(true)}
           >
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-violet-500/10 p-1.5">
-                <HandCoins className="h-3 w-3 text-violet-500" />
-              </div>
-              <Plus className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="rounded-lg bg-indigo-500/10 p-2 w-fit mb-2">
+              <HandCoins className="h-4 w-4 text-indigo-500" />
             </div>
-            <p className="text-[10px] text-muted-foreground leading-none">Emprestado</p>
-            <p className="text-sm font-bold font-heading text-foreground mt-0.5 truncate">{formatarMoeda(totalEmprestado)}</p>
+            <p className="text-[10px] font-medium text-muted-foreground leading-none">Emprestado</p>
+            <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalEmprestado)}</p>
           </button>
 
           {/* Consultorias */}
           <button
             type="button"
-            className="rounded-lg border border-border/40 bg-card p-2.5 text-left transition-all hover:border-primary/30 hover:shadow-sm group"
+            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-primary/40 hover:shadow-md active:scale-95 group card-hover"
             onClick={() => router.push("/consultorias")}
           >
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-primary/10 p-1.5">
-                <Briefcase className="h-3 w-3 text-primary" />
-              </div>
-              <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="rounded-lg bg-primary/10 p-2 w-fit mb-2">
+              <Briefcase className="h-4 w-4 text-primary" />
             </div>
-            <p className="text-[10px] text-muted-foreground leading-none">Consultorias</p>
-            <p className="text-sm font-bold font-heading text-foreground mt-0.5">
+            <p className="text-[10px] font-medium text-muted-foreground leading-none">Consultorias</p>
+            <p className="text-xs font-bold font-heading text-foreground mt-1">
               {totalConsultorias} {totalConsultorias === 1 ? "ativa" : "ativas"}
             </p>
           </button>
         </section>
 
         {/* Transactions List */}
-        <section>
+        <section className="pb-6">
           <ListaTransacoes
             transacoes={transacoes}
             contas={contas}
@@ -923,6 +937,6 @@ export default function Home() {
       <EmprestimoDialog open={emprestimoDialogOpen} onOpenChange={setEmprestimoDialogOpen} onUpdate={fetchEmprestimos} />
       <PoupancaDialog open={poupancaDialogOpen} onOpenChange={setPoupancaDialogOpen} onUpdate={fetchPoupancaEViagem} />
       <ViagemDialog open={viagemDialogOpen} onOpenChange={setViagemDialogOpen} onUpdate={fetchPoupancaEViagem} />
-      </main>
+    </main>
   )
 }

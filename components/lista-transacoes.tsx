@@ -571,17 +571,17 @@ export function ListaTransacoes({
     <div className="space-y-4">
       {/* Month Navigation */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             onClick={voltarMes}
             disabled={mostrarApenasHoje}
-            className="h-8 w-8 rounded-full"
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h2 className="text-lg font-bold font-heading min-w-[180px] text-center">
+          <h2 className="text-base font-bold font-heading min-w-[160px] text-center text-foreground">
             {mostrarApenasHoje ? "Hoje" : `${meses[mesSelecionado - 1]} ${anoSelecionado}`}
           </h2>
           <Button
@@ -589,82 +589,83 @@ export function ListaTransacoes({
             size="icon"
             onClick={avancarMes}
             disabled={mostrarApenasHoje}
-            className="h-8 w-8 rounded-full"
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        {onToggleMostrarHoje && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={mostrarApenasHoje ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => onToggleMostrarHoje(!mostrarApenasHoje)}
-                  className={`h-8 w-8 ${mostrarApenasHoje ? "" : "text-muted-foreground"}`}
-                >
-                  <Calendar className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{mostrarApenasHoje ? "Ver mes completo" : "Ver somente hoje"}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
-
-      {/* Search + Filters */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="pl-9 h-9 bg-muted/50 border-border/40"
-          />
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Select value={filtroTipo} onValueChange={(v: any) => setFiltroTipo(v)}>
-            <SelectTrigger className="h-8 w-auto min-w-[120px] text-xs bg-muted/50 border-border/40">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os tipos</SelectItem>
-              <SelectItem value="credito">Creditos</SelectItem>
-              <SelectItem value="fixa">Fixas</SelectItem>
-              <SelectItem value="parcelada">Parceladas</SelectItem>
-              <SelectItem value="diaria">Gastos Diarios</SelectItem>
-              <SelectItem value="caixinha">Caixinha</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={filtroStatus} onValueChange={(v: any) => setFiltroStatus(v)}>
-            <SelectTrigger className="h-8 w-auto min-w-[100px] text-xs bg-muted/50 border-border/40">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="pago">Pagos</SelectItem>
-              <SelectItem value="pendente">Pendentes</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={ordenacao} onValueChange={(v: any) => setOrdenacao(v)}>
-            <SelectTrigger className="h-8 w-auto min-w-[90px] text-xs bg-muted/50 border-border/40">
-              <SelectValue placeholder="Ordenar" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="data">Data</SelectItem>
-              <SelectItem value="valor">Valor</SelectItem>
-              <SelectItem value="nome">Nome</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <span className="text-xs text-muted-foreground ml-auto">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-muted-foreground font-medium bg-muted/60 px-2 py-0.5 rounded-full">
             {itensFiltrados.length} {itensFiltrados.length === 1 ? "item" : "itens"}
           </span>
+          {onToggleMostrarHoje && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={mostrarApenasHoje ? "default" : "ghost"}
+                    size="icon"
+                    onClick={() => onToggleMostrarHoje(!mostrarApenasHoje)}
+                    className={`h-8 w-8 rounded-full ${mostrarApenasHoje ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <Calendar className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{mostrarApenasHoje ? "Ver mes completo" : "Ver somente hoje"}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nome..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="pl-9 h-9 bg-muted/40 border-border/40 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-primary/50"
+        />
+      </div>
+
+      {/* Filter chips */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <Select value={filtroTipo} onValueChange={(v: any) => setFiltroTipo(v)}>
+          <SelectTrigger className="h-7 w-auto min-w-[110px] text-xs bg-muted/40 border-border/40 rounded-full px-3">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os tipos</SelectItem>
+            <SelectItem value="credito">Creditos</SelectItem>
+            <SelectItem value="fixa">Fixas</SelectItem>
+            <SelectItem value="parcelada">Parceladas</SelectItem>
+            <SelectItem value="diaria">Gastos Diarios</SelectItem>
+            <SelectItem value="caixinha">Caixinha</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filtroStatus} onValueChange={(v: any) => setFiltroStatus(v)}>
+          <SelectTrigger className="h-7 w-auto min-w-[90px] text-xs bg-muted/40 border-border/40 rounded-full px-3">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="pago">Pagos</SelectItem>
+            <SelectItem value="pendente">Pendentes</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={ordenacao} onValueChange={(v: any) => setOrdenacao(v)}>
+          <SelectTrigger className="h-7 w-auto min-w-[80px] text-xs bg-muted/40 border-border/40 rounded-full px-3">
+            <SelectValue placeholder="Ordenar" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="data">Data</SelectItem>
+            <SelectItem value="valor">Valor</SelectItem>
+            <SelectItem value="nome">Nome</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   )
@@ -679,13 +680,17 @@ export function ListaTransacoes({
     return (
       <div
         key={item.id}
-        className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/8 transition-colors"
+        className="flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-l-emerald-500 border border-emerald-500/15 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all"
       >
-        <ArrowUpCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-        <span className="font-medium text-sm text-foreground truncate flex-1">{item.nome}</span>
-        <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
-          {dataFormatada} as {horaFormatada}
-        </span>
+        <div className="rounded-full bg-emerald-500/15 p-1.5 shrink-0">
+          <ArrowUpCircle className="h-3.5 w-3.5 text-emerald-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <span className="font-medium text-sm text-foreground truncate block">{item.nome}</span>
+          <span className="text-[11px] text-muted-foreground">
+            {dataFormatada} {'\u00e0s'} {horaFormatada}
+          </span>
+        </div>
         <span className="font-bold text-emerald-500 text-sm whitespace-nowrap shrink-0">
           + {formatarMoeda(item.valor)}
         </span>
@@ -740,7 +745,7 @@ export function ListaTransacoes({
     return (
       <div
         key={item.id}
-        className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border/40 bg-card hover:bg-accent/30 transition-all border-l-[3px] ${getBorderColor()}`}
+        className={`group flex items-center gap-3 px-3 py-3 rounded-xl border border-border/40 bg-card hover:bg-muted/30 transition-all border-l-[4px] ${getBorderColor()}`}
       >
         {/* Status toggle */}
         {!isSomenteLeitura && (
@@ -755,73 +760,69 @@ export function ListaTransacoes({
               }
             }}
             disabled={conta.tipo === "diaria"}
-            className={`shrink-0 h-4 w-4 rounded-full border flex items-center justify-center transition-all ${
+            className={`shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${
               pago || conta.tipo === "diaria"
-                ? "bg-emerald-500 border-emerald-500 text-white"
-                : "border-muted-foreground/40 hover:border-muted-foreground"
-            } disabled:cursor-not-allowed disabled:opacity-50`}
+                ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                : "border-border hover:border-primary/60 hover:bg-primary/5"
+            } disabled:cursor-not-allowed disabled:opacity-60`}
             aria-label={pago ? "Marcar como pendente" : "Marcar como pago"}
           >
             {(pago || conta.tipo === "diaria") && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
           </button>
         )}
 
-        {/* Name + badges */}
-        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-          <span
-            className={`text-sm font-medium truncate ${
-              pago || conta.tipo === "diaria"
-                ? "line-through text-muted-foreground"
-                : "text-foreground"
-            }`}
-          >
-            {conta.nome}
-          </span>
-          {typeBadge && (
-            <span className={`hidden sm:inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium border shrink-0 ${typeBadge.className}`}>
-              {typeBadge.label}
-            </span>
-          )}
-          {conta.categoria && (
-            <span className="hidden md:inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium bg-muted text-muted-foreground shrink-0">
-              {conta.categoria}
-            </span>
-          )}
-          {temAnexo && (
-            <button
-              type="button"
-              onClick={() => {
-                const anexoUrl = pagamento?.anexo || conta.anexoDiario || null
-                setAnexoVisualizar(anexoUrl)
-              }}
-              className="text-muted-foreground hover:text-foreground shrink-0"
+        {/* Name + badges + date */}
+        <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span
+              className={`text-sm font-medium truncate leading-tight ${
+                pago || conta.tipo === "diaria"
+                  ? "line-through text-muted-foreground"
+                  : "text-foreground"
+              }`}
             >
-              <Paperclip className="h-3 w-3" />
-            </button>
-          )}
-        </div>
-
-        {/* Date info */}
-        <span className="hidden lg:inline text-xs text-muted-foreground whitespace-nowrap shrink-0">
-          {conta.tipo === "diaria" && conta.data_gasto
-            ? (conta.data_gasto.includes("T") ? new Date(conta.data_gasto) : new Date(conta.data_gasto + "T00:00:00")).toLocaleDateString("pt-BR")
-            : conta.tipo === "caixinha" && conta.data_gasto
+              {conta.nome}
+            </span>
+            {typeBadge && (
+              <span className={`inline-flex items-center px-1.5 py-0 rounded-full text-[10px] font-semibold border shrink-0 ${typeBadge.className}`}>
+                {typeBadge.label}
+              </span>
+            )}
+            {temAnexo && (
+              <button
+                type="button"
+                onClick={() => {
+                  const anexoUrl = pagamento?.anexo || conta.anexoDiario || null
+                  setAnexoVisualizar(anexoUrl)
+                }}
+                className="text-muted-foreground/60 hover:text-muted-foreground shrink-0 transition-colors"
+              >
+                <Paperclip className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+          <span className="text-[10px] text-muted-foreground/70 leading-none">
+            {conta.tipo === "diaria" && conta.data_gasto
               ? (conta.data_gasto.includes("T") ? new Date(conta.data_gasto) : new Date(conta.data_gasto + "T00:00:00")).toLocaleDateString("pt-BR")
-              : conta.tipo === "fixa"
-                ? `Venc. ${new Date(anoSelecionado, mesSelecionado - 1, conta.vencimento).toLocaleDateString("pt-BR")}`
-                : conta.tipo === "parcelada"
-                  ? `P${parcelaAtual} - ${conta.dataVencimentoCompleta || new Date(conta.anoVencimento || anoSelecionado, (conta.mesVencimento || mesSelecionado) - 1, conta.vencimento).toLocaleDateString("pt-BR")}`
-                  : ""}
-        </span>
+              : conta.tipo === "caixinha" && conta.data_gasto
+                ? (conta.data_gasto.includes("T") ? new Date(conta.data_gasto) : new Date(conta.data_gasto + "T00:00:00")).toLocaleDateString("pt-BR")
+                : conta.tipo === "fixa"
+                  ? `Venc. dia ${conta.vencimento}`
+                  : conta.tipo === "parcelada"
+                    ? `Parcela ${parcelaAtual} de ${conta.parcelas}`
+                    : ""}
+            {conta.categoria ? ` · ${conta.categoria}` : ""}
+          </span>
+        </div>
 
         {/* Actions */}
         {!isSomenteLeitura && (
           <TooltipProvider>
-            <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => handleCompartilharWhatsApp(conta)}>
-                    <Share2 className="h-3 w-3" />
+                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60" onClick={() => handleCompartilharWhatsApp(conta)}>
+                    <Share2 className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">Compartilhar</TooltipContent>
@@ -829,8 +830,8 @@ export function ListaTransacoes({
               {(conta.tipo === "parcelada" || conta.tipo === "fixa") && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-amber-500" onClick={() => handleEditarParcela(conta)}>
-                      <Edit className="h-3 w-3" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10" onClick={() => handleEditarParcela(conta)}>
+                      <Edit className="h-3.5 w-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">Editar Parcela</TooltipContent>
@@ -838,16 +839,16 @@ export function ListaTransacoes({
               )}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-blue-500" onClick={() => handleEditarConta(conta)}>
-                    <Settings className="h-3 w-3" />
+                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10" onClick={() => handleEditarConta(conta)}>
+                    <Settings className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">Editar Conta</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-red-500" onClick={() => handleDeleteWithUndo(conta)}>
-                    <Trash2 className="h-3 w-3" />
+                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10" onClick={() => handleDeleteWithUndo(conta)}>
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">Excluir</TooltipContent>
@@ -858,11 +859,11 @@ export function ListaTransacoes({
 
         {/* Value */}
         <span
-          className={`text-sm font-bold whitespace-nowrap shrink-0 ${
+          className={`text-sm font-bold whitespace-nowrap shrink-0 tabular-nums ${
             pago || conta.tipo === "diaria"
-              ? "text-muted-foreground"
+              ? "text-muted-foreground line-through decoration-1"
               : "text-foreground"
-          } ${temAjuste ? "underline decoration-amber-500/50 decoration-dotted underline-offset-2" : ""}`}
+          } ${temAjuste ? "underline decoration-amber-500/60 decoration-dotted underline-offset-2" : ""}`}
         >
           {formatarMoeda(valorExibido)}
         </span>
@@ -872,17 +873,19 @@ export function ListaTransacoes({
 
   if (itensFiltrados.length === 0) {
     return (
-      <div className="rounded-xl border border-border/40 bg-card">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-sm">
         <div className="p-5">
           {renderHeader()}
         </div>
         <div className="px-5 pb-8">
-          <div className="text-center py-12">
-            <div className="rounded-full bg-muted/50 p-4 w-fit mx-auto mb-3">
-              <Search className="h-6 w-6 text-muted-foreground" />
+          <div className="text-center py-12 space-y-3">
+            <div className="rounded-full bg-muted/40 p-5 w-fit mx-auto">
+              <Search className="h-6 w-6 text-muted-foreground/50" />
             </div>
-            <p className="text-sm text-muted-foreground">Nenhum resultado encontrado</p>
-            <p className="text-xs text-muted-foreground mt-1">Tente ajustar os filtros</p>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Nenhum resultado encontrado</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Tente ajustar os filtros ou mudar o mes</p>
+            </div>
           </div>
         </div>
       </div>
@@ -891,12 +894,12 @@ export function ListaTransacoes({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-border/40 bg-card">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-sm">
         <div className="p-5">
           {renderHeader()}
         </div>
-        <div className="px-5 pb-5">
-          <div className="space-y-2">
+        <div className="px-3 pb-4">
+          <div className="space-y-1.5">
             {itensFiltrados.map((item) =>
               item.tipo === "credito" ? renderCreditoItem(item) : renderContaItem(item)
             )}
