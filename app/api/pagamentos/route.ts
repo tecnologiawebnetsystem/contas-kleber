@@ -33,12 +33,14 @@ export async function POST(request: Request) {
 
     if (saldoError) throw saldoError
 
-    // Contas fixas, variáveis e gastos diários debitam do crédito
-    // Poupança e Viagem são apenas controle, não debitam
-    const tiposQueDebitam = ["fixa", "variavel", "gasto_diario"]
-    const deveValidarSaldo = tiposQueDebitam.includes(conta.tipo)
+    // Contas fixas, parceladas e diarias debitam do saldo ao serem pagas
+    // Poupanca, Viagem e Caixinha NAO debitam (ja foram debitadas na criacao)
+    const tiposQueNaoDebitam = ["poupanca", "viagem", "caixinha"]
+    const deveValidarSaldo = !tiposQueNaoDebitam.includes(conta.tipo)
 
-    const novoSaldo = deveValidarSaldo ? Number(saldoAtual.valor) - Number(conta.valor) : Number(saldoAtual.valor)
+    // Usar valorAjustado enviado pelo cliente (para parcelas com valor diferente)
+    const valorEfetivo = body.valorAjustado ? Number(body.valorAjustado) : Number(conta.valor)
+    const novoSaldo = deveValidarSaldo ? Number(saldoAtual.valor) - valorEfetivo : Number(saldoAtual.valor)
 
     // Atualiza o saldo mesmo que fique negativo
     if (deveValidarSaldo) {
@@ -99,7 +101,7 @@ export async function DELETE(request: Request) {
 
     const { data: pagamento, error: pagamentoError } = await supabase
       .from("pagamentos")
-      .select("id, conta_id")
+      .select("id, conta_id, valor_ajustado")
       .eq("conta_id", contaId)
       .eq("mes", mesConvertido)
       .eq("ano", Number.parseInt(ano))
@@ -107,7 +109,7 @@ export async function DELETE(request: Request) {
 
     if (pagamentoError) throw pagamentoError
 
-    const { data: conta, error: contaError } = await supabase.from("contas").select("valor").eq("id", contaId).single()
+    const { data: conta, error: contaError } = await supabase.from("contas").select("valor, tipo").eq("id", contaId).single()
 
     if (contaError) throw contaError
 
@@ -115,7 +117,9 @@ export async function DELETE(request: Request) {
 
     if (saldoError) throw saldoError
 
-    const novoSaldo = Number(saldoAtual.valor) + Number(conta.valor)
+    // Usar valor_ajustado se existir, caso contrario usa o valor da conta
+    const valorAEstornar = pagamento?.valor_ajustado ? Number(pagamento.valor_ajustado) : Number(conta.valor)
+    const novoSaldo = Number(saldoAtual.valor) + valorAEstornar
 
     const { error: updateSaldoError } = await supabase
       .from("saldo")

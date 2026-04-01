@@ -1,12 +1,12 @@
 import { createClient } from "@/lib/mysql/server"
 import { NextResponse } from "next/server"
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient()
 
     const body = await request.json()
-    const { id } = params
+    const { id } = await params
     const { mes, ano, valorAjustado, vencimentoAjustado } = body
 
     if (!mes || !ano) {

@@ -19,7 +19,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (body.tipo === "parcelada") {
       dadosAtualizados.parcelas = body.parcelas
       dadosAtualizados.data_inicio = body.dataInicio
-      dadosAtualizados.parcela_atual = body.parcelaAtual
+      // parcela_atual nao existe na tabela — e calculada dinamicamente pela API
     }
 
     if (body.tipo === "diaria") {
@@ -44,9 +44,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       tipo: data.tipo,
       vencimento: data.vencimento,
       categoria: data.categoria,
+      subcategoria: data.subcategoria,
+      fornecedor: data.fornecedor,
       parcelas: data.parcelas,
       dataInicio: data.data_inicio,
-      parcelaAtual: data.parcela_atual,
       dataGasto: data.data_gasto,
       anexoDiario: data.anexo_diario,
       pagamentos: [],
