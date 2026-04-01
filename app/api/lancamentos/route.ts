@@ -29,9 +29,9 @@ export async function GET(request: Request) {
       (lancamentos || []).map(async (lanc) => {
         const pool = getPool()
         const [itens] = await pool.execute(
-          `SELECT li.*, id.nome as imposto_nome 
+          `SELECT li.*, id_imp.nome as imposto_nome 
            FROM lancamento_itens li 
-           JOIN impostos_descontos id ON li.imposto_desconto_id = id.id 
+           JOIN impostos_descontos id_imp ON li.imposto_desconto_id = id_imp.id 
            WHERE li.lancamento_id = ?`,
           [lanc.id]
         )
@@ -63,57 +63,57 @@ export async function POST(request: Request) {
     // Calcular valor líquido
     let totalDescontos = 0
     const itensCalculados = (itens || []).map((item: any) => {
-      let valorCalculado = 0
-      if (item.tipo_calculo === "PERCENTUAL") {
-        valorCalculado = (valor_bruto * item.percentual) / 100
+      let resultado = 0
+      if (item.tipo_valor === "percentual") {
+        resultado = (valor_bruto * Number(item.valor_aplicado)) / 100
       } else {
-        valorCalculado = item.valor_fixo || 0
+        resultado = Number(item.valor_aplicado) || 0
       }
-      totalDescontos += valorCalculado
+      totalDescontos += resultado
       return {
         ...item,
-        valor_base: valor_bruto,
-        valor_calculado: valorCalculado
+        resultado,
       }
     })
 
     const valor_liquido = valor_bruto - totalDescontos
 
-    // Inserir lançamento
+    // Inserir lançamento (colunas corretas: salario_bruto, salario_liquido)
     const lancamentoId = crypto.randomUUID()
     await pool.execute(
-      `INSERT INTO lancamentos_mensais (id, consultoria_id, mes_referencia, valor_bruto, valor_liquido, observacoes)
+      `INSERT INTO lancamentos_mensais (id, consultoria_id, mes_referencia, salario_bruto, salario_liquido, observacoes)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [lancamentoId, consultoria_id, mes_referencia, valor_bruto, valor_liquido, observacoes || null]
     )
 
-    // Inserir itens
+    // Inserir itens (colunas corretas: nome, tipo, tipo_valor, valor_aplicado, resultado)
     for (const item of itensCalculados) {
       const itemId = crypto.randomUUID()
       await pool.execute(
-        `INSERT INTO lancamento_itens (id, lancamento_id, imposto_desconto_id, tipo_calculo, valor_base, percentual, valor_calculado)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO lancamento_itens (id, lancamento_id, imposto_desconto_id, nome, tipo, tipo_valor, valor_aplicado, resultado)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           itemId,
           lancamentoId,
           item.imposto_desconto_id,
-          item.tipo_calculo,
-          item.valor_base,
-          item.percentual || null,
-          item.valor_calculado
+          item.nome || "",
+          item.tipo || "desconto",
+          item.tipo_valor || "percentual",
+          item.valor_aplicado || 0,
+          item.resultado,
         ]
       )
     }
 
     // Retornar lançamento com itens
     const [lancamentoRows] = await pool.execute(
-      "SELECT * FROM lancamentos_mensais WHERE id = ?",
+      "SELECT *, salario_bruto as valor_bruto, salario_liquido as valor_liquido FROM lancamentos_mensais WHERE id = ?",
       [lancamentoId]
     )
     const [itensRows] = await pool.execute(
-      `SELECT li.*, id.nome as imposto_nome 
+      `SELECT li.*, id_imp.nome as imposto_nome 
        FROM lancamento_itens li 
-       JOIN impostos_descontos id ON li.imposto_desconto_id = id.id 
+       JOIN impostos_descontos id_imp ON li.imposto_desconto_id = id_imp.id 
        WHERE li.lancamento_id = ?`,
       [lancamentoId]
     )
@@ -145,26 +145,22 @@ export async function PUT(request: Request) {
     // Calcular valor líquido
     let totalDescontos = 0
     const itensCalculados = (itens || []).map((item: any) => {
-      let valorCalculado = 0
-      if (item.tipo_calculo === "PERCENTUAL") {
-        valorCalculado = (valor_bruto * item.percentual) / 100
+      let resultado = 0
+      if (item.tipo_valor === "percentual") {
+        resultado = (valor_bruto * Number(item.valor_aplicado)) / 100
       } else {
-        valorCalculado = item.valor_fixo || 0
+        resultado = Number(item.valor_aplicado) || 0
       }
-      totalDescontos += valorCalculado
-      return {
-        ...item,
-        valor_base: valor_bruto,
-        valor_calculado: valorCalculado
-      }
+      totalDescontos += resultado
+      return { ...item, resultado }
     })
 
     const valor_liquido = valor_bruto - totalDescontos
 
-    // Atualizar lançamento
+    // Atualizar lançamento (colunas corretas: salario_bruto, salario_liquido)
     await pool.execute(
       `UPDATE lancamentos_mensais 
-       SET valor_bruto = ?, valor_liquido = ?, observacoes = ?, updated_at = NOW()
+       SET salario_bruto = ?, salario_liquido = ?, observacoes = ?, updated_at = NOW()
        WHERE id = ?`,
       [valor_bruto, valor_liquido, observacoes || null, id]
     )
@@ -175,29 +171,30 @@ export async function PUT(request: Request) {
     for (const item of itensCalculados) {
       const itemId = crypto.randomUUID()
       await pool.execute(
-        `INSERT INTO lancamento_itens (id, lancamento_id, imposto_desconto_id, tipo_calculo, valor_base, percentual, valor_calculado)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO lancamento_itens (id, lancamento_id, imposto_desconto_id, nome, tipo, tipo_valor, valor_aplicado, resultado)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           itemId,
           id,
           item.imposto_desconto_id,
-          item.tipo_calculo,
-          item.valor_base,
-          item.percentual || null,
-          item.valor_calculado
+          item.nome || "",
+          item.tipo || "desconto",
+          item.tipo_valor || "percentual",
+          item.valor_aplicado || 0,
+          item.resultado,
         ]
       )
     }
 
     // Retornar lançamento atualizado
     const [lancamentoRows] = await pool.execute(
-      "SELECT * FROM lancamentos_mensais WHERE id = ?",
+      "SELECT *, salario_bruto as valor_bruto, salario_liquido as valor_liquido FROM lancamentos_mensais WHERE id = ?",
       [id]
     )
     const [itensRows] = await pool.execute(
-      `SELECT li.*, id.nome as imposto_nome 
+      `SELECT li.*, id_imp.nome as imposto_nome 
        FROM lancamento_itens li 
-       JOIN impostos_descontos id ON li.imposto_desconto_id = id.id 
+       JOIN impostos_descontos id_imp ON li.imposto_desconto_id = id_imp.id 
        WHERE li.lancamento_id = ?`,
       [id]
     )

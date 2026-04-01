@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/mysql/server"
 import { NextResponse } from "next/server"
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await request.json()
     const supabase = await createClient()
+    const { id } = await params
 
     const { data, error } = await supabase
       .from("caixinha_depositos")
@@ -13,7 +14,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         observacao: body.observacao,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single()
 
@@ -21,7 +22,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
     // Recalcular valores futuros se necessário
     if (body.recalcular) {
-      await recalcularDepositos(params.id)
+      await recalcularDepositos(id)
     }
 
     return NextResponse.json(data)

@@ -13,20 +13,20 @@ export async function GET(request: Request) {
       .eq("ativo", true)
       .order("nome", { ascending: true })
 
-    if (tipoAplicacao && tipoAplicacao !== "AMBOS") {
-      // Buscar registros específicos do tipo ou que se aplicam a ambos
+    if (tipoAplicacao && tipoAplicacao !== "Ambos") {
+      // Buscar registros específicos do tipo ou que se aplicam a ambos (campo: aplicavel_a)
       const result1 = await supabase
         .from("impostos_descontos")
         .select("*")
         .eq("ativo", true)
-        .eq("tipo_aplicacao", tipoAplicacao)
+        .eq("aplicavel_a", tipoAplicacao)
         .order("nome", { ascending: true })
 
       const result2 = await supabase
         .from("impostos_descontos")
         .select("*")
         .eq("ativo", true)
-        .eq("tipo_aplicacao", "AMBOS")
+        .eq("aplicavel_a", "Ambos")
         .order("nome", { ascending: true })
 
       const data = [...(result1.data || []), ...(result2.data || [])]
@@ -52,11 +52,16 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
 
-    const { nome, tipo_aplicacao, tipo_calculo, valor_padrao, descricao } = body
+    // Aceita tanto nomes novos quanto legados
+    const nome = body.nome
+    const tipo = body.tipo || "desconto"
+    const aplicavel_a = body.aplicavel_a || body.tipo_aplicacao || "Ambos"
+    const tipo_valor = body.tipo_valor || body.tipo_calculo?.toLowerCase() || "percentual"
+    const valor_padrao = body.valor_padrao || 0
 
-    if (!nome || !tipo_aplicacao || !tipo_calculo) {
+    if (!nome || !aplicavel_a) {
       return NextResponse.json(
-        { error: "Nome, tipo de aplicação e tipo de cálculo são obrigatórios" },
+        { error: "Nome e tipo de aplicacao sao obrigatorios" },
         { status: 400 }
       )
     }
@@ -65,11 +70,11 @@ export async function POST(request: Request) {
       .from("impostos_descontos")
       .insert({
         nome,
-        tipo_aplicacao,
-        tipo_calculo,
-        valor_padrao: valor_padrao || 0,
-        descricao: descricao || null,
-        ativo: true
+        tipo,
+        aplicavel_a,
+        tipo_valor,
+        valor_padrao,
+        ativo: true,
       })
       .select()
       .single()
@@ -91,18 +96,21 @@ export async function PUT(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
 
-    const { id, nome, tipo_aplicacao, tipo_calculo, valor_padrao, descricao, ativo } = body
+    const { id, nome, tipo, aplicavel_a, tipo_valor, valor_padrao, ativo } = body
+    // Suporte a nomes legados
+    const aplicavel_a_final = aplicavel_a || body.tipo_aplicacao
+    const tipo_valor_final = tipo_valor || (body.tipo_calculo ? body.tipo_calculo.toLowerCase() : undefined)
 
     if (!id) {
-      return NextResponse.json({ error: "ID é obrigatório" }, { status: 400 })
+      return NextResponse.json({ error: "ID e obrigatorio" }, { status: 400 })
     }
 
     const updateData: Record<string, any> = {}
     if (nome !== undefined) updateData.nome = nome
-    if (tipo_aplicacao !== undefined) updateData.tipo_aplicacao = tipo_aplicacao
-    if (tipo_calculo !== undefined) updateData.tipo_calculo = tipo_calculo
+    if (tipo !== undefined) updateData.tipo = tipo
+    if (aplicavel_a_final !== undefined) updateData.aplicavel_a = aplicavel_a_final
+    if (tipo_valor_final !== undefined) updateData.tipo_valor = tipo_valor_final
     if (valor_padrao !== undefined) updateData.valor_padrao = valor_padrao
-    if (descricao !== undefined) updateData.descricao = descricao
     if (ativo !== undefined) updateData.ativo = ativo
 
     const { data, error } = await supabase
