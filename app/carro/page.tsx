@@ -336,14 +336,17 @@ export default function CarroPage() {
     })
   }
 
-  // Valor extra do Palio Sporting (não salvo no banco de dados)
+  // Valores extras não salvos no banco de dados
   const VALOR_EXTRA_PALIO = 2000
+  const VALOR_EXTRA_VOLVO = 10000
 
   const totalPorCarro = CARROS.map((carro) => ({
     ...carro,
     total: pagamentos
       .filter((p) => p.carro === carro.value)
-      .reduce((sum, p) => sum + Number(p.valor), 0) + (carro.value === "palio_sporting" ? VALOR_EXTRA_PALIO : 0),
+      .reduce((sum, p) => sum + Number(p.valor), 0) +
+      (carro.value === "palio_sporting" ? VALOR_EXTRA_PALIO : 0) +
+      (carro.value === "volvo_xc60" ? VALOR_EXTRA_VOLVO : 0),
     quantidade: pagamentos.filter((p) => p.carro === carro.value).length,
   }))
 
