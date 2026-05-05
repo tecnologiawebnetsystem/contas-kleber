@@ -15,7 +15,7 @@ import {
   Share2,
   PiggyBank,
   BarChart3,
-  Plane,
+  Scissors,
   PlusCircle,
   Car,
   ArrowUpRight,
@@ -40,7 +40,7 @@ import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
 import { EmprestimoDialog } from "@/components/emprestimo-dialog"
 import { PoupancaDialog } from "@/components/poupanca-dialog"
-import { ViagemDialog } from "@/components/viagem-dialog"
+import { CabeloDialog } from "@/components/cabelo-dialog"
 
 export default function Home() {
   const { user, logout } = useAuth()
@@ -59,7 +59,8 @@ export default function Home() {
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("")
   const [emprestimoDialogOpen, setEmprestimoDialogOpen] = useState(false)
   const [poupancaDialogOpen, setPoupancaDialogOpen] = useState(false)
-  const [viagemDialogOpen, setViagemDialogOpen] = useState(false)
+  const [cabeloDialogOpen, setCabeloDialogOpen] = useState(false)
+  const [cabeloResumo, setCabeloResumo] = useState({ luzesFeitas: 0, progressivasFeitas: 0 })
   const [totalEmprestado, setTotalEmprestado] = useState(0)
   const [totalConsultorias, setTotalConsultorias] = useState(0)
   const router = useRouter()
@@ -84,6 +85,7 @@ export default function Home() {
       fetchEmprestimos()
       fetchConsultorias()
       fetchTotalCarro()
+      fetchCabelo()
     }
     carregarDados()
   }, [])
@@ -206,6 +208,20 @@ export default function Home() {
       }
     } catch (error) {
       console.error("[v0] Erro ao buscar emprestimos:", error)
+    }
+  }
+
+  const fetchCabelo = async () => {
+    try {
+      const res = await fetch("/api/cabelo")
+      if (res.ok) {
+        const data = await res.json()
+        const luzesFeitas = data.filter((r: any) => r.tipo === "luz" && r.feita).length
+        const progressivasFeitas = data.filter((r: any) => r.tipo === "progressiva" && r.feita).length
+        setCabeloResumo({ luzesFeitas, progressivasFeitas })
+      }
+    } catch (error) {
+      console.error("[v0] Erro ao buscar cabelo:", error)
     }
   }
 
@@ -851,17 +867,19 @@ export default function Home() {
             <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalPoupanca)}</p>
           </button>
 
-          {/* Viagem */}
+          {/* Cabelo */}
           <button
             type="button"
-            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-sky-500/40 hover:shadow-md active:scale-95 group card-hover"
-            onClick={() => setViagemDialogOpen(true)}
+            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-pink-500/40 hover:shadow-md active:scale-95 group card-hover"
+            onClick={() => setCabeloDialogOpen(true)}
           >
-            <div className="rounded-lg bg-sky-500/10 p-2 w-fit mb-2">
-              <Plane className="h-4 w-4 text-sky-500" />
+            <div className="rounded-lg bg-pink-500/10 p-2 w-fit mb-2">
+              <Scissors className="h-4 w-4 text-pink-500" />
             </div>
-            <p className="text-[10px] font-medium text-muted-foreground leading-none">Viagem</p>
-            <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalViagem)}</p>
+            <p className="text-[10px] font-medium text-muted-foreground leading-none">Cabelo</p>
+            <p className="text-xs font-bold font-heading text-foreground mt-1">
+              {4 - cabeloResumo.luzesFeitas}L &bull; {4 - cabeloResumo.progressivasFeitas}P restantes
+            </p>
           </button>
 
           {/* Carro */}
@@ -936,7 +954,7 @@ export default function Home() {
       <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
       <EmprestimoDialog open={emprestimoDialogOpen} onOpenChange={setEmprestimoDialogOpen} onUpdate={fetchEmprestimos} />
       <PoupancaDialog open={poupancaDialogOpen} onOpenChange={setPoupancaDialogOpen} onUpdate={fetchContas} />
-      <ViagemDialog open={viagemDialogOpen} onOpenChange={setViagemDialogOpen} onUpdate={fetchContas} />
+      <CabeloDialog open={cabeloDialogOpen} onOpenChange={setCabeloDialogOpen} onUpdate={fetchCabelo} />
     </main>
   )
 }
