@@ -22,7 +22,7 @@ import {
   ArrowDownRight,
   CircleDollarSign,
   Clock,
-  HandCoins,
+  Scale,
   Briefcase,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -872,16 +872,16 @@ export default function Home() {
             <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalPagoCarro)}</p>
           </button>
 
-          {/* Emprestado */}
+          {/* Advogado */}
           <button
             type="button"
             className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-indigo-500/40 hover:shadow-md active:scale-95 group card-hover"
             onClick={() => setEmprestimoDialogOpen(true)}
           >
             <div className="rounded-lg bg-indigo-500/10 p-2 w-fit mb-2">
-              <HandCoins className="h-4 w-4 text-indigo-500" />
+              <Scale className="h-4 w-4 text-indigo-500" />
             </div>
-            <p className="text-[10px] font-medium text-muted-foreground leading-none">Emprestado</p>
+            <p className="text-[10px] font-medium text-muted-foreground leading-none">Advogado</p>
             <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalEmprestado)}</p>
           </button>
 
