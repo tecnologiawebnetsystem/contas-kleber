@@ -209,6 +209,11 @@ export default function Home() {
     }
   }
 
+  // Valores extras não salvos no banco (espelha os mesmos de app/carro/page.tsx)
+  const VALOR_EXTRA_PALIO = 2000
+  const VALOR_EXTRA_VOLVO = 10000
+  const TOTAL_EXTRAS_CARRO = VALOR_EXTRA_PALIO + VALOR_EXTRA_VOLVO
+
   const fetchTotalCarro = async () => {
     try {
       if (isOnline) {
@@ -218,19 +223,19 @@ export default function Home() {
         }
         const data = await response.json()
         const total = data.reduce((sum: number, p: any) => sum + Number(p.valor), 0)
-        setTotalPagoCarro(total)
+        setTotalPagoCarro(total + TOTAL_EXTRAS_CARRO)
         await offlineStorage.savePagamentosCarro(data)
       } else {
         const cachedData = await offlineStorage.getPagamentosCarro()
         const total = cachedData.reduce((sum: number, p: any) => sum + Number(p.valor), 0)
-        setTotalPagoCarro(total)
+        setTotalPagoCarro(total + TOTAL_EXTRAS_CARRO)
       }
     } catch (error) {
       console.error("[v0] Erro ao buscar total do carro:", error)
       try {
         const cachedData = await offlineStorage.getPagamentosCarro()
         const total = cachedData.reduce((sum: number, p: any) => sum + Number(p.valor), 0)
-        setTotalPagoCarro(total)
+        setTotalPagoCarro(total + TOTAL_EXTRAS_CARRO)
       } catch {
         console.error("[v0] Erro ao carregar cache do carro")
       }
