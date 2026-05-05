@@ -888,6 +888,9 @@ export default function Home() {
             </div>
             <p className="text-[10px] font-medium text-muted-foreground leading-none">Advogado</p>
             <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalEmprestado)}</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5 truncate">
+              Restante: {formatarMoeda(Math.max(0, 13000 - totalEmprestado))}
+            </p>
           </button>
 
           {/* Consultorias */}

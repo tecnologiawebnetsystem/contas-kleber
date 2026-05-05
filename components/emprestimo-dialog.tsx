@@ -86,7 +86,9 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
     }
   }
 
-  const total = lancamentos.reduce((sum, l) => sum + Number(l.valor), 0)
+  const TOTAL_CONTRATADO = 13000
+  const totalPago = lancamentos.reduce((sum, l) => sum + Number(l.valor), 0)
+  const totalRestante = Math.max(0, TOTAL_CONTRATADO - totalPago)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,17 +99,25 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
             Advogado
           </DialogTitle>
           <DialogDescription>
-            Registre os valores pagos ao advogado
+            Acompanhe os pagamentos ao advogado
           </DialogDescription>
         </DialogHeader>
 
-        {/* Total acumulado */}
-        {lancamentos.length > 0 && (
-          <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-3 py-2 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Total acumulado</span>
-            <span className="text-sm font-bold text-indigo-500">{formatarMoeda(total)}</span>
+        {/* Painel de resumo */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-lg border border-border/40 bg-card px-2.5 py-2 flex flex-col gap-0.5">
+            <span className="text-[10px] text-muted-foreground leading-none">Total contratado</span>
+            <span className="text-sm font-bold text-foreground">{formatarMoeda(TOTAL_CONTRATADO)}</span>
           </div>
-        )}
+          <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-2.5 py-2 flex flex-col gap-0.5">
+            <span className="text-[10px] text-muted-foreground leading-none">Já pago</span>
+            <span className="text-sm font-bold text-indigo-500">{formatarMoeda(totalPago)}</span>
+          </div>
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-2 flex flex-col gap-0.5">
+            <span className="text-[10px] text-muted-foreground leading-none">Restante</span>
+            <span className="text-sm font-bold text-amber-500">{formatarMoeda(totalRestante)}</span>
+          </div>
+        </div>
 
         {/* Lista de lançamentos */}
         <div className="space-y-1.5 max-h-60 overflow-y-auto">
