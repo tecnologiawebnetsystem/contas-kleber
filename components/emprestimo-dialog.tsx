@@ -5,17 +5,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Check, Trash2, HandCoins } from "lucide-react"
+import { Plus, Trash2, Scale } from "lucide-react"
 import { formatarMoeda } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
-interface Emprestimo {
+interface LancamentoAdvogado {
   id: string
   nome_pessoa: string
   valor: number
-  data_devolucao: string
-  devolvido: boolean
-  data_devolvido?: string
   created_at: string
 }
 
@@ -26,34 +23,33 @@ interface EmprestimoDialogProps {
 }
 
 export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDialogProps) {
-  const [emprestimos, setEmprestimos] = useState<Emprestimo[]>([])
+  const [lancamentos, setLancamentos] = useState<LancamentoAdvogado[]>([])
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
-  const [nomePessoa, setNomePessoa] = useState("")
+  const [descricao, setDescricao] = useState("")
   const [valor, setValor] = useState("")
-  const [dataDevolucao, setDataDevolucao] = useState("")
 
   useEffect(() => {
     if (open) {
-      fetchEmprestimos()
+      fetchLancamentos()
     }
   }, [open])
 
-  const fetchEmprestimos = async () => {
+  const fetchLancamentos = async () => {
     try {
       const res = await fetch("/api/emprestimos")
       if (res.ok) {
         const data = await res.json()
-        setEmprestimos(data)
+        setLancamentos(data)
       }
     } catch (error) {
-      console.error("Erro ao buscar emprestimos:", error)
+      console.error("Erro ao buscar lançamentos do advogado:", error)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!nomePessoa || !valor || !dataDevolucao) return
+    if (!valor) return
 
     setLoading(true)
     try {
@@ -61,94 +57,80 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nomePessoa,
+          nomePessoa: descricao || "Advogado",
           valor: parseFloat(valor),
-          dataDevolucao,
+          dataDevolucao: new Date().toISOString().split("T")[0],
         }),
       })
       if (res.ok) {
-        setNomePessoa("")
+        setDescricao("")
         setValor("")
-        setDataDevolucao("")
         setShowForm(false)
-        fetchEmprestimos()
+        fetchLancamentos()
         onUpdate?.()
       }
     } catch (error) {
-      console.error("Erro ao criar emprestimo:", error)
+      console.error("Erro ao registrar lançamento:", error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleToggleDevolvido = async (emp: Emprestimo) => {
-    try {
-      await fetch(`/api/emprestimos/${emp.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ devolvido: !emp.devolvido }),
-      })
-      fetchEmprestimos()
-      onUpdate?.()
-    } catch (error) {
-      console.error("Erro ao atualizar emprestimo:", error)
     }
   }
 
   const handleDelete = async (id: string) => {
     try {
       await fetch(`/api/emprestimos/${id}`, { method: "DELETE" })
-      fetchEmprestimos()
+      fetchLancamentos()
       onUpdate?.()
     } catch (error) {
-      console.error("Erro ao remover emprestimo:", error)
+      console.error("Erro ao remover lançamento:", error)
     }
   }
 
-  const pendentes = emprestimos.filter(e => !e.devolvido)
-  const devolvidos = emprestimos.filter(e => e.devolvido)
-  const totalPendente = pendentes.reduce((sum, e) => sum + Number(e.valor), 0)
+  const TOTAL_CONTRATADO = 13000
+  const totalPago = lancamentos.reduce((sum, l) => sum + Number(l.valor), 0)
+  const totalRestante = Math.max(0, TOTAL_CONTRATADO - totalPago)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <HandCoins className="h-5 w-5 text-violet-500" />
-            Emprestado
+            <Scale className="h-5 w-5 text-indigo-500" />
+            Advogado
           </DialogTitle>
           <DialogDescription>
-            Gerencie o dinheiro emprestado para outras pessoas
+            Acompanhe os pagamentos ao advogado
           </DialogDescription>
         </DialogHeader>
 
-        {/* Total pendente */}
-        {pendentes.length > 0 && (
-          <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Total pendente</span>
-            <span className="text-sm font-bold text-violet-500">{formatarMoeda(totalPendente)}</span>
+        {/* Painel de resumo */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-lg border border-border/40 bg-card px-2.5 py-2 flex flex-col gap-0.5">
+            <span className="text-[10px] text-muted-foreground leading-none">Total contratado</span>
+            <span className="text-sm font-bold text-foreground">{formatarMoeda(TOTAL_CONTRATADO)}</span>
           </div>
-        )}
+          <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-2.5 py-2 flex flex-col gap-0.5">
+            <span className="text-[10px] text-muted-foreground leading-none">Já pago</span>
+            <span className="text-sm font-bold text-indigo-500">{formatarMoeda(totalPago)}</span>
+          </div>
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-2 flex flex-col gap-0.5">
+            <span className="text-[10px] text-muted-foreground leading-none">Restante</span>
+            <span className="text-sm font-bold text-amber-500">{formatarMoeda(totalRestante)}</span>
+          </div>
+        </div>
 
-        {/* Lista de emprestimos */}
+        {/* Lista de lançamentos */}
         <div className="space-y-1.5 max-h-60 overflow-y-auto">
-          {pendentes.map((emp) => (
+          {lancamentos.map((lanc) => (
             <div
-              key={emp.id}
+              key={lanc.id}
               className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border/40 bg-card hover:bg-accent/30 transition-colors group"
             >
-              <button
-                type="button"
-                onClick={() => handleToggleDevolvido(emp)}
-                className="shrink-0 h-3.5 w-3.5 rounded-full border border-violet-500/50 hover:border-violet-500 hover:bg-violet-500/20 flex items-center justify-center transition-all"
-                aria-label="Marcar como devolvido"
-                title="Marcar como devolvido"
-              />
-              <span className="text-sm font-medium text-foreground truncate flex-1">{emp.nome_pessoa}</span>
+              <span className="text-sm font-medium text-foreground truncate flex-1">{lanc.nome_pessoa}</span>
               <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                {new Date(emp.data_devolucao + "T00:00:00").toLocaleDateString("pt-BR")}
+                {new Date(lanc.created_at).toLocaleDateString("pt-BR")}
               </span>
-              <span className="text-sm font-bold text-foreground whitespace-nowrap">{formatarMoeda(Number(emp.valor))}</span>
+              <span className="text-sm font-bold text-foreground whitespace-nowrap">{formatarMoeda(Number(lanc.valor))}</span>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -156,7 +138,7 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
                       variant="ghost"
                       size="icon"
                       className="h-5 w-5 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                      onClick={() => handleDelete(emp.id)}
+                      onClick={() => handleDelete(lanc.id)}
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -167,40 +149,8 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
             </div>
           ))}
 
-          {devolvidos.length > 0 && (
-            <>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider pt-2 px-1">Devolvidos</p>
-              {devolvidos.map((emp) => (
-                <div
-                  key={emp.id}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border/20 bg-card/50 group"
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleToggleDevolvido(emp)}
-                    className="shrink-0 h-3.5 w-3.5 rounded-full bg-emerald-500 border border-emerald-500 flex items-center justify-center transition-all hover:bg-emerald-600"
-                    aria-label="Desmarcar devolvido"
-                    title="Desmarcar devolvido"
-                  >
-                    <Check className="h-2 w-2 text-white" strokeWidth={3} />
-                  </button>
-                  <span className="text-sm text-muted-foreground line-through truncate flex-1">{emp.nome_pessoa}</span>
-                  <span className="text-sm font-bold text-muted-foreground whitespace-nowrap">{formatarMoeda(Number(emp.valor))}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                    onClick={() => handleDelete(emp.id)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </>
-          )}
-
-          {emprestimos.length === 0 && !showForm && (
-            <p className="text-sm text-muted-foreground text-center py-6">Nenhum empréstimo registrado</p>
+          {lancamentos.length === 0 && !showForm && (
+            <p className="text-sm text-muted-foreground text-center py-6">Nenhum lançamento registrado</p>
           )}
         </div>
 
@@ -208,38 +158,26 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
         {showForm ? (
           <form onSubmit={handleSubmit} className="space-y-3 border-t border-border/40 pt-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Nome da Pessoa</Label>
+              <Label className="text-xs">Descrição (opcional)</Label>
               <Input
-                value={nomePessoa}
-                onChange={(e) => setNomePessoa(e.target.value)}
-                placeholder="Ex: João"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Ex: Honorários, Audiência..."
                 className="h-8 text-sm"
-                required
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5">
-                <Label className="text-xs">{'Valor (R$)'}</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={valor}
-                  onChange={(e) => setValor(e.target.value)}
-                  placeholder="0,00"
-                  className="h-8 text-sm"
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Data de Devolução</Label>
-                <Input
-                  type="date"
-                  value={dataDevolucao}
-                  onChange={(e) => setDataDevolucao(e.target.value)}
-                  className="h-8 text-sm"
-                  required
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{'Valor (R$)'}</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                placeholder="0,00"
+                className="h-8 text-sm"
+                required
+                autoFocus
+              />
             </div>
             <div className="flex items-center gap-2 justify-end">
               <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>
@@ -258,7 +196,7 @@ export function EmprestimoDialog({ open, onOpenChange, onUpdate }: EmprestimoDia
             onClick={() => setShowForm(true)}
           >
             <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Adicionar Empréstimo
+            Adicionar Valor
           </Button>
         )}
       </DialogContent>
