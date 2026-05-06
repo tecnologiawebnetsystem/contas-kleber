@@ -103,15 +103,15 @@ export function CabeloDialog({ open, onOpenChange, onUpdate }: CabeloDialogProps
 
   const renderSessao = (sessao: Sessao, corClasse: string) => {
     const estaEditando = editandoData === sessao.id
-    const idReal = !sessao.id.startsWith("luz-") && !sessao.id.startsWith("prog-")
+    const temIdReal = !sessao.id.startsWith("luz-") && !sessao.id.startsWith("prog-")
 
     return (
       <div key={sessao.id} className="flex flex-col gap-1">
         <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-accent/30 transition-colors">
           <button
             type="button"
-            disabled={loading || (!idReal && sessao.feita) || estaEditando}
-            onClick={() => idReal ? handleToggle(sessao) : !sessao.feita && setEditandoData(sessao.id) || handleToggle(sessao)}
+            disabled={loading || estaEditando || (!temIdReal && !sessao.feita)}
+            onClick={() => temIdReal ? handleToggle(sessao) : undefined}
             className={`h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
               sessao.feita
                 ? `${corClasse} border-transparent`
