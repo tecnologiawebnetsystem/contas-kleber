@@ -1,24 +1,16 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/mysql/server"
+import { query, insert, removeWhere } from "@/lib/mysql"
 
 // GET - Listar depositos de poupanca
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data, error } = await supabase
-      .from("contas")
-      .select("id, nome, valor, data_gasto, created_at")
-      .eq("tipo", "poupanca")
-      .order("created_at", { ascending: false })
-
-    if (error) {
-      console.error("[v0] Erro ao buscar poupanca:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json(data || [])
+    const rows = await query(
+      "SELECT id, nome, valor, data_gasto, created_at FROM contas WHERE tipo = ? ORDER BY created_at DESC",
+      ["poupanca"]
+    )
+    return NextResponse.json(rows)
   } catch (error: any) {
-    console.error("[v0] Erro poupanca GET:", error)
+    console.error("[v0] Erro poupanca GET:", error?.message)
     return NextResponse.json({ error: error?.message }, { status: 500 })
   }
 }
@@ -26,66 +18,43 @@ export async function GET() {
 // POST - Adicionar deposito de poupanca
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
     const body = await request.json()
+    const { nome, valor } = body
 
-    console.log("[v0] Poupanca POST body:", JSON.stringify(body))
+    if (!nome || !valor) {
+      return NextResponse.json({ error: "Nome e valor sao obrigatorios" }, { status: 400 })
+    }
 
     const hoje = new Date().toISOString().split("T")[0]
 
     // 1. Inserir na tabela contas
-    const { data: conta, error: contaError } = await supabase
-      .from("contas")
-      .insert({
-        nome: body.nome,
-        valor: body.valor,
-        tipo: "poupanca",
-        vencimento: new Date().getDate(),
-        categoria: "Poupanca",
-        data_gasto: hoje,
-      })
-      .select()
-      .single()
-
-    if (contaError) {
-      console.error("[v0] Erro insert conta poupanca:", JSON.stringify(contaError))
-      return NextResponse.json({ error: contaError.message || JSON.stringify(contaError) }, { status: 500 })
-    }
-
-    // 2. Inserir pagamento (ignora duplicidade da constraint UNIQUE conta_id/mes/ano)
-    const { error: pagError } = await supabase.from("pagamentos").insert({
-      conta_id: conta.id,
-      mes: new Date().getMonth(),
-      ano: new Date().getFullYear(),
-      data_pagamento: hoje,
+    const conta = await insert("contas", {
+      nome,
+      valor: parseFloat(valor),
+      tipo: "poupanca",
+      vencimento: new Date().getDate(),
+      categoria: "Poupanca",
+      data_gasto: hoje,
     })
 
-    if (pagError) {
-      console.error("[v0] Erro insert pagamento poupanca:", JSON.stringify(pagError))
+    if (!conta) {
+      return NextResponse.json({ error: "Erro ao inserir deposito" }, { status: 500 })
     }
 
-    // 3. Atualizar saldo (opcional - nao bloqueia)
-    const { data: saldoData } = await supabase.from("saldo").select("*").limit(1).single()
-    if (saldoData) {
-      const novoSaldo = Number(saldoData.valor) - Number(body.valor)
-      await supabase
-        .from("saldo")
-        .update({ valor: novoSaldo, updated_at: new Date().toISOString() })
-        .eq("id", saldoData.id)
+    // 2. Inserir pagamento — usa INSERT IGNORE para nao falhar em duplicidade
+    try {
+      const pool = (await import("@/lib/mysql")).getPool()
+      await pool.execute(
+        "INSERT IGNORE INTO pagamentos (id, conta_id, mes, ano, data_pagamento) VALUES (UUID(), ?, ?, ?, ?)",
+        [conta.id, new Date().getMonth() + 1, new Date().getFullYear(), hoje]
+      )
+    } catch (e: any) {
+      console.error("[v0] Aviso pagamento poupanca:", e?.message)
     }
-
-    // 4. Registrar transacao (opcional - nao bloqueia)
-    await supabase.from("transacoes").insert({
-      tipo: "debito",
-      valor: body.valor,
-      descricao: `Deposito na poupanca: ${body.nome}`,
-      referencia_id: conta.id,
-      data_transacao: hoje,
-    })
 
     return NextResponse.json(conta)
   } catch (error: any) {
-    console.error("[v0] Erro poupanca POST catch:", error?.message, JSON.stringify(error))
+    console.error("[v0] Erro poupanca POST:", error?.message)
     return NextResponse.json({ error: error?.message || "Erro interno" }, { status: 500 })
   }
 }
@@ -93,21 +62,24 @@ export async function POST(request: Request) {
 // DELETE - Excluir deposito de poupanca
 export async function DELETE(request: Request) {
   try {
-    const supabase = await createClient()
     const { id } = await request.json()
 
-    // Deletar registros dependentes primeiro
-    await supabase.from("pagamentos").delete().eq("conta_id", id)
-    await supabase.from("transacoes").delete().eq("referencia_id", id)
-
-    const { error } = await supabase.from("contas").delete().eq("id", id)
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!id) {
+      return NextResponse.json({ error: "ID obrigatorio" }, { status: 400 })
     }
+
+    // Remover dependentes primeiro
+    try {
+      await removeWhere("pagamentos", { conta_id: id })
+    } catch (e: any) {
+      console.error("[v0] Aviso ao remover pagamentos poupanca:", e?.message)
+    }
+
+    await removeWhere("contas", { id })
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
+    console.error("[v0] Erro poupanca DELETE:", error?.message)
     return NextResponse.json({ error: error?.message || "Erro ao excluir" }, { status: 500 })
   }
 }
