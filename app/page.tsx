@@ -614,7 +614,7 @@ export default function Home() {
     .reduce((sum, transacao) => sum + Number(transacao.valor || 0), 0)
 
   const totalPagoMes = transacoesDoMes
-    .filter((transacao) => transacao.tipo === "debito" && String(transacao.descricao || "").startsWith("Pagamento:"))
+    .filter((transacao) => transacao.tipo === "debito")
     .reduce((sum, transacao) => sum + Number(transacao.valor || 0), 0)
 
   const pagas = contasMesAtual.filter((conta) => {
