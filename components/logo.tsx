@@ -100,7 +100,7 @@ export function Logo({ variant = "full", size = "md", glow = false, className = 
       <IconSVG />
       <div className="flex flex-col">
         <span className={`font-heading font-bold tracking-tight text-gradient leading-tight ${s.text}`}>
-          Talent Money Family
+          Família Gonçalves
         </span>
         <span className="text-[10px] text-muted-foreground tracking-widest uppercase">
           Contas a Pagar

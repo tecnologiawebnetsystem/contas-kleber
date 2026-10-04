@@ -25,13 +25,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon-192.jpg", sizes: "192x192", type: "image/jpeg" },
-      { url: "/icon-512.jpg", sizes: "512x512", type: "image/jpeg" },
+      { url: "/icon.svg", sizes: "any", type: "image/svg+xml" },
     ],
     apple: [
-      { url: "/apple-icon.jpg", sizes: "180x180", type: "image/jpeg" },
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/icon-192.jpg",
+    shortcut: "/icon.svg",
   },
   generator: "v0.app",
 }
@@ -66,12 +65,12 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Família Gonçalves" />
 
         {/* Ícone para iOS (add to home screen) */}
-        <link rel="apple-touch-icon" href="/apple-icon.jpg" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.jpg" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png" />
 
         {/* Ícone favicon */}
-        <link rel="icon" type="image/jpeg" sizes="192x192" href="/icon-192.jpg" />
-        <link rel="shortcut icon" href="/icon-192.jpg" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <link rel="shortcut icon" href="/icon.svg" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
