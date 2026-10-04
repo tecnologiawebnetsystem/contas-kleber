@@ -602,18 +602,25 @@ export default function Home() {
     return false
   })
 
-  const totalMes = contasMesAtual.reduce((sum, conta) => sum + conta.valor, 0)
+  const transacoesDoMes = transacoes.filter((transacao) => {
+    const data = transacao.data_transacao || transacao.created_at
+    if (!data) return false
+    const dataTransacao = new Date(`${String(data).slice(0, 10)}T00:00:00`)
+    return dataTransacao.getMonth() + 1 === mesSelecionado && dataTransacao.getFullYear() === anoSelecionado
+  })
+
+  const totalCreditoMes = transacoesDoMes
+    .filter((transacao) => transacao.tipo === "credito")
+    .reduce((sum, transacao) => sum + Number(transacao.valor || 0), 0)
+
+  const totalPagoMes = transacoesDoMes
+    .filter((transacao) => transacao.tipo === "debito")
+    .reduce((sum, transacao) => sum + Number(transacao.valor || 0), 0)
+
   const pagas = contasMesAtual.filter((conta) => {
     if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return true
     return isContaPaga(conta)
   }).length
-
-  const totalPago = contasMesAtual
-    .filter((conta) => {
-      if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return true
-      return isContaPaga(conta)
-    })
-    .reduce((sum, conta) => sum + conta.valor, 0)
 
   const meses = [
     "Janeiro",
@@ -633,7 +640,7 @@ export default function Home() {
   const totalPoupanca = dataPoupanca?.totalDepositado || 0
   const totalViagem = dataViagem?.totalDepositado || 0
 
-  const percentualPago = totalMes > 0 ? Math.round((totalPago / totalMes) * 100) : 0
+  const percentualPago = totalCreditoMes > 0 ? Math.min(100, Math.round((totalPagoMes / totalCreditoMes) * 100)) : 0
 
   if (loading) {
     return (
@@ -855,18 +862,14 @@ export default function Home() {
               </div>
 
               {/* Stats row */}
-              <div className="grid grid-cols-3 gap-3 pt-4 border-t border-border/40">
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-border/40">
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total do mes</p>
-                  <p className="text-sm font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalMes)}</p>
+                  <p className="text-sm font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalCreditoMes)}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pago</p>
-                  <p className="text-sm font-bold font-heading text-emerald-500 mt-0.5">{formatarMoeda(totalPago)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pendente</p>
-                  <p className="text-sm font-bold font-heading text-amber-500 mt-0.5">{formatarMoeda(totalMes - totalPago)}</p>
+                  <p className="text-sm font-bold font-heading text-emerald-500 mt-0.5">{formatarMoeda(totalPagoMes)}</p>
                 </div>
               </div>
 
