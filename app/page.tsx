@@ -70,7 +70,7 @@ export default function Home() {
   const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear())
   const [mostrarApenasHoje, setMostrarApenasHoje] = useState(false)
 
-  // Perfil 1 = acesso total (Kleber), Perfil 2 = consulta (Pamela)
+  // Perfil 1 = acesso total da Família Gonçalves
   const temAcessoTotal = user?.perfil === 1
   const podeEditar = temAcessoTotal
 

@@ -64,7 +64,7 @@ export function InstallPrompt() {
             <Download className="h-6 w-6" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-lg mb-1">Instalar ContasKleber</h3>
+            <h3 className="font-semibold text-lg mb-1">Instalar Família Gonçalves</h3>
             <p className="text-sm text-white/90 mb-3">Instale o app no seu tablet para acesso rápido e uso offline!</p>
             <div className="flex gap-2">
               <Button onClick={handleInstall} size="sm" className="bg-background text-primary hover:bg-background/90">
