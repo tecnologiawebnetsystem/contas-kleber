@@ -69,9 +69,10 @@ export async function POST(request: Request) {
     if (deveValidarSaldo) {
       const { error: transacaoError } = await supabase.from("transacoes").insert({
         tipo: "debito",
-        valor: Number(conta.valor),
+        valor: Number(body.valorAjustado || conta.valor),
         descricao: `Pagamento: ${body.contaNome || "Conta"}`,
         referencia_id: data.id,
+        data_transacao: body.dataPagamento || new Date().toISOString().slice(0, 10),
       })
 
       if (transacaoError) throw transacaoError

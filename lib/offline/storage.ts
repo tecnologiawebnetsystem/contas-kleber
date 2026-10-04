@@ -9,7 +9,7 @@ interface OfflineOperation {
 }
 
 class OfflineStorage {
-  private dbName = "ContasKleberDB"
+  private dbName = "FamiliaGoncalvesDB"
   private version = 2
   private db: IDBDatabase | null = null
 

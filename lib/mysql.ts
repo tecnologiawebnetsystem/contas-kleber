@@ -1,352 +1,160 @@
-import mysql from 'mysql2/promise'
+import { Pool } from "pg"
 
-// Pool de conexões MySQL — singleton global para sobreviver ao hot-reload do Next.js
-// O HostGator limita conexões por usuário (geralmente 3-5 em planos compartilhados)
+type NeonPool = Pool & {
+  execute: (sql: string, params?: any[]) => Promise<[any[], { affectedRows: number }]>
+}
+
 declare global {
   // eslint-disable-next-line no-var
-  var _mysqlPool: mysql.Pool | undefined
+  var _neonPool: NeonPool | undefined
 }
 
-export function getPool(): mysql.Pool {
-  if (!global._mysqlPool) {
-    global._mysqlPool = mysql.createPool({
-      host: process.env.MYSQL_HOST || 'localhost',
-      port: parseInt(process.env.MYSQL_PORT || '3306'),
-      user: process.env.MYSQL_USER || 'root',
-      password: process.env.MYSQL_PASSWORD || '',
-      database: process.env.MYSQL_DATABASE || 'contas_kleber',
-      waitForConnections: true,
-      connectionLimit: 3,       // Conservador para planos compartilhados HostGator
-      queueLimit: 20,           // Fila de até 20 requisições esperando conexão livre
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 10000,
-      connectTimeout: 10000,
+export function getPool(): NeonPool {
+  if (!global._neonPool) {
+    if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL não configurada")
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 10,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+      ssl: { rejectUnauthorized: false },
     })
+    ;(pool as NeonPool).execute = (sql: string, params: any[] = []) => execute(sql, params)
+    global._neonPool = pool
   }
-  return global._mysqlPool
+  return global._neonPool
 }
 
-// Helper para executar queries
-export async function query<T = any>(
-  sql: string,
-  params?: any[]
-): Promise<T[]> {
-  const pool = getPool()
-  const [rows] = await pool.execute(sql, params)
+function normalizeSql(sql: string, params: any[] = []) {
+  let index = 0
+  return {
+    sql: sql.replace(/\?/g, () => `$${++index}`).replace(/\bUUID\(\)/gi, "gen_random_uuid()").replace(/`/g, '"'),
+    params,
+  }
+}
+
+export async function execute(sql: string, params: any[] = []): Promise<[any[], { affectedRows: number }]> {
+  if (/^\s*SHOW\s+TABLES/i.test(sql)) {
+    const result = await getPool().query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name")
+    return [result.rows, { affectedRows: result.rowCount ?? 0 }]
+  }
+  const normalized = normalizeSql(sql, params)
+  const result = await getPool().query(normalized.sql, normalized.params)
+  return [result.rows, { affectedRows: result.rowCount ?? 0 }]
+}
+
+export async function query<T = any>(sql: string, params: any[] = []): Promise<T[]> {
+  const [rows] = await execute(sql, params)
   return rows as T[]
 }
 
-// Helper para executar queries que retornam um único resultado
-export async function queryOne<T = any>(
-  sql: string,
-  params?: any[]
-): Promise<T | null> {
-  const results = await query<T>(sql, params)
-  return results[0] || null
+export async function queryOne<T = any>(sql: string, params: any[] = []): Promise<T | null> {
+  return (await query<T>(sql, params))[0] || null
 }
 
-// Helper para inserir dados e retornar o registro inserido
-export async function insert(
-  table: string,
-  data: Record<string, any>
-): Promise<any> {
-  const pool = getPool()
-  const id = crypto.randomUUID()
-  const dataWithId = { id, ...data }
-  
-  const columns = Object.keys(dataWithId)
-  const values = Object.values(dataWithId)
-  const placeholders = columns.map(() => '?').join(', ')
-  
-  const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`
-  await pool.execute(sql, values)
-  
-  // Retornar o registro inserido
-  const [rows] = await pool.execute(`SELECT * FROM ${table} WHERE id = ?`, [id])
-  return (rows as any[])[0]
+export async function insert(table: string, data: Record<string, any>): Promise<any> {
+  const record = { id: data.id || crypto.randomUUID(), ...data }
+  const columns = Object.keys(record)
+  const values = Object.values(record)
+  const fields = columns.map((column) => `"${column}"`).join(", ")
+  const placeholders = columns.map((_, index) => `$${index + 1}`).join(", ")
+  const result = await getPool().query(`INSERT INTO "${table}" (${fields}) VALUES (${placeholders}) RETURNING *`, values)
+  return result.rows[0]
 }
 
-// Helper para atualizar dados
-export async function update(
-  table: string,
-  id: string,
-  data: Record<string, any>
-): Promise<any> {
-  const pool = getPool()
-  
-  const columns = Object.keys(data)
-  const values = Object.values(data)
-  const setClause = columns.map(col => `${col} = ?`).join(', ')
-  
-  const sql = `UPDATE ${table} SET ${setClause}, updated_at = NOW() WHERE id = ?`
-  await pool.execute(sql, [...values, id])
-  
-  // Retornar o registro atualizado
-  const [rows] = await pool.execute(`SELECT * FROM ${table} WHERE id = ?`, [id])
-  return (rows as any[])[0]
+export async function update(table: string, id: string, data: Record<string, any>): Promise<any> {
+  const entries = Object.entries(data).filter(([column]) => column !== "updated_at")
+  const values = entries.map(([, value]) => value)
+  const assignments = entries.map(([column], index) => `"${column}" = $${index + 1}`)
+  const result = await getPool().query(`UPDATE "${table}" SET ${assignments.join(", ")}, updated_at = NOW() WHERE id = $${values.length + 1} RETURNING *`, [...values, id])
+  return result.rows[0]
 }
 
-// Helper para deletar dados
 export async function remove(table: string, id: string): Promise<boolean> {
-  const pool = getPool()
-  const [result] = await pool.execute(`DELETE FROM ${table} WHERE id = ?`, [id])
-  return (result as any).affectedRows > 0
+  const result = await getPool().query(`DELETE FROM "${table}" WHERE id = $1`, [id])
+  return (result.rowCount ?? 0) > 0
 }
 
-// Helper para deletar com condição
-export async function removeWhere(
-  table: string,
-  conditions: Record<string, any>
-): Promise<number> {
-  const pool = getPool()
-  
-  const columns = Object.keys(conditions)
-  const values = Object.values(conditions)
-  const whereClause = columns.map(col => `${col} = ?`).join(' AND ')
-  
-  const sql = `DELETE FROM ${table} WHERE ${whereClause}`
-  const [result] = await pool.execute(sql, values)
-  return (result as any).affectedRows
+export async function removeWhere(table: string, conditions: Record<string, any>): Promise<number> {
+  const entries = Object.entries(conditions)
+  const where = entries.map(([column], index) => `"${column}" = $${index + 1}`).join(" AND ")
+  const result = await getPool().query(`DELETE FROM "${table}" WHERE ${where}`, entries.map(([, value]) => value))
+  return result.rowCount ?? 0
 }
 
-// Objeto compatível com API do Supabase para facilitar migração
-export function createMySQLClient() {
-  return {
-    from: (table: string) => new QueryBuilder(table),
-  }
-}
-
-type Operation = 'select' | 'insert' | 'update' | 'delete'
+export function createMySQLClient() { return { from: (table: string) => new QueryBuilder(table) } }
 
 class QueryBuilder {
-  private table: string
-  private selectColumns: string = '*'
+  private selectColumns = "*"
   private whereConditions: { column: string; operator: string; value: any }[] = []
   private orderByColumns: { column: string; ascending: boolean }[] = []
   private limitValue: number | null = null
   private offsetValue: number | null = null
-  private operation: Operation = 'select'
+  private operation: "select" | "insert" | "update" | "delete" = "select"
   private updateData: Record<string, any> | null = null
   private insertData: Record<string, any> | Record<string, any>[] | null = null
 
-  constructor(table: string) {
-    this.table = table
+  constructor(private readonly table: string) {}
+  select(columns = "*") { if (this.operation === "select") this.selectColumns = columns; return this }
+  eq(column: string, value: any) { this.whereConditions.push({ column, operator: "=", value }); return this }
+  neq(column: string, value: any) { this.whereConditions.push({ column, operator: "!=", value }); return this }
+  gt(column: string, value: any) { this.whereConditions.push({ column, operator: ">", value }); return this }
+  gte(column: string, value: any) { this.whereConditions.push({ column, operator: ">=", value }); return this }
+  lt(column: string, value: any) { this.whereConditions.push({ column, operator: "<", value }); return this }
+  lte(column: string, value: any) { this.whereConditions.push({ column, operator: "<=", value }); return this }
+  order(column: string, options?: { ascending?: boolean }) { this.orderByColumns.push({ column, ascending: options?.ascending ?? true }); return this }
+  limit(count: number) { this.limitValue = count; return this }
+  offset(count: number) { this.offsetValue = count; return this }
+  insert(data: Record<string, any> | Record<string, any>[]) { this.operation = "insert"; this.insertData = data; return this }
+  update(data: Record<string, any>) { this.operation = "update"; this.updateData = data; return this }
+  delete() { this.operation = "delete"; return this }
+
+  private where() {
+    const sql = this.whereConditions.length ? ` WHERE ${this.whereConditions.map((condition, index) => `${condition.column} ${condition.operator} $${index + 1}`).join(" AND ")}` : ""
+    return { sql, params: this.whereConditions.map((condition) => condition.value) }
   }
 
-  select(columns: string = '*') {
-    // Só muda a operação para 'select' se ainda não foi definida outra operação
-    // (ex: .insert({...}).select() não deve sobrescrever a operação de insert)
-    if (this.operation === 'select') {
-      this.selectColumns = columns
-    }
-    return this
-  }
-
-  eq(column: string, value: any) {
-    this.whereConditions.push({ column, operator: '=', value })
-    return this
-  }
-
-  neq(column: string, value: any) {
-    this.whereConditions.push({ column, operator: '!=', value })
-    return this
-  }
-
-  gt(column: string, value: any) {
-    this.whereConditions.push({ column, operator: '>', value })
-    return this
-  }
-
-  gte(column: string, value: any) {
-    this.whereConditions.push({ column, operator: '>=', value })
-    return this
-  }
-
-  lt(column: string, value: any) {
-    this.whereConditions.push({ column, operator: '<', value })
-    return this
-  }
-
-  lte(column: string, value: any) {
-    this.whereConditions.push({ column, operator: '<=', value })
-    return this
-  }
-
-  order(column: string, options?: { ascending?: boolean }) {
-    this.orderByColumns.push({
-      column,
-      ascending: options?.ascending ?? true,
-    })
-    return this
-  }
-
-  limit(count: number) {
-    this.limitValue = count
-    return this
-  }
-
-  offset(count: number) {
-    this.offsetValue = count
-    return this
-  }
-
-  private buildWhereClause(): { sql: string; params: any[] } {
-    if (this.whereConditions.length === 0) {
-      return { sql: '', params: [] }
-    }
-    const conditions = this.whereConditions.map(
-      (c) => `${c.column} ${c.operator} ?`
-    )
-    return {
-      sql: ' WHERE ' + conditions.join(' AND '),
-      params: this.whereConditions.map((c) => c.value),
-    }
-  }
-
-  private buildOrderClause(): string {
-    if (this.orderByColumns.length === 0) return ''
-    const orders = this.orderByColumns.map(
-      (o) => `${o.column} ${o.ascending ? 'ASC' : 'DESC'}`
-    )
-    return ' ORDER BY ' + orders.join(', ')
-  }
-
-  private buildLimitClause(): string {
-    if (this.limitValue === null) return ''
-    let clause = ` LIMIT ${this.limitValue}`
-    if (this.offsetValue !== null) {
-      clause += ` OFFSET ${this.offsetValue}`
-    }
-    return clause
-  }
-
-  private async executeSelect(): Promise<{ data: any[] | null; error: any }> {
+  private async run(): Promise<{ data: any; error: any }> {
     try {
-      const pool = getPool()
-      const { sql: whereSQL, params } = this.buildWhereClause()
-      const orderSQL = this.buildOrderClause()
-      const limitSQL = this.buildLimitClause()
-      const sql = `SELECT ${this.selectColumns} FROM ${this.table}${whereSQL}${orderSQL}${limitSQL}`
-      const [rows] = await pool.execute(sql, params)
-      return { data: rows as any[], error: null }
+      if (this.operation === "select") {
+        const where = this.where()
+        const order = this.orderByColumns.length ? ` ORDER BY ${this.orderByColumns.map((item) => `${item.column} ${item.ascending ? "ASC" : "DESC"}`).join(", ")}` : ""
+        const limit = this.limitValue === null ? "" : ` LIMIT ${this.limitValue}${this.offsetValue === null ? "" : ` OFFSET ${this.offsetValue}`}`
+        const result = await getPool().query(`SELECT ${this.selectColumns} FROM ${this.table}${where.sql}${order}${limit}`, where.params)
+        return { data: result.rows, error: null }
+      }
+      if (this.operation === "insert") {
+        const records = Array.isArray(this.insertData) ? this.insertData : [this.insertData!]
+        const inserted = []
+        for (const record of records) inserted.push(await insert(this.table, record))
+        return { data: Array.isArray(this.insertData) ? inserted : inserted[0], error: null }
+      }
+      const where = this.where()
+      if (!where.params.length) return { data: null, error: new Error("A condição é obrigatória") }
+      if (this.operation === "delete") {
+        const result = await getPool().query(`DELETE FROM ${this.table}${where.sql} RETURNING *`, where.params)
+        return { data: result.rows, error: null }
+      }
+      const entries = Object.entries(this.updateData || {}).filter(([column]) => column !== "updated_at")
+      const values = entries.map(([, value]) => value)
+      const assignments = entries.map(([column], index) => `${column} = $${index + 1}`)
+      const shiftedWhere = where.sql.replace(/\$(\d+)/g, (_, value) => `$${Number(value) + values.length}`)
+      const result = await getPool().query(`UPDATE ${this.table} SET ${assignments.join(", ")}, updated_at = NOW()${shiftedWhere} RETURNING *`, [...values, ...where.params])
+      return { data: result.rows[0] ?? null, error: null }
     } catch (error) {
+      console.error("[v0] Erro na consulta Neon:", error)
       return { data: null, error }
     }
   }
 
-  private async executeInsert(): Promise<{ data: any; error: any }> {
-    try {
-      const pool = getPool()
-      const records = Array.isArray(this.insertData) ? this.insertData : [this.insertData!]
-      const insertedRecords: any[] = []
-
-      for (const record of records) {
-        // Remove campos gerados automaticamente pelo banco
-        const { created_at, updated_at, ...cleanRecord } = record
-        const id = cleanRecord.id || crypto.randomUUID()
-        const dataWithId = { id, ...cleanRecord }
-        const columns = Object.keys(dataWithId)
-        const values = Object.values(dataWithId)
-        const placeholders = columns.map(() => '?').join(', ')
-        const sql = `INSERT INTO ${this.table} (${columns.join(', ')}) VALUES (${placeholders})`
-        await pool.execute(sql, values)
-        const [rows] = await pool.execute(`SELECT * FROM ${this.table} WHERE id = ?`, [id])
-        insertedRecords.push((rows as any[])[0])
-      }
-
-      return {
-        data: Array.isArray(this.insertData) ? insertedRecords : insertedRecords[0],
-        error: null,
-      }
-    } catch (error: any) {
-      console.log('[v0] executeInsert ERROR table:', this.table, 'msg:', error?.message)
-      return { data: null, error }
-    }
-  }
-
-  private async executeUpdate(): Promise<{ data: any; error: any }> {
-    try {
-      const pool = getPool()
-      const { sql: whereSQL, params: whereParams } = this.buildWhereClause()
-      if (whereParams.length === 0) {
-        return { data: null, error: new Error('Update requires at least one condition') }
-      }
-      const rawData = this.updateData!
-      // Remove updated_at do objeto — é adicionado automaticamente pelo SQL
-      const { updated_at, ...data } = rawData
-      const columns = Object.keys(data)
-      const values = Object.values(data)
-      const setClause = columns.map((col) => `${col} = ?`).join(', ')
-      const sql = `UPDATE ${this.table} SET ${setClause}, updated_at = NOW()${whereSQL}`
-      await pool.execute(sql, [...values, ...whereParams])
-      const [rows] = await pool.execute(`SELECT * FROM ${this.table}${whereSQL}`, whereParams)
-      return { data: (rows as any[])[0] ?? null, error: null }
-    } catch (error: any) {
-      console.error('[v0] executeUpdate ERROR table:', this.table, 'msg:', error?.message)
-      return { data: null, error }
-    }
-  }
-
-  private async executeDelete(): Promise<{ data: any; error: any }> {
-    try {
-      const pool = getPool()
-      const { sql: whereSQL, params } = this.buildWhereClause()
-      const [rows] = await pool.execute(`SELECT * FROM ${this.table}${whereSQL}`, params)
-      await pool.execute(`DELETE FROM ${this.table}${whereSQL}`, params)
-      return { data: rows, error: null }
-    } catch (error) {
-      return { data: null, error }
-    }
-  }
-
-  private async executeOperation(): Promise<{ data: any; error: any }> {
-    switch (this.operation) {
-      case 'insert': return this.executeInsert()
-      case 'update': return this.executeUpdate()
-      case 'delete': return this.executeDelete()
-      default: return this.executeSelect()
-    }
-  }
-
-  // Compatibilidade com Supabase: permite await diretamente no QueryBuilder
-  then(
-    resolve: (value: { data: any; error: any }) => void,
-    reject?: (reason?: any) => void
-  ) {
-    return this.executeOperation().then(resolve, reject)
-  }
-
-  async single(): Promise<{ data: any | null; error: any }> {
-    // Para operações de insert/update/delete, executa a operação e retorna o primeiro item
-    // Para select, limita a 1 resultado
-    if (this.operation === 'select') {
-      this.limitValue = 1
-    }
-    const result = await this.executeOperation()
-    const data = Array.isArray(result.data) ? (result.data[0] ?? null) : (result.data ?? null)
-    return { data, error: result.error }
-  }
-
-  // insert() é síncrono — agenda a operação e retorna this para encadeamento
-  insert(data: Record<string, any> | Record<string, any>[]) {
-    this.operation = 'insert'
-    this.insertData = data
-    return this
-  }
-
-  // update() é síncrono — agenda a operação e retorna this para encadeamento
-  update(data: Record<string, any>) {
-    this.operation = 'update'
-    this.updateData = data
-    return this
-  }
-
-  // delete() é síncrono — agenda a operação e retorna this para encadeamento
-  delete() {
-    this.operation = 'delete'
-    return this
-  }
+  then(resolve: (value: { data: any; error: any }) => void, reject?: (reason?: any) => void) { return this.run().then(resolve, reject) }
+  async single() { if (this.operation === "select") this.limitValue = 1; const result = await this.run(); return { data: Array.isArray(result.data) ? result.data[0] ?? null : result.data, error: result.error } }
 }
 
-// Exportar instância padrão
 export const mysql_db = createMySQLClient()
+export const db = mysql_db
+export const pool = getPool
+export const mysql = { getPool, query, insert, update, remove, removeWhere }
+export const neon = mysql
+export const provider = "neon"
+export const dialect = "postgres"

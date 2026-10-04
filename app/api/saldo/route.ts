@@ -45,7 +45,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { valor, descricao, data_transacao, consultoria_id } = await request.json()
+    const { valor, descricao, data_transacao, consultoria_id, tipo = "credito" } = await request.json()
+    const valorNumerico = Number(valor)
+    if (!Number.isFinite(valorNumerico) || valorNumerico <= 0 || !["credito", "debito"].includes(tipo)) {
+      return NextResponse.json({ error: "Valor ou tipo de transação inválido" }, { status: 400 })
+    }
     const supabase = await createClient()
 
     // Buscar saldo atual
@@ -53,8 +57,8 @@ export async function POST(request: Request) {
 
     if (saldoError) throw saldoError
 
-    // Calcular novo saldo
-    const novoValor = Number(saldoAtual.valor) + Number(valor)
+    // Crédito soma; débito desconta do saldo disponível
+    const novoValor = Number(saldoAtual.valor) + (tipo === "debito" ? -valorNumerico : valorNumerico)
 
     // Atualizar saldo
     const { error: updateError } = await supabase
@@ -66,8 +70,8 @@ export async function POST(request: Request) {
 
     // Montar payload da transação — inclui consultoria se informada
     const transacaoPayload: Record<string, any> = {
-      tipo: "credito",
-      valor: Number(valor),
+      tipo,
+      valor: valorNumerico,
       descricao: descricao || "Adição de crédito",
       ...(data_transacao && { data_transacao }),
       ...(consultoria_id && consultoria_id !== "none" && { referencia_id: consultoria_id }),

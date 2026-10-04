@@ -75,7 +75,7 @@ export default function CarroPage() {
   const [editDescricao, setEditDescricao] = useState("")
   const [editCarroSelecionado, setEditCarroSelecionado] = useState<CarroValue | "">("")
 
-  // Perfil 1 = acesso total (Kleber), Perfil 2 = consulta (Pamela)
+  // Perfil 1 = acesso total da Família Gonçalves
   const temAcessoTotal = user?.perfil === 1
 
   useEffect(() => {
@@ -362,7 +362,7 @@ export default function CarroPage() {
     return data.toLocaleDateString("pt-BR")
   }
 
-  // Perfil 2 (Pamela) pode visualizar, perfil 1 (Kleber) pode adicionar/deletar
+  // O perfil único da Família Gonçalves pode visualizar, adicionar e deletar
   const podeEditar = temAcessoTotal
 
   if (loading) {
@@ -496,7 +496,7 @@ export default function CarroPage() {
               })}
             </div>
 
-            {/* Botão adicionar - apenas Kleber */}
+            {/* Botão adicionar — Família Gonçalves */}
             {podeEditar && (
               <div className="flex justify-end">
                 <Button

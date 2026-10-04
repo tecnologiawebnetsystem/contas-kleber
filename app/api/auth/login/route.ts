@@ -22,8 +22,8 @@ export async function POST(request: Request) {
     }
 
     // Buscar usuário pelo PIN
-    const usuarios = await query<Usuario[]>(
-      "SELECT id, nome, pin, perfil, tema, ativo FROM usuarios WHERE pin = ? AND ativo = 1",
+    const usuarios = await query<Usuario>(
+      "SELECT id, nome, pin, perfil, tema, ativo FROM usuarios WHERE pin = ? AND ativo = true",
       [pin]
     )
 

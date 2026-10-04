@@ -15,14 +15,11 @@ import {
   Share2,
   PiggyBank,
   BarChart3,
-  Scissors,
   PlusCircle,
-  Car,
   ArrowUpRight,
   ArrowDownRight,
   CircleDollarSign,
   Clock,
-  Scale,
   Briefcase,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -38,6 +35,7 @@ import { formatarMoeda } from "@/utils/formatar-moeda"
 import { OnlineStatus } from "@/components/online-status"
 import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
+import { AddDebitoDialog } from "@/components/add-debito-dialog"
 import { EmprestimoDialog } from "@/components/emprestimo-dialog"
 import { PoupancaDialog } from "@/components/poupanca-dialog"
 import { CabeloDialog } from "@/components/cabelo-dialog"
@@ -50,6 +48,7 @@ export default function Home() {
   const [transacoes, setTransacoes] = useState<any[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [creditoDialogOpen, setCreditoDialogOpen] = useState(false)
+  const [debitoDialogOpen, setDebitoDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   // Poupanca e viagem sao derivados diretamente do state de contas — sem fetch extra
   const [dataPoupanca, setDataPoupanca] = useState<any | null>(null)
@@ -71,7 +70,7 @@ export default function Home() {
   const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear())
   const [mostrarApenasHoje, setMostrarApenasHoje] = useState(false)
 
-  // Perfil 1 = acesso total (Kleber), Perfil 2 = consulta (Pamela)
+  // Perfil 1 = acesso total da Família Gonçalves
   const temAcessoTotal = user?.perfil === 1
   const podeEditar = temAcessoTotal
 
@@ -326,6 +325,25 @@ export default function Home() {
           description: "Não foi possível adicionar crédito.",
         variant: "destructive",
       })
+    }
+  }
+
+  const addDebito = async (valor: number, descricao: string, dataTransacao: string) => {
+    try {
+      const response = await fetch("/api/saldo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ valor, descricao, data_transacao: dataTransacao, tipo: "debito" }),
+      })
+      if (!response.ok) throw new Error("Erro ao adicionar débito")
+      const data = await response.json()
+      setSaldo(Number(data.novoSaldo))
+      await fetchTransacoes()
+      toast({ title: "Débito registrado", description: `${formatarMoeda(valor)} descontado do saldo.` })
+      setDebitoDialogOpen(false)
+    } catch (error) {
+      console.error("[v0] Erro ao adicionar débito:", error)
+      toast({ title: "Erro", description: "Não foi possível registrar o débito.", variant: "destructive" })
     }
   }
 
@@ -584,18 +602,25 @@ export default function Home() {
     return false
   })
 
-  const totalMes = contasMesAtual.reduce((sum, conta) => sum + conta.valor, 0)
+  const transacoesDoMes = transacoes.filter((transacao) => {
+    const data = transacao.data_transacao || transacao.created_at
+    if (!data) return false
+    const dataTransacao = new Date(`${String(data).slice(0, 10)}T00:00:00`)
+    return dataTransacao.getMonth() + 1 === mesSelecionado && dataTransacao.getFullYear() === anoSelecionado
+  })
+
+  const totalCreditoMes = transacoesDoMes
+    .filter((transacao) => transacao.tipo === "credito")
+    .reduce((sum, transacao) => sum + Number(transacao.valor || 0), 0)
+
+  const totalPagoMes = transacoesDoMes
+    .filter((transacao) => transacao.tipo === "debito" && String(transacao.descricao || "").startsWith("Pagamento:"))
+    .reduce((sum, transacao) => sum + Number(transacao.valor || 0), 0)
+
   const pagas = contasMesAtual.filter((conta) => {
     if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return true
     return isContaPaga(conta)
   }).length
-
-  const totalPago = contasMesAtual
-    .filter((conta) => {
-      if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return true
-      return isContaPaga(conta)
-    })
-    .reduce((sum, conta) => sum + conta.valor, 0)
 
   const meses = [
     "Janeiro",
@@ -615,7 +640,7 @@ export default function Home() {
   const totalPoupanca = dataPoupanca?.totalDepositado || 0
   const totalViagem = dataViagem?.totalDepositado || 0
 
-  const percentualPago = totalMes > 0 ? Math.round((totalPago / totalMes) * 100) : 0
+  const percentualPago = totalCreditoMes > 0 ? Math.min(100, Math.round((totalPagoMes / totalCreditoMes) * 100)) : 0
 
   if (loading) {
     return (
@@ -701,10 +726,26 @@ export default function Home() {
                       <CircleDollarSign className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Adicionar Credito</TooltipContent>
-                </Tooltip>
-              )}
-              {podeEditar && (
+            <TooltipContent>Adicionar Crédito</TooltipContent>
+          </Tooltip>
+        )}
+        {podeEditar && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => setDebitoDialogOpen(true)}
+                size="icon"
+                variant="outline"
+                className="h-9 w-9 rounded-full border-red-500/30 text-red-500 hover:bg-red-500/10"
+                aria-label="Adicionar débito"
+              >
+                <ArrowDownRight className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Adicionar Débito</TooltipContent>
+          </Tooltip>
+        )}
+        {podeEditar && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -821,18 +862,14 @@ export default function Home() {
               </div>
 
               {/* Stats row */}
-              <div className="grid grid-cols-3 gap-3 pt-4 border-t border-border/40">
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-border/40">
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total do mes</p>
-                  <p className="text-sm font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalMes)}</p>
+                  <p className="text-sm font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalCreditoMes)}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pago</p>
-                  <p className="text-sm font-bold font-heading text-emerald-500 mt-0.5">{formatarMoeda(totalPago)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pendente</p>
-                  <p className="text-sm font-bold font-heading text-amber-500 mt-0.5">{formatarMoeda(totalMes - totalPago)}</p>
+                  <p className="text-sm font-bold font-heading text-emerald-500 mt-0.5">{formatarMoeda(totalPagoMes)}</p>
                 </div>
               </div>
 
@@ -853,7 +890,7 @@ export default function Home() {
         </section>
 
         {/* Mini Cards Grid */}
-        <section className="grid grid-cols-5 gap-2 fade-up">
+        <section className="grid grid-cols-2 gap-2 fade-up">
           {/* Poupanca */}
           <button
             type="button"
@@ -865,50 +902,6 @@ export default function Home() {
             </div>
             <p className="text-[10px] font-medium text-muted-foreground leading-none truncate">{'Poupan\u00e7a'}</p>
             <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalPoupanca)}</p>
-          </button>
-
-          {/* Cabelo */}
-          <button
-            type="button"
-            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-pink-500/40 hover:shadow-md active:scale-95 group card-hover"
-            onClick={() => setCabeloDialogOpen(true)}
-          >
-            <div className="rounded-lg bg-pink-500/10 p-2 w-fit mb-2">
-              <Scissors className="h-4 w-4 text-pink-500" />
-            </div>
-            <p className="text-[10px] font-medium text-muted-foreground leading-none">Cabelo</p>
-            <p className="text-xs font-bold font-heading text-foreground mt-1">
-              {4 - cabeloResumo.luzesFeitas}L &bull; {4 - cabeloResumo.progressivasFeitas}P restantes
-            </p>
-          </button>
-
-          {/* Carro */}
-          <button
-            type="button"
-            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-zinc-500/40 hover:shadow-md active:scale-95 group card-hover"
-            onClick={() => router.push("/carro")}
-          >
-            <div className="rounded-lg bg-zinc-500/10 p-2 w-fit mb-2">
-              <Car className="h-4 w-4 text-zinc-500" />
-            </div>
-            <p className="text-[10px] font-medium text-muted-foreground leading-none">Carro</p>
-            <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalPagoCarro)}</p>
-          </button>
-
-          {/* Advogado */}
-          <button
-            type="button"
-            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-indigo-500/40 hover:shadow-md active:scale-95 group card-hover"
-            onClick={() => setEmprestimoDialogOpen(true)}
-          >
-            <div className="rounded-lg bg-indigo-500/10 p-2 w-fit mb-2">
-              <Scale className="h-4 w-4 text-indigo-500" />
-            </div>
-            <p className="text-[10px] font-medium text-muted-foreground leading-none">Advogado</p>
-            <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalEmprestado)}</p>
-            <p className="text-[9px] text-muted-foreground mt-0.5 truncate">
-              Restante: {formatarMoeda(Math.max(0, 13000 - totalEmprestado))}
-            </p>
           </button>
 
           {/* Consultorias */}
@@ -952,6 +945,7 @@ export default function Home() {
       {/* Dialogs */}
       <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
       <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
+      <AddDebitoDialog open={debitoDialogOpen} onOpenChange={setDebitoDialogOpen} onAdd={addDebito} />
       <EmprestimoDialog open={emprestimoDialogOpen} onOpenChange={setEmprestimoDialogOpen} onUpdate={fetchEmprestimos} />
       <PoupancaDialog open={poupancaDialogOpen} onOpenChange={setPoupancaDialogOpen} onUpdate={fetchContas} />
       <CabeloDialog open={cabeloDialogOpen} onOpenChange={setCabeloDialogOpen} onUpdate={fetchCabelo} />
