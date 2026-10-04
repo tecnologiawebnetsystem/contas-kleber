@@ -11,6 +11,7 @@ import { WhatsAppSendDialog } from "./whatsapp-send-dialog"
 import { EmailCompartilharDialog } from "./email-compartilhar-dialog"
 import {
   ArrowUpCircle,
+  ArrowDownCircle,
   Trash2,
   Share2,
   Search,
@@ -45,7 +46,7 @@ interface Transacao {
 
 interface ItemListado {
   id: string
-  tipo: "credito" | "conta"
+  tipo: "credito" | "debito" | "conta"
   nome: string
   valor: number
   data: Date
@@ -145,10 +146,10 @@ export function ListaTransacoes({
     // Processar transações
     todosItens.push(
       ...transacoes
-        .filter((t) => t.tipo === "credito")
+        .filter((t) => t.tipo === "credito" || t.tipo === "debito")
         .map((t) => ({
           id: t.id,
-          tipo: "credito" as const,
+          tipo: t.tipo as "credito" | "debito",
           nome: t.descricao,
           valor: t.valor,
           data: new Date(t.data_transacao || t.created_at),
@@ -259,14 +260,14 @@ export function ListaTransacoes({
 
     if (filtroTipo !== "todos") {
       itens = itens.filter((item) => {
-        if (filtroTipo === "credito") return item.tipo === "credito"
+        if (filtroTipo === "credito" || filtroTipo === "debito") return item.tipo === filtroTipo
         return item.tipo === "conta" && item.conta?.tipo === filtroTipo
       })
     }
 
     if (filtroStatus !== "todos") {
       itens = itens.filter((item) => {
-        if (item.tipo === "credito") return filtroStatus === "pago"
+        if (item.tipo === "credito" || item.tipo === "debito") return filtroStatus === "pago"
         const conta = item.conta
         let pago = false
         if (conta?.tipo === "parcelada" && conta.pago !== undefined) {
@@ -637,7 +638,8 @@ export function ListaTransacoes({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os tipos</SelectItem>
-            <SelectItem value="credito">Creditos</SelectItem>
+            <SelectItem value="credito">Créditos</SelectItem>
+            <SelectItem value="debito">Débitos</SelectItem>
             <SelectItem value="fixa">Fixas</SelectItem>
             <SelectItem value="parcelada">Parceladas</SelectItem>
             <SelectItem value="diaria">Gastos Diarios</SelectItem>
@@ -694,6 +696,21 @@ export function ListaTransacoes({
         <span className="font-bold text-emerald-500 text-sm whitespace-nowrap shrink-0">
           + {formatarMoeda(item.valor)}
         </span>
+      </div>
+    )
+  }
+
+  const renderDebitoItem = (item: ItemListado) => {
+    return (
+      <div key={item.id} className="flex items-center gap-3 rounded-xl border border-red-500/15 border-l-[3px] border-l-red-500 bg-red-500/5 px-3 py-3 transition-all hover:bg-red-500/10">
+        <div className="shrink-0 rounded-full bg-red-500/15 p-1.5">
+          <ArrowDownCircle className="h-3.5 w-3.5 text-red-500" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium text-foreground">{item.nome}</span>
+          <span className="text-[11px] text-muted-foreground">{item.data.toLocaleDateString("pt-BR")}</span>
+        </div>
+        <span className="shrink-0 whitespace-nowrap text-sm font-bold text-red-500">- {formatarMoeda(item.valor)}</span>
       </div>
     )
   }
@@ -901,7 +918,7 @@ export function ListaTransacoes({
         <div className="px-3 pb-4">
           <div className="space-y-1.5">
             {itensFiltrados.map((item) =>
-              item.tipo === "credito" ? renderCreditoItem(item) : renderContaItem(item)
+              item.tipo === "credito" ? renderCreditoItem(item) : item.tipo === "debito" ? renderDebitoItem(item) : renderContaItem(item)
             )}
           </div>
         </div>

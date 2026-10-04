@@ -35,6 +35,7 @@ import { formatarMoeda } from "@/utils/formatar-moeda"
 import { OnlineStatus } from "@/components/online-status"
 import { AddContaDialog } from "@/components/add-conta-dialog"
 import { AddCreditoDialog } from "@/components/add-credito-dialog"
+import { AddDebitoDialog } from "@/components/add-debito-dialog"
 import { EmprestimoDialog } from "@/components/emprestimo-dialog"
 import { PoupancaDialog } from "@/components/poupanca-dialog"
 import { CabeloDialog } from "@/components/cabelo-dialog"
@@ -47,6 +48,7 @@ export default function Home() {
   const [transacoes, setTransacoes] = useState<any[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [creditoDialogOpen, setCreditoDialogOpen] = useState(false)
+  const [debitoDialogOpen, setDebitoDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   // Poupanca e viagem sao derivados diretamente do state de contas — sem fetch extra
   const [dataPoupanca, setDataPoupanca] = useState<any | null>(null)
@@ -323,6 +325,25 @@ export default function Home() {
           description: "Não foi possível adicionar crédito.",
         variant: "destructive",
       })
+    }
+  }
+
+  const addDebito = async (valor: number, descricao: string, dataTransacao: string) => {
+    try {
+      const response = await fetch("/api/saldo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ valor, descricao, data_transacao: dataTransacao, tipo: "debito" }),
+      })
+      if (!response.ok) throw new Error("Erro ao adicionar débito")
+      const data = await response.json()
+      setSaldo(Number(data.novoSaldo))
+      await fetchTransacoes()
+      toast({ title: "Débito registrado", description: `${formatarMoeda(valor)} descontado do saldo.` })
+      setDebitoDialogOpen(false)
+    } catch (error) {
+      console.error("[v0] Erro ao adicionar débito:", error)
+      toast({ title: "Erro", description: "Não foi possível registrar o débito.", variant: "destructive" })
     }
   }
 
@@ -698,10 +719,26 @@ export default function Home() {
                       <CircleDollarSign className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Adicionar Credito</TooltipContent>
-                </Tooltip>
-              )}
-              {podeEditar && (
+            <TooltipContent>Adicionar Crédito</TooltipContent>
+          </Tooltip>
+        )}
+        {podeEditar && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => setDebitoDialogOpen(true)}
+                size="icon"
+                variant="outline"
+                className="h-9 w-9 rounded-full border-red-500/30 text-red-500 hover:bg-red-500/10"
+                aria-label="Adicionar débito"
+              >
+                <ArrowDownRight className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Adicionar Débito</TooltipContent>
+          </Tooltip>
+        )}
+        {podeEditar && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -905,6 +942,7 @@ export default function Home() {
       {/* Dialogs */}
       <AddContaDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addConta} user={user} />
       <AddCreditoDialog open={creditoDialogOpen} onOpenChange={setCreditoDialogOpen} onAdd={addCredito} />
+      <AddDebitoDialog open={debitoDialogOpen} onOpenChange={setDebitoDialogOpen} onAdd={addDebito} />
       <EmprestimoDialog open={emprestimoDialogOpen} onOpenChange={setEmprestimoDialogOpen} onUpdate={fetchEmprestimos} />
       <PoupancaDialog open={poupancaDialogOpen} onOpenChange={setPoupancaDialogOpen} onUpdate={fetchContas} />
       <CabeloDialog open={cabeloDialogOpen} onOpenChange={setCabeloDialogOpen} onUpdate={fetchCabelo} />
