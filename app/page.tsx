@@ -603,18 +603,23 @@ export default function Home() {
   })
 
   const transacoesDoMes = transacoes.filter((transacao) => {
-    const data = transacao.data_transacao || transacao.created_at
+    const data = transacao.data_transacao || transacao.dataTransacao || transacao.created_at
     if (!data) return false
-    const dataTransacao = new Date(`${String(data).slice(0, 10)}T00:00:00`)
-    return dataTransacao.getMonth() + 1 === mesSelecionado && dataTransacao.getFullYear() === anoSelecionado
+    const dataTexto = String(data)
+    const dataTransacao = new Date(
+      dataTexto.length >= 10 ? `${dataTexto.slice(0, 10)}T00:00:00` : dataTexto,
+    )
+    return !Number.isNaN(dataTransacao.getTime()) &&
+      dataTransacao.getMonth() + 1 === mesSelecionado &&
+      dataTransacao.getFullYear() === anoSelecionado
   })
 
   const totalCreditoMes = transacoesDoMes
-    .filter((transacao) => transacao.tipo === "credito")
+    .filter((transacao) => String(transacao.tipo).toLowerCase() === "credito")
     .reduce((sum, transacao) => sum + Number(transacao.valor || 0), 0)
 
   const totalPagoMes = transacoesDoMes
-    .filter((transacao) => transacao.tipo === "debito")
+    .filter((transacao) => String(transacao.tipo).toLowerCase() === "debito")
     .reduce((sum, transacao) => sum + Number(transacao.valor || 0), 0)
 
   const pagas = contasMesAtual.filter((conta) => {
@@ -889,12 +894,11 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Mini Cards Grid */}
-        <section className="grid grid-cols-2 gap-2 fade-up">
-          {/* Poupanca */}
+        {/* Atalho principal */}
+        <section className="fade-up">
           <button
             type="button"
-            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-amber-500/40 hover:shadow-md active:scale-95 group card-hover"
+            className="w-full rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-amber-500/40 hover:shadow-md active:scale-95 group card-hover"
             onClick={() => setPoupancaDialogOpen(true)}
           >
             <div className="rounded-lg bg-amber-500/10 p-2 w-fit mb-2">
@@ -902,21 +906,6 @@ export default function Home() {
             </div>
             <p className="text-[10px] font-medium text-muted-foreground leading-none truncate">{'Poupan\u00e7a'}</p>
             <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalPoupanca)}</p>
-          </button>
-
-          {/* Consultorias */}
-          <button
-            type="button"
-            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-primary/40 hover:shadow-md active:scale-95 group card-hover"
-            onClick={() => router.push("/consultorias")}
-          >
-            <div className="rounded-lg bg-primary/10 p-2 w-fit mb-2">
-              <Briefcase className="h-4 w-4 text-primary" />
-            </div>
-            <p className="text-[10px] font-medium text-muted-foreground leading-none">Consultorias</p>
-            <p className="text-xs font-bold font-heading text-foreground mt-1">
-              {totalConsultorias} {totalConsultorias === 1 ? "ativa" : "ativas"}
-            </p>
           </button>
         </section>
 

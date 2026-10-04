@@ -9,7 +9,6 @@ export async function GET() {
       .from("transacoes")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(50)
 
     if (error) throw error
 
