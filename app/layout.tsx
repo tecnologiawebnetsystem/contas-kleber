@@ -11,14 +11,14 @@ const _spaceGrotesk = Space_Grotesk({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Contas - Talent Money Family",
-  description: "Sistema completo para gerenciar suas contas fixas e parceladas",
+  title: "Família Gonçalves | Controle Financeiro",
+  description: "Controle financeiro simples para a Família Gonçalves",
   manifest: "/manifest.json",
-  applicationName: "TalentMoney",
+  applicationName: "Família Gonçalves",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "TalentMoney",
+    title: "Família Gonçalves",
   },
   formatDetection: {
     telephone: false,
@@ -43,7 +43,7 @@ export const viewport = {
   maximumScale: 5,
   userScalable: true,
   viewportFit: "cover",
-  themeColor: "#ef4444",
+  themeColor: "#101719",
 }
 
 export default function RootLayout({
@@ -58,12 +58,12 @@ export default function RootLayout({
 
         {/* PWA — Android / Chrome */}
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#ef4444" />
+        <meta name="theme-color" content="#101719" />
 
         {/* PWA — iOS / Safari */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="TalentMoney" />
+        <meta name="apple-mobile-web-app-title" content="Família Gonçalves" />
 
         {/* Ícone para iOS (add to home screen) */}
         <link rel="apple-touch-icon" href="/apple-icon.jpg" />

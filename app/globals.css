@@ -11,24 +11,24 @@
   --card-foreground: #0a0a0a;
   --popover: #ffffff;
   --popover-foreground: #0a0a0a;
-  --primary: #dc2626;
-  --primary-foreground: #fafafa;
-  --secondary: #1e3a5f;
-  --secondary-foreground: #f5f5f5;
-  --muted: #f0f0f0;
-  --muted-foreground: #6b7280;
-  --accent: #c2410c;
-  --accent-foreground: #fafafa;
-  --destructive: #dc2626;
-  --destructive-foreground: #fafafa;
-  --border: #e5e5e5;
-  --input: #e5e5e5;
-  --ring: #dc2626;
-  --chart-1: #dc2626;
-  --chart-2: #1e3a5f;
-  --chart-3: #c2410c;
-  --chart-4: #0ea5e9;
-  --chart-5: #f59e0b;
+  --primary: #e96a4b;
+  --primary-foreground: #fffaf7;
+  --secondary: #254b5f;
+  --secondary-foreground: #f7fbfc;
+  --muted: #edf1f3;
+  --muted-foreground: #66747d;
+  --accent: #2fb486;
+  --accent-foreground: #06281d;
+  --destructive: #e05a5a;
+  --destructive-foreground: #fffaf7;
+  --border: #dce4e8;
+  --input: #dce4e8;
+  --ring: #e96a4b;
+  --chart-1: #e96a4b;
+  --chart-2: #2fb486;
+  --chart-3: #254b5f;
+  --chart-4: #8b6f5a;
+  --chart-5: #d99b4a;
   --radius: 0.75rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #0a0a0a;
@@ -54,38 +54,38 @@
 
 /* Dark mode: deep black with red/blue accents */
 .dark {
-  --background: #0a0a0a;
-  --foreground: #f5f5f5;
-  --card: #111111;
-  --card-foreground: #f5f5f5;
-  --popover: #111111;
-  --popover-foreground: #f5f5f5;
-  --primary: #ef4444;
-  --primary-foreground: #0a0a0a;
-  --secondary: #1e3a5f;
-  --secondary-foreground: #f5f5f5;
-  --muted: #1a1a1a;
-  --muted-foreground: #a3a3a3;
-  --accent: #ea580c;
-  --accent-foreground: #f5f5f5;
-  --destructive: #ef4444;
-  --destructive-foreground: #f5f5f5;
-  --border: #262626;
-  --input: #262626;
-  --ring: #ef4444;
-  --chart-1: #ef4444;
-  --chart-2: #3b82f6;
-  --chart-3: #ea580c;
-  --chart-4: #0ea5e9;
-  --chart-5: #f59e0b;
-  --sidebar: #0a0a0a;
-  --sidebar-foreground: #f5f5f5;
-  --sidebar-primary: #ef4444;
-  --sidebar-primary-foreground: #f5f5f5;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #f5f5f5;
-  --sidebar-border: #262626;
-  --sidebar-ring: #ef4444;
+  --background: #101719;
+  --foreground: #f4f7f6;
+  --card: #172023;
+  --card-foreground: #f4f7f6;
+  --popover: #1b272a;
+  --popover-foreground: #f4f7f6;
+  --primary: #ef7655;
+  --primary-foreground: #1b1715;
+  --secondary: #294f61;
+  --secondary-foreground: #f4f7f6;
+  --muted: #202c2f;
+  --muted-foreground: #9aa9aa;
+  --accent: #39c493;
+  --accent-foreground: #071e17;
+  --destructive: #ee6b6b;
+  --destructive-foreground: #1e1111;
+  --border: #2a393c;
+  --input: #2a393c;
+  --ring: #ef7655;
+  --chart-1: #ef7655;
+  --chart-2: #39c493;
+  --chart-3: #5e9bb2;
+  --chart-4: #c18a68;
+  --chart-5: #e2ae58;
+  --sidebar: #0d1416;
+  --sidebar-foreground: #f4f7f6;
+  --sidebar-primary: #ef7655;
+  --sidebar-primary-foreground: #1b1715;
+  --sidebar-accent: #202c2f;
+  --sidebar-accent-foreground: #f4f7f6;
+  --sidebar-border: #263437;
+  --sidebar-ring: #ef7655;
 }
 
 /* Pamela pink theme dark */
@@ -192,7 +192,7 @@
 
 /* Utility classes */
 .text-gradient {
-  background: linear-gradient(135deg, #dc2626, #ea580c);
+  background: linear-gradient(135deg, #ef7655, #d99b4a);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

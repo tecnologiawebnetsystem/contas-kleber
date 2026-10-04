@@ -28,8 +28,8 @@ export function Logo({ variant = "full", size = "md", glow = false, className = 
     >
       <defs>
         <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#dc2626" />
-          <stop offset="100%" stopColor="#ea580c" />
+          <stop offset="0%" stopColor="#ef7655" />
+          <stop offset="100%" stopColor="#d99b4a" />
         </linearGradient>
         <linearGradient id="blueAccent" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#1e3a5f" />
@@ -76,10 +76,10 @@ export function Logo({ variant = "full", size = "md", glow = false, className = 
     return (
       <div className={`inline-flex flex-col ${className}`}>
         <span className={`font-heading font-bold tracking-tight text-gradient ${s.text}`}>
-          Tecnologia Web Net
+          Família Gonçalves
         </span>
         <span className="text-xs text-muted-foreground tracking-widest uppercase">
-          Contas a Pagar
+          Controle financeiro
         </span>
       </div>
     )

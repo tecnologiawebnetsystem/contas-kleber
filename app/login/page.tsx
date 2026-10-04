@@ -149,7 +149,7 @@ export default function LoginPage() {
             <Logo variant="icon" size="xl" glow />
           </div>
           <CardTitle className="text-3xl font-heading font-bold text-gradient">
-            Talent Money Family
+            Família Gonçalves
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground">
             Gestao financeira familiar inteligente
