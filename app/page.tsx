@@ -480,7 +480,7 @@ export default function Home() {
   }
 
   const abrirModalWhatsApp = (titulo: string, conteudo: string) => {
-    const mensagem = `*${titulo}*\n\n${conteudo}\n\n_Talent Money Family_`
+    const mensagem = `*${titulo}*\n\n${conteudo}\n\n_Família Gonçalves_`
     setMensagemWhatsApp(mensagem)
     setWhatsappDialogOpen(true)
   }
