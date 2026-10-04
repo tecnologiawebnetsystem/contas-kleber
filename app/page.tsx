@@ -15,14 +15,11 @@ import {
   Share2,
   PiggyBank,
   BarChart3,
-  Scissors,
   PlusCircle,
-  Car,
   ArrowUpRight,
   ArrowDownRight,
   CircleDollarSign,
   Clock,
-  Scale,
   Briefcase,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -853,7 +850,7 @@ export default function Home() {
         </section>
 
         {/* Mini Cards Grid */}
-        <section className="grid grid-cols-5 gap-2 fade-up">
+        <section className="grid grid-cols-2 gap-2 fade-up">
           {/* Poupanca */}
           <button
             type="button"
@@ -865,50 +862,6 @@ export default function Home() {
             </div>
             <p className="text-[10px] font-medium text-muted-foreground leading-none truncate">{'Poupan\u00e7a'}</p>
             <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalPoupanca)}</p>
-          </button>
-
-          {/* Cabelo */}
-          <button
-            type="button"
-            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-pink-500/40 hover:shadow-md active:scale-95 group card-hover"
-            onClick={() => setCabeloDialogOpen(true)}
-          >
-            <div className="rounded-lg bg-pink-500/10 p-2 w-fit mb-2">
-              <Scissors className="h-4 w-4 text-pink-500" />
-            </div>
-            <p className="text-[10px] font-medium text-muted-foreground leading-none">Cabelo</p>
-            <p className="text-xs font-bold font-heading text-foreground mt-1">
-              {4 - cabeloResumo.luzesFeitas}L &bull; {4 - cabeloResumo.progressivasFeitas}P restantes
-            </p>
-          </button>
-
-          {/* Carro */}
-          <button
-            type="button"
-            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-zinc-500/40 hover:shadow-md active:scale-95 group card-hover"
-            onClick={() => router.push("/carro")}
-          >
-            <div className="rounded-lg bg-zinc-500/10 p-2 w-fit mb-2">
-              <Car className="h-4 w-4 text-zinc-500" />
-            </div>
-            <p className="text-[10px] font-medium text-muted-foreground leading-none">Carro</p>
-            <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalPagoCarro)}</p>
-          </button>
-
-          {/* Advogado */}
-          <button
-            type="button"
-            className="rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:border-indigo-500/40 hover:shadow-md active:scale-95 group card-hover"
-            onClick={() => setEmprestimoDialogOpen(true)}
-          >
-            <div className="rounded-lg bg-indigo-500/10 p-2 w-fit mb-2">
-              <Scale className="h-4 w-4 text-indigo-500" />
-            </div>
-            <p className="text-[10px] font-medium text-muted-foreground leading-none">Advogado</p>
-            <p className="text-xs font-bold font-heading text-foreground mt-1 truncate">{formatarMoeda(totalEmprestado)}</p>
-            <p className="text-[9px] text-muted-foreground mt-0.5 truncate">
-              Restante: {formatarMoeda(Math.max(0, 13000 - totalEmprestado))}
-            </p>
           </button>
 
           {/* Consultorias */}
