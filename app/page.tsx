@@ -613,9 +613,16 @@ export default function Home() {
     .filter((transacao) => transacao.tipo === "credito")
     .reduce((sum, transacao) => sum + Number(transacao.valor || 0), 0)
 
-  const totalPagoMes = transacoesDoMes
-    .filter((transacao) => transacao.tipo === "debito")
-    .reduce((sum, transacao) => sum + Number(transacao.valor || 0), 0)
+  const totalPagoMes = contasMesAtual.reduce((sum, conta) => {
+    const pagamentosDoMes = (conta.pagamentos || []).filter(
+      (pagamento: any) => pagamento.mes === mesSelecionado && pagamento.ano === anoSelecionado,
+    )
+
+    return sum + pagamentosDoMes.reduce(
+      (total: number, pagamento: any) => total + Number(pagamento.valorAjustado ?? pagamento.valor ?? conta.valor ?? 0),
+      0,
+    )
+  }, 0)
 
   const pagas = contasMesAtual.filter((conta) => {
     if (conta.tipo === "diaria" || conta.tipo === "poupanca" || conta.tipo === "viagem") return true
