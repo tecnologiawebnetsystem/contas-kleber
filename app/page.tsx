@@ -815,19 +815,15 @@ export default function Home() {
           </div>
         )}
 
-        {/* Hero Card - Credito Disponivel */}
+        {/* Resumo financeiro */}
         <section className="fade-up">
           <div className="rounded-2xl bg-card border border-border/50 p-5 relative overflow-hidden shadow-sm card-hover">
-            {/* Decorative background */}
             <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-primary/5 -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-secondary/5 translate-y-1/2 -translate-x-1/2 blur-2xl pointer-events-none" />
-
             <div className="relative">
-              {/* Top row */}
-              <div className="flex items-start justify-between mb-4">
-                <div>
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div className="min-w-0">
                   <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest mb-1">
-                    Credito Disponivel
+                    Saldo disponível
                   </p>
                   <p className={`text-3xl md:text-4xl font-bold font-heading tracking-tight ${saldo >= 0 ? "text-foreground" : "text-red-500"}`}>
                     {formatarMoeda(saldo)}
@@ -835,60 +831,52 @@ export default function Home() {
                   <div className="flex items-center gap-1.5 mt-2">
                     {saldo >= 0 ? (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        <ArrowUpRight className="h-3 w-3" />
-                        Positivo
+                        <ArrowUpRight className="h-3 w-3" /> Positivo
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full">
-                        <ArrowDownRight className="h-3 w-3" />
-                        Negativo
+                        <ArrowDownRight className="h-3 w-3" /> Negativo
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Circular progress - always visible */}
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex shrink-0 flex-col items-center gap-1" aria-label={`${percentualPago}% do crédito mensal utilizado`}>
                   <div className="relative h-16 w-16">
-                    <svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64">
+                    <svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64" aria-hidden="true">
                       <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" strokeWidth="5" className="text-muted/40" />
                       <circle
                         cx="32" cy="32" r="26" fill="none" stroke="currentColor" strokeWidth="5"
-                        className="text-primary"
-                        strokeLinecap="round"
+                        className="text-primary" strokeLinecap="round"
                         strokeDasharray={`${percentualPago * 1.634} ${163.4 - percentualPago * 1.634}`}
                         style={{ transition: "stroke-dasharray 0.7s ease-out" }}
                       />
                     </svg>
-                    <Wallet className="h-5 w-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    <Wallet className="h-5 w-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" aria-hidden="true" />
                   </div>
-                  <p className="text-xs font-bold text-primary font-heading">{percentualPago}%</p>
+                  <p className="text-xs font-bold text-primary font-heading">{percentualPago}% usado</p>
                 </div>
               </div>
 
-              {/* Stats row */}
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-border/40">
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total do mes</p>
-                  <p className="text-sm font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalCreditoMes)}</p>
+              <div className="grid grid-cols-2 gap-3 border-t border-border/40 pt-4">
+                <div className="rounded-xl bg-muted/30 px-3 py-2.5">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Recebido no mês</p>
+                  <p className="text-base font-bold font-heading text-foreground mt-0.5">{formatarMoeda(totalCreditoMes)}</p>
                 </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pago</p>
-                  <p className="text-sm font-bold font-heading text-emerald-500 mt-0.5">{formatarMoeda(totalPagoMes)}</p>
+                <div className="rounded-xl bg-emerald-500/5 px-3 py-2.5">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Débitos no mês</p>
+                  <p className="text-base font-bold font-heading text-emerald-500 mt-0.5">{formatarMoeda(totalPagoMes)}</p>
                 </div>
               </div>
 
-              {/* Progress bar */}
-              <div className="mt-3">
-                <div className="w-full bg-muted/50 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
-                    style={{ width: `${percentualPago}%` }}
-                  />
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                  <span>Uso do crédito recebido</span>
+                  <span>{pagas} de {contasMesAtual.length} contas pagas</span>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {pagas} de {contasMesAtual.length} contas pagas
-                </p>
+                <div className="w-full bg-muted/50 rounded-full h-1.5 overflow-hidden" aria-hidden="true">
+                  <div className="h-full rounded-full bg-primary transition-all duration-700 ease-out" style={{ width: `${percentualPago}%` }} />
+                </div>
               </div>
             </div>
           </div>

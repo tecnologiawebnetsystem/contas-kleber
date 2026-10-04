@@ -1,7 +1,7 @@
 {
-  "name": "Família Gonçalves | Finanças",
-  "short_name": "Família Gonçalves",
-  "description": "Controle financeiro simples para a Família Gonçalves",
+  "name": "Talent Money Family",
+  "short_name": "Talent Money",
+  "description": "Gestão financeira familiar da Talent Money Family",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#101719",
