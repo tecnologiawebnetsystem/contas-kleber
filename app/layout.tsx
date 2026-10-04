@@ -108,12 +108,12 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(
+                  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(
                     function(registration) {
-                      console.log('[SW] Service Worker registrado com sucesso:', registration.scope);
+                      registration.update();
                     },
                     function(err) {
-                      console.log('[SW] Falha ao registrar Service Worker:', err);
+                      console.error('[PWA] Falha ao registrar Service Worker:', err);
                     }
                   );
                 });

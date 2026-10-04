@@ -1,13 +1,12 @@
 // Service Worker — TalentMoney PWA
-const CACHE_NAME = "talentmoney-v4"
+const CACHE_NAME = "talent-money-family-v5"
 
-// Assets estáticos para pré-cachear na instalação
+// Apenas recursos de identidade ficam no pré-cache. Dados e páginas autenticadas
+// devem continuar vindo da rede para não exibir informações financeiras antigas.
 const STATIC_CACHE = [
-  "/",
   "/manifest.json",
-  "/icon-192.jpg",
-  "/icon-512.jpg",
-  "/apple-icon.jpg",
+  "/icon.svg",
+  "/apple-icon.png",
 ]
 
 // Instalação: pré-cacheia assets estáticos
@@ -58,7 +57,17 @@ self.addEventListener("fetch", (event) => {
     return
   }
 
-  // Assets e páginas — Cache First com fallback para rede
+  // Navegação sempre tenta a versão atual; usa o cache somente offline.
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => response)
+        .catch(() => caches.match("/"))
+    )
+    return
+  }
+
+  // Assets estáticos usam cache-first para permitir abertura offline.
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached
