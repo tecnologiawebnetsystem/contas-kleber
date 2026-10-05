@@ -5,7 +5,8 @@ const CACHE_NAME = "talent-money-family-v5"
 // devem continuar vindo da rede para não exibir informações financeiras antigas.
 const STATIC_CACHE = [
   "/manifest.json",
-  "/icon.svg",
+  "/icon-192.png",
+  "/icon-512.png",
   "/apple-icon.png",
 ]
 
